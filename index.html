@@ -3,7 +3,7 @@
   integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
   crossorigin="anonymous"></script>
 <div class="im_history_messages_peer" ng-show="peerHistory.peerID == historyPeer.id" ng-repeat="peerHistory in peerHistories" style="">
-  <div class="im_history_message_wrap im_grouped im_message_focus" my-message="" ng-repeat="historyMessage in peerHistory.messages"><div class="im_message_outer_wrap hasselect" ng-click="toggleMessage(historyMessage.mid, $event)">
+  <div class="im_history_message_wrap" my-message="" ng-repeat="historyMessage in peerHistory.messages"><div class="im_message_outer_wrap hasselect" ng-click="toggleMessage(historyMessage.mid, $event)">
 
       <div class="im_message_wrap clearfix" ng-switch="::historyMessage._ == 'messageService'">
 
@@ -15,20 +15,20 @@
           <!---->
           <!---->
 
-          <a class="im_message_from_photo pull-left peer_photo_init" my-peer-photolink="::historyMessage.fromID" img-class="im_message_from_photo"><img class="im_message_from_photo" src="blob:https://web.telegram.org/ef3aa50b-fbd9-4b6b-9634-703f1c84371f"></a>
+          <a class="im_message_from_photo pull-left peer_photo_init" my-peer-photolink="::historyMessage.fromID" img-class="im_message_from_photo"><img class="im_message_from_photo" src="blob:https://web.telegram.org/db4d34ce-13e5-458e-ae93-00596d9dfe0e"></a>
 
           <div class="im_message_meta pull-right text-right noselect">
             <!---->
         <span class="im_message_date clickable">
 
-          <span class="im_message_date_text nocopy" data-content="8:46:48 PM"></span>
+          <span class="im_message_date_text nocopy" data-content="11:49:24 AM"></span>
         </span>
           </div>
 
           <div class="im_message_body" ng-class="::{im_message_body_media: historyMessage._ == 'message' &amp;&amp; historyMessage.media ? true : false}">
 
         <span class="im_message_author_wrap">
-          <span class="copyonly">[<span ng-bind="::historyMessage.date | time">8:46:48 PM</span>] </span><a class="im_message_author" my-peer-link="historyMessage.fromID" short="historyMessage.peerID > 0" color="historyMessage.peerID < 0" no-watch="true" saved-from="historyMessage.savedFrom">Wasteland Wars</a><!----><span class="copyonly">:</span><span class="im_message_author_admin" my-message-admin-badge="historyMessage" style="display: none;"></span>
+          <span class="copyonly">[<span ng-bind="::historyMessage.date | time">11:49:24 AM</span>] </span><a class="im_message_author" my-peer-link="historyMessage.fromID" short="historyMessage.peerID > 0" color="historyMessage.peerID < 0" no-watch="true" saved-from="historyMessage.savedFrom">Wasteland Wars</a><!----><span class="copyonly">:</span><span class="im_message_author_admin" my-message-admin-badge="historyMessage" style="display: none;"></span>
         </span>
 
 
@@ -37,7 +37,7 @@
             <!---->
 
             <div my-message-body="historyMessage">
-              <div class="im_message_text" dir="auto"><span class="emoji  emoji-spritesheet-0" style="background-position: -180px -108px;" title="heart">:heart:</span>182/248 <span class="emoji  emoji-spritesheet-2" style="background-position: -342px -90px;" title="poultry_leg">:poultry_leg:</span>46% <span class="emoji  emoji-spritesheet-2" style="background-position: -504px -18px;" title="battery">:battery:</span>9/9<br><span class="emoji  emoji-spritesheet-0" style="background-position: -450px -108px;" title="footprints">:footprints:</span><strong>36км</strong> от лагеря.<br>Сражение с <strong><span class="emoji  emoji-spritesheet-1" style="background-position: -306px -18px;" title="dragon">:dragon:</span>Туннельщик</strong> (🏵🏵Мифический)<br><br><strong><span class="emoji  emoji-spritesheet-1" style="background-position: -306px -18px;" title="dragon">:dragon:</span>Туннельщик</strong> нанес тебе удар <span class="emoji  emoji-spritesheet-0" style="background-position: -198px -108px;" title="broken_heart">:broken_heart:</span><code>-19</code><br><span class="emoji  emoji-spritesheet-0" style="background-position: -396px -108px;" title="bust_in_silhouette">:bust_in_silhouette:</span>Ты <strong>зарядил в грудь</strong> <code>💥159</code><br><strong><span class="emoji  emoji-spritesheet-1" style="background-position: -306px -18px;" title="dragon">:dragon:</span>Туннельщик</strong> нанес тебе удар <span class="emoji  emoji-spritesheet-0" style="background-position: -198px -108px;" title="broken_heart">:broken_heart:</span><code>-22</code><br><span class="emoji  emoji-spritesheet-0" style="background-position: -396px -108px;" title="bust_in_silhouette">:bust_in_silhouette:</span>Ты <strong>ударил по касательной</strong> <code>💥188</code><br><br><strong>Ты одержал победу!</strong><br><br>Получено крышек: 🕳<strong>1618</strong><br>Получено материалов: <span class="emoji  emoji-spritesheet-2" style="background-position: -558px -36px;" title="package">:package:</span><strong>2218</strong></div>
+              <div class="im_message_text" dir="auto">🕳Крышки: <strong>761</strong><br><br><code>Ты отдал учителю 4670 крышек и погрузился в обучение. Теперь ты стал немного опытнее.</code><br><br><span class="emoji  emoji-spritesheet-0" style="background-position: -252px -72px;" title="muscle">:muscle:</span>Сила (120): 🕳<strong>156</strong><br><span class="emoji  emoji-spritesheet-2" style="background-position: -126px -36px;" title="gun">:gun:</span>Меткость (107): 🕳<strong>10</strong><br>🤸🏽♂Ловкость (108): 🕳<strong>10</strong><br><span class="emoji  emoji-spritesheet-0" style="background-position: -180px -108px;" title="heart">:heart:</span>Живучесть (248): 🕳<strong>1820</strong><br>🗣Харизма (468): 🕳<strong>4680</strong> <br><br>Выбирай желаемый навык:</div>
               <div class="im_message_media" style="display: none;"></div>
               <div class="im_message_sign" style="display: none;"></div>
               <div class="im_message_keyboard" style="display: none;"></div>
@@ -54,3 +54,4 @@
   </div>
 </div>
 
+          

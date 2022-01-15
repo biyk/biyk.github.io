@@ -2,56 +2,13 @@
   src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
   integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
   crossorigin="anonymous"></script>
-<div class="im_history_messages_peer" ng-show="peerHistory.peerID == historyPeer.id" ng-repeat="peerHistory in peerHistories" style="">
-  <div class="im_history_message_wrap im_grouped" my-message="" ng-repeat="historyMessage in peerHistory.messages"><div class="im_message_outer_wrap hasselect" ng-click="toggleMessage(historyMessage.mid, $event)">
+<label> весс (г)
+<input name="mass" value="0">
+</label>
+<label> цена (руб)
+<input name="price" value="0">
+</label>
 
-      <div class="im_message_wrap clearfix" ng-switch="::historyMessage._ == 'messageService'">
-
-        <!---->
-
-        <!----><div ng-switch-default="" class="im_content_message_wrap im_message_in" ng-class="::[historyMessage.pFlags.out ? 'im_message_out' : 'im_message_in', historyMessage.fwdFromID ? 'im_message_fwd' : '']">
-          <i class="icon icon-select-tick"></i>
-
-          <!---->
-          <!---->
-
-          <a class="im_message_from_photo pull-left peer_photo_init" my-peer-photolink="::historyMessage.fromID" img-class="im_message_from_photo"><img class="im_message_from_photo" src="blob:https://web.telegram.org/2a3b8af9-479f-4312-a36f-f4ffacb62e8c"></a>
-
-          <div class="im_message_meta pull-right text-right noselect">
-            <!---->
-        <span class="im_message_date clickable">
-
-          <span class="im_message_date_text nocopy" data-content="3:45:34 PM"></span>
-        </span>
-          </div>
-
-          <div class="im_message_body" ng-class="::{im_message_body_media: historyMessage._ == 'message' &amp;&amp; historyMessage.media ? true : false}">
-
-        <span class="im_message_author_wrap">
-          <span class="copyonly">[<span ng-bind="::historyMessage.date | time">3:45:34 PM</span>] </span><a class="im_message_author" my-peer-link="historyMessage.fromID" short="historyMessage.peerID > 0" color="historyMessage.peerID < 0" no-watch="true" saved-from="historyMessage.savedFrom">Wasteland Wars</a><!----><span class="copyonly">:</span><span class="im_message_author_admin" my-message-admin-badge="historyMessage" style="display: none;"></span>
-        </span>
-
-
-            <!---->
-
-            <!---->
-
-            <div my-message-body="historyMessage">
-              <div class="im_message_text" dir="auto"><code>Заброшенный супермаркет</code><br><span class="emoji  emoji-spritesheet-0" style="background-position: -180px -108px;" title="heart">:heart:</span>204/248 <span class="emoji  emoji-spritesheet-2" style="background-position: -342px -90px;" title="poultry_leg">:poultry_leg:</span>51% <span class="emoji  emoji-spritesheet-2" style="background-position: -504px -18px;" title="battery">:battery:</span>9/9<br><span class="emoji  emoji-spritesheet-0" style="background-position: -450px -108px;" title="footprints">:footprints:</span><strong>36км</strong> от лагеря.<br><br>Во время вылазки на тебя напал <strong><span class="emoji  emoji-spritesheet-1" style="background-position: -504px -36px;" title="new_moon_with_face">:new_moon_with_face:</span>Дитя ночи</strong> <em>(🏵🏵Мыслитель)</em>.<br><br><code>Вероятность победы стремится к нулю.</code><br><br>Ты можешь попробовать вступить с ним в битву, или же попытаться убежать.</div>
-              <div class="im_message_media" style="display: none;"></div>
-              <div class="im_message_sign" style="display: none;"></div>
-              <div class="im_message_keyboard" style="display: none;"></div>
-            </div>
-
-
-          </div>
-
-        </div><!---->
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-          
+<label> калорийность на 100г
+<input name="price" value="0">
+</label>

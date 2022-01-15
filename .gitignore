@@ -124,6 +124,7 @@ concat-less/
 /src/style/partials/icons.less
 /src/index.pug
 /src/json/faviconData.json
+/src/style/partials/fonts.less
 
 
 /src/iconlist.pug

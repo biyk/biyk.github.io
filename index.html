@@ -15,5 +15,16 @@
 <br>
 <hr>
 <label> Результат
-<input name="result" value="0">
+    <div class="result" value="0"></div>
 </label>
+<script>
+    let timer;
+    $('input').on('keyup change', function () {
+        cancelIdleCallback(timer);
+        timer = requestIdleCallback(function () {
+           let imass = $('[name="price"]').val()/ ($('[name="mass"]').val()/100);
+           let result = imass*25;
+           $('.result').text(result);
+        });
+    });
+</script>

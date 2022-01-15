@@ -10,7 +10,7 @@
 </label>
 
 <label> калорийность на 100г
-<input name="price" value="0">
+<input name="kkal" value="0">
 </label>
 <br>
 <hr>
@@ -23,7 +23,7 @@
         cancelIdleCallback(timer);
         timer = requestIdleCallback(function () {
            let imass = $('[name="price"]').val()/ ($('[name="mass"]').val()/100);
-           let result = imass*25;
+           let result = 2500*imass/$('[name="kkal"]').val();
            $('.result').text(result);
         });
     });

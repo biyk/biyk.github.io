@@ -1,0 +1,36 @@
+<script
+  src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
+  crossorigin="anonymous"></script>
+<form>
+<label> вес (г)<br>
+<input name="mass" value="" type="number">
+</label>
+<br>
+<hr>
+<label> цена (руб)<br>
+<input name="price" value="" type="number">
+</label>
+<br>
+<hr>
+<label> калорийность на 100г<br>
+<input name="kkal" value="" type="number">
+</label>
+<br>
+<hr>
+<label> Результат
+    <div class="result" value="0"></div>
+</label>
+    <button type="reset">Сбросить</button>
+</form>
+<script>
+    let timer;
+    $('input').on('keyup change', function () {
+        cancelIdleCallback(timer);
+        timer = requestIdleCallback(function () {
+           let imass = $('[name="price"]').val()/ ($('[name="mass"]').val()/100);
+           let result = 2500*imass/$('[name="kkal"]').val();
+           $('.result').text(result);
+        });
+    });
+</script>

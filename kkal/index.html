@@ -7,22 +7,26 @@
 </head>
 <body>
 <h2>КБЖУ Калькулятор</h2>
-<label for="kkal">Ккал:</label>
+
 <input type="number" id="kkal" value="0">
+<label for="kkal">Ккал</label>
 <br>
-<label for="protein">Белки:</label>
 <input type="number" id="protein" value="0">
+<label for="protein">Белки</label>
+
 <br>
-<label for="fat">Жиры:</label>
 <input type="number" id="fat" value="0">
+<label for="fat">Жиры</label>
 <br>
-<label for="carbs">Углеводы:</label>
 <input type="number" id="carbs" value="0">
+<label for="carbs">Углеводы</label>
 <br>
-<label for="weight">Вес (в граммах):</label>
+
 <input type="number" id="weight" value="100">
+<label for="weight">грамм</label>
 <br>
 <button onclick="calculate()">Рассчитать</button>
+<button onclick="reset()">Сброс</button>
 
 <h3>Результат:</h3>
 <p>Новые значения Ккал: <span id="newKal">0</span></p>
@@ -31,6 +35,14 @@
 <p>Новые значения Углеводы: <span id="newCarbs">0</span></p>
 
 <script>
+
+    function reset(){
+        document.getElementById('protein').value=0;
+        document.getElementById('kkal').value=0;
+        document.getElementById('fat').value=0;
+        document.getElementById('carbs').value=0;
+        document.getElementById('weight').value=0;
+    }
     function calculate() {
         let protein = document.getElementById('protein').value;
         let kkal = document.getElementById('kkal').value;

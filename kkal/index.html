@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>КБЖУ Калькулятор</title>
+</head>
+<body>
+<h2>КБЖУ Калькулятор</h2>
+<label for="kkal">Ккал:</label>
+<input type="number" id="kkal" value="0">
+<br>
+<label for="protein">Белки:</label>
+<input type="number" id="protein" value="0">
+<br>
+<label for="fat">Жиры:</label>
+<input type="number" id="fat" value="0">
+<br>
+<label for="carbs">Углеводы:</label>
+<input type="number" id="carbs" value="0">
+<br>
+<label for="weight">Вес (в граммах):</label>
+<input type="number" id="weight" value="100">
+<br>
+<button onclick="calculate()">Рассчитать</button>
+
+<h3>Результат:</h3>
+<p>Новые значения Ккал: <span id="newKal">0</span></p>
+<p>Новые значения Белки: <span id="newProtein">0</span></p>
+<p>Новые значения Жиры: <span id="newFat">0</span></p>
+<p>Новые значения Углеводы: <span id="newCarbs">0</span></p>
+
+<script>
+    function calculate() {
+        let protein = document.getElementById('protein').value;
+        let kkal = document.getElementById('kkal').value;
+        let fat = document.getElementById('fat').value;
+        let carbs = document.getElementById('carbs').value;
+        let weight = document.getElementById('weight').value;
+
+        let coefficient = weight / 100;
+
+        document.getElementById('newProtein').innerText = protein * coefficient;
+        document.getElementById('newFat').innerText = fat * coefficient;
+        document.getElementById('newCarbs').innerText = carbs * coefficient;
+        document.getElementById('newKal').innerText = kkal * coefficient;
+    }
+</script>
+</body>
+</html>

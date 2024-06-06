@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div class="content">
+  <p>Онлайн калькулятор процента жира/сухой мышечной массы по
+    толщине жировой складки в трёх точках на теле.<br>Предлагаемый калькулятор может подсчитать приблизительный процент
+    жира и сухую мышечную массу в зависимости от вашего веса, возраста и толщины
+    жировых/кожных складок, измеренных в трёх точках на теле. В основе
+    калькулятора лежит формула Джэксона-Поллока.</p>
+
+  <center>
+    <div style="margin: 20px 0 25px 0">
+
+      <!-- Yandex.RTB R-A-63670-1 -->
+      <div id="yandex_rtb_R-A-63670-1"></div>
+      <script>window.yaContextCb.push(()=>{
+        Ya.Context.AdvManager.render({
+          renderTo: "yandex_rtb_R-A-63670-1",
+          blockId: "R-A-63670-1"
+        })
+      })</script>
+    </div></center>
+
+
+
+
+
+
+  <fieldset class=" collapsible collapsed"><legend>Инструкция</legend><div>
+    - Заполните поля.<br>
+    - Нажмите "Подсчитать".<br><br>
+    * Как производить замеры:<br>
+    При помощи кончиков большого пальца и
+    указательного пальца ущипните кожу в указанном месте. Оттяните кожу от мышц.
+    Следует "захватить" весь подкожный жир, но не мышцы под ним. Измерьте
+    толщину этой кожной/жировой складки, в миллиметрах, при помощи (метрической)
+    линейки или специального инструмента. Если у вас есть такой инструмент
+    (штангенциркуль для измерения кожных складок), то его челюсти следует
+    накладывать на то место, где находятся кончики пальцев (примерно 1 см от
+    пальцев). Отпустите ручки штангенциркуля и подождите 2 секунды, прежде чем
+    снимать измерения. Одну и ту же точку на теле следует измерить несколько раз
+    (отпустите складку и ущипните кожу ещё раз, заново измерьте её толщину).
+    Высчитайте среднее арифметическое. Полученные результаты измерения одной и
+    той же точки не должны отличаться друг от друга более чем на 1-2 мм. Если у
+    вас нет такого штангенциркуля, то придётся обойтись линейкой.<p></p>
+    <p>Процедура отличается для мужчин и женщин. Мужчины измеряют складки на
+      груди, животе и бёдрах, а женщины - на трицепсе, над подвздошной костью и
+      бёдрах. См. рисунки ниже для обеих
+      полов:</p>
+    <p>Мужчины:</p>
+    <ul>
+      <li>Грудь - Диагональная складка посередине между
+        соском и верхней частью грудной мышцы у подмышки.</li>
+      <li>Живот - Вертикальная складка 2,5 см вправо от
+        пупка.</li>
+      <li> Бедро - Вертикальная складка посередине между
+        коленной чашечкой и паховым сгибом (впадина, где верхняя часть ноги
+        подсоединяется к ягодицам).</li>
+    </ul>
+    <p>Женщины:</p>
+    <ul>
+      <li>Трицепсы - Вертикальная складка посередине между
+        верхом плеча и локтём.</li>
+      <li>Над подвздошной костью - Диагональная складка над
+        верхней передней частью подвздошного гребешка (место выше верхней
+        передней выступающей области бедренной кости)</li>
+      <li>Бедро - Вертикальная складка посередине между
+        коленной чашечкой и паховым сгибом (впадина, где верхняя часть ноги
+        подсоединяется к ягодицам)</li>
+    </ul>
+  </div>
+  </fieldset>
+
+  <br><br>
+  <div id="rslokadv" style="position:absolute; margin-top:75px; width: 360px;display:none;">
+  </div>
+  <center>
+    <form name="form" action="" method="post" style="min-width:550px">
+
+      <table class="my_table">
+        <tbody><tr align="left">
+          <td>Пол</td>
+          <td><input type="radio" checked="" value="1" name="gender">
+            мужчина <input type="radio" value="0" name="gender">
+            женщина</td></tr>
+        <tr align="left">
+          <td>Возраст</td>
+          <td><input type="text" size="4" name="age"> в годах</td></tr>
+        <tr align="left">
+          <td>Вес</td>
+          <td><input type="text" size="4" name="weight"> <input onclick="weight.value=weight.value*2.2046" type="radio" value="1" name="weightRB"> фунты <input onclick="weight.value=weight.value/2.2046" type="radio" checked="" value="0" name="weightRB"> кг</td></tr>
+        <tr align="left">
+          <td>Складка на груди (только мужчины)
+          </td>
+          <td><input type="text" size="4" name="pec"> мм</td></tr>
+        <tr align="left">
+          <td>Складка на животе (только мужчины)
+          </td>
+          <td><input type="text" size="4" name="abd"> мм</td></tr>
+        <tr align="left">
+          <td>Складка на бедре (мужчины и женщины)
+          </td>
+          <td><input type="text" size="4" name="thigh"> мм</td></tr>
+        <tr align="left">
+          <td>Складка на трицепсе (только женщины)
+          </td>
+          <td><input type="text" size="4" name="triceps"> мм</td></tr>
+        <tr align="left">
+          <td>Складка над подвздошной костью (только женщины)
+          </td>
+          <td><input type="text" size="4" name="suprailiac">  мм</td></tr>
+        <tr align="center"><td colspan="2">
+          <div style="display:inline-block;margin:50px 5px 70px 5px;height:100%;width:100%;max-width:390px">
+            <center>
+              <!-- Yandex.RTB R-A-63670-44 -->
+              <div id="yandex_rtb_R-A-63670-44"></div>
+              <script>window.yaContextCb.push(()=>{
+                Ya.Context.AdvManager.render({
+                  renderTo: 'yandex_rtb_R-A-63670-44',
+                  blockId: 'R-A-63670-44'
+                })
+              })</script>
+            </center>
+          </div></td></tr>
+        <tr align="center">
+          <td colspan="2">
+
+            <input onclick="gaBf1()" type="button" value="Вычислить" name="button" class="button">
+
+          </td></tr></tbody></table></form></center>
+  <p align="center">
+    <script language="JavaScript">
+
+      <!--
+      function gaBf1(){
+
+        var male = document.form.gender[0];
+        var female = document.form.gender[1];
+
+        var imweight = document.form.weightRB[0];
+        var meweight = document.form.weightRB[1];
+
+        var age = Number(document.form.age.value);
+        var weight = Number(document.form.weight.value);
+        var pec = Number(document.form.pec.value);
+        var abd = Number(document.form.abd.value);
+        var thigh = Number(document.form.thigh.value);
+        var triceps = Number(document.form.triceps.value);
+        var suprailiac = Number(document.form.suprailiac.value);
+
+        var y = 495;
+        var z = 450;
+
+        if (imweight.checked) {
+          var remain = weight%10;
+          var wint = Math.round(weight);
+          remain = weight-wint;
+          var suff = Math.round(remain*10);
+          weight = wint + suff/10;
+        }
+        if (meweight.checked) {
+          weight = weight ;
+          var remain = weight%10;
+          var wint = Math.round(weight);
+          remain = weight-wint;
+          var suff = Math.round(remain*10);
+          weight = wint + suff/10;
+        }
+
+        if (male.checked) {
+          gender="мужчина";
+          var m = pec + abd + thigh;
+          var n = Math.pow(m, 2);
+          var bd = 1.1093800 - (0.0008267*m) + (0.0000016*n) - (0.0002574*age);
+        }
+
+        if (female.checked) {
+          gender="женщина";
+          var m = triceps + suprailiac + thigh;
+          var n = Math.pow(m, 2);
+          var bd = 1.0994921 - (0.0009929*m) + (0.0000023*n) - (0.0001392*age);
+        }
+
+        var perfat= ( y/(bd) ) - z;
+        var pleanmass = 1 - (perfat/100);
+
+        var remain = perfat%10;
+        var bfint = Math.round(perfat);
+        remain = perfat-bfint;
+        var suff = Math.round(remain*10);
+        var finbf = bfint + suff/10;
+
+        var leanmass = pleanmass * weight;
+        var remain2 = leanmass%10;
+        var lmint = Math.round(leanmass);
+        remain2 = leanmass-lmint;
+        var suff2 = Math.round(remain*10);
+        var finlm = lmint + suff2/10;
+
+        //validation
+        if ((!male.checked) && (!female.checked)){
+          alert("Необходимо указать свой пол - мужчина или женщина");
+          return false;
+        }
+        if ((age>100)||(age<15)){
+          alert("Необходимо указать свой возраст между 15 и 100 годами");
+          return false;
+        }
+        if ((weight>272)||(weight<16)){
+          alert("Необходимо указать свой вес между 16 и 272 кг или в фунтах");
+          return false;
+        }
+        if ( (male.checked) && (pec>100 || pec<1) ){
+          alert("Необходимо указать толщину складки на груди между 1 и 100 мм");
+          return false;
+        }
+        if ( (male.checked) && (abd>100 || abd<1) ){
+          alert("Необходимо указать толщину складки на животе между 1 и 100 мм");
+          return false;
+        }
+        if ( (male.checked) && (thigh>100 || thigh<1) ){
+          alert("Необходимо указать толщину складки на бёдрах между 1 и 100 мм");
+          return false;
+        }
+        if ( (female.checked) && (triceps>100 || triceps<1) ){
+          alert("Необходимо указать толщину складки на трицепсе между 1 и 100 мм");
+          return false;
+        }
+        if ( (female.checked) && (suprailiac>100 || suprailiac<1) ){
+          alert("Необходимо указать толщину складки над подвздошной костью между 1 и 100 мм");
+          return false;
+        }
+        if ( (female.checked) && (thigh>100 || thigh<1) ){
+          alert("Необходимо указать толщину складки на бёдрах между 1 и 100 мм");
+          return false;
+        }
+
+        bfWin=open("", "documentWindow","width=600,height=300,status=no,toolbar=no,menubar=no");
+        bfWin.document.open();
+        //create output
+
+        bfWin.document.write("<body>");
+
+
+        bfWin.document.write("<table width='600' class='contenttoc'>");
+
+        bfWin.document.write("<tr><td >Пол:</td>");
+        bfWin.document.write("<td >" + gender + "</td>");
+        bfWin.document.write("<td >Вес:</td>");
+        bfWin.document.write("<td >" + weight + " кг</td></tr>");
+
+        bfWin.document.write("<tr><td >Возраст:</td>");
+        bfWin.document.write("<td >" + age + " лет/года</td>");
+        bfWin.document.write("<td >Складка на груди:</td>");
+        bfWin.document.write("<td >" + pec + " мм </td></tr>");
+
+        bfWin.document.write("<tr><td >Складка на животе:</td>");
+        bfWin.document.write("<td >" + abd + " мм</td>");
+        bfWin.document.write("<td >Складка на бедре:</td>");
+        bfWin.document.write("<td >" + thigh + " мм </td></tr>");
+
+        bfWin.document.write("<tr><td >Складка на трицепсе:</td>");
+        bfWin.document.write("<td >" + triceps + " мм</td>");
+        bfWin.document.write("<td >Складка над подвздошной костью:</td>");
+        bfWin.document.write("<td >" + suprailiac + " мм </td></tr>");
+        bfWin.document.write("</table>");
+
+        bfWin.document.write("<h4>Ваш процент жира: " + finbf + " %</h4>");
+        bfWin.document.write("<h4>Ваша сухая мышечная масса: " + finlm + " кг</h4>");
+
+        bfWin.document.write("<form><input type='button' class='button' value='Закрыть' onClick='window.close()'></form><br><br>");
+        bfWin.document.write("</body></html>");
+
+        //close display
+        bfWin.document.close();
+        return true;
+      }
+
+      //-->
+    </script>
+  </p>
+  <br>
+
+  <style>
+    .popbox{z-index:9999999;position:fixed;text-align:center;display:none;padding:5px;background-color:#fff;width:70%;max-width:700px;max-height:100%;}
+    .popclose{cursor:pointer;font-size:50px;float:right;line-height:30px;}
+    .popback{display:none;background-color:#00000090;width:100%;height:100%;z-index:9999998;position:fixed;top:0;left:0;align-items:center;align-content:center;justify-content:center;overflow:auto;flex-direction:row;flex-wrap:wrap;}
+    .popiOs, .popAndr {display:none}
+    .popiOs.popAndr a{background: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3e%3cpath fill='%23000' d='M352 8H160a40.045 40.045 0 0 0-40 40v416a40.045 40.045 0 0 0 40 40h192a40.045 40.045 0 0 0 40-40V48a40.045 40.045 0 0 0-40-40zm-41.758 16l-4.8 24h-98.883l-4.8-24zM376 464a24.027 24.027 0 0 1-24 24H160a24.027 24.027 0 0 1-24-24V48a24.027 24.027 0 0 1 24-24h25.441l6.714 33.569A8 8 0 0 0 200 64h112a8 8 0 0 0 7.845-6.431L326.559 24H352a24.027 24.027 0 0 1 24 24z'/%3e%3cpath fill='%23000' d='M282 456h-48a8 8 0 0 0 0 16h48a8 8 0 0 0 0-16z'/%3e%3c/svg%3e") no-repeat; text-decoration: underline; padding:3px 0 3px 28px}
+  </style>
+
+
+
+</div>
+</body>
+</html>

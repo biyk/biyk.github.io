@@ -69,4 +69,5 @@ backButton.addEventListener('click', () => {
     image.style.display = 'none';
     audio.style.display = 'none';
     backButton.style.display = 'none';
+    iframe.style.display = 'none';
 });

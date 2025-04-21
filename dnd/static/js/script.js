@@ -76,7 +76,7 @@ class MapManager {
         let api = window.GoogleSheetDB || new GoogleSheetDB();
         await api.waitGoogle();
         let callbackLoadData = () => {
-            document.body.dispatchEvent(new Event('g-list-ready'));
+            location.reload();
         }
         let authButton = document.getElementById('auth');
         let settingsButton = document.getElementById('settings');

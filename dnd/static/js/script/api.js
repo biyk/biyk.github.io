@@ -205,3 +205,15 @@ export async function getMapTable() {
         spreadsheetId: keys.maps
     });
 }
+
+export async function getPlayerTable() {
+    let keysTable = new Table({
+        list: 'KEYS',
+        spreadsheetId: spreadsheetId
+    });
+    let keys = await keysTable.getAll({caching: true, formated: true});
+    return new Table({
+        list: localStorage.getItem('auth_code'),
+        spreadsheetId: keys.players
+    });
+}

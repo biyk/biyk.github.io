@@ -1,7 +1,7 @@
 import {debounce} from './init/func.js';
 import {SpellsApi} from './api/spells.js';
 import {displayRes, displaySpells, renderSpellMenu, displaySkills} from './spells/display.js';
-import {spreadsheetId, Table} from "./db/google.js";
+import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
 
 
 
@@ -180,7 +180,7 @@ export class Spells {
     }
 
     initEventListeners(){
-        document.body.addEventListener('ready_spells', (e) => {
+        document.body.addEventListener('ready_spells', async (e) => {
             this.displayAll();
             document.getElementById('spell-search').addEventListener(
                 'input',
@@ -281,7 +281,7 @@ export class Spells {
         sidebar.style.right = sidebar.style.right === '0px' ? '-100%' : '0px';
     }
 
-    async getPlayersSheet() {
+    async getPlayersSheet() {//TODO почему-то не работает
         let configTable = new Table({
             list: 'KEYS',
             spreadsheetId: spreadsheetId

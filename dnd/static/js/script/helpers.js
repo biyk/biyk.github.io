@@ -154,6 +154,7 @@ export function loadSettingsToLocalStorage(){
     input.type = "file";
     input.accept = "application/json";
     input.style.zIndex = "999999";
+    input.style.position = "absolute";
 
     input.addEventListener("change", (event)=> {
         const file = event.target.files[0];

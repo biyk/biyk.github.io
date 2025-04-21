@@ -4,7 +4,7 @@ const CLIENT_ID = '21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleuserc
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
 
-class ORM {
+export class ORM {
     constructor(columns = []) {
         this.columns = columns
     }
@@ -99,11 +99,7 @@ export class Table {
     async waitSending(timeout = 10000) {
         const startTime = Date.now();
         while (this.sending) {
-            if (Date.now() - startTime > timeout) {
-                throw new Error('Инициализация Google API не завершена в течение отведенного времени.'
-                    + this.gapiInited + ' ' + this.gisInited);
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
 
@@ -161,7 +157,9 @@ export class Table {
         let table = new ORM(this.columns[this.list]);
         let rawValue = table.getRaw(values);
         console.debug('values.update',new Error().stack);
-        gapi.client.sheets.spreadsheets.values.update({
+        this.waitSending();
+        this.sending = true;
+        await gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: this.spreadsheetId,
             range: this.list + '!A' + row,
             valueInputOption: 'RAW',
@@ -173,6 +171,7 @@ export class Table {
         }).catch((err) => {
             console.log('Value update failed:', err);
         });
+        this.sending = false;
     }
 
     async getLists() {
@@ -183,8 +182,8 @@ export class Table {
         return response.result.sheets;
     }
 
-    async createList(title) {
-        title = title || this.list;
+    async createList(columns = ['code', 'value']) {
+        let title = this.list;
         // Сначала получаем информацию о таблице
         await this.spreadsheets.get({
             spreadsheetId: this.spreadsheetId,
@@ -212,7 +211,7 @@ export class Table {
                 ]
             }).then((response) => {
                 console.log('Лист добавлен:', response.result.replies[0].addSheet.properties.sheetId);
-                this.addColumns(['code', 'value']);
+                this.addColumns(columns);
             }).catch((error) => {
                 console.error('Ошибка при добавлении листа:', error);
             });
@@ -252,7 +251,7 @@ export class Table {
 
     async getAll(options = {}) {
         let {caching, formated} = options;
-        const range = this.list + '!A1:B1000';
+        const range = this.list + '!A1:Z1000';
         let spreadsheetId = this.spreadsheetId;
         let response = await this.api.fetchSheetValues({range, spreadsheetId, caching});
         if (response){
@@ -324,6 +323,45 @@ export class Table {
         } else {
             await this.addRow(values);
             return false;
+        }
+    }
+
+    async addRows(values = []) {
+        if (!this.columns[this.list]) {
+            let columnsRaw = sessionStorage.getItem(spreadsheetId + '/' + this.list + '/columns');
+            if (columnsRaw) {
+                this.columns[this.list] = JSON.parse(columnsRaw);
+            } else {
+                await this.getAll();
+            }
+
+        }
+
+        let table = new ORM(this.columns[this.list]);
+        let rawValues = [];
+        values.forEach((e)=>{
+            rawValues.push(table.getRaw(e))
+        });
+
+        await this.waitSending();
+        try {
+            this.sending = true;
+            let res = await this.spreadsheets.values.append({
+                spreadsheetId: this.spreadsheetId,
+                range: this.list + '!A1:Z1',
+                valueInputOption: "RAW",
+                insertDataOption: "INSERT_ROWS",
+                resource: {
+                    majorDimension: "ROWS",
+                    values: rawValues,
+                    //values: [["Engine", "$100", "1", "3/20/2016"]],
+                }
+            });
+            console.log(res);
+        } catch (e) {
+            console.error(e)
+        } finally {
+            this.sending = false;
         }
     }
 }

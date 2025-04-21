@@ -1,0 +1,81 @@
+{
+  "image": "image",
+  "width": 16875,
+  "height": 13750,
+  "maxLevel": 7,
+  "minLevel": 0,
+  "orgLevel": 7,
+  "polygons": [],
+  "mapState": {
+    "center": {
+      "lat": 69.16255790810501,
+      "lng": -87.27539062500001
+    },
+    "zoom": 3
+  },
+  "mainPolygon": {
+    "points": [
+      [
+        {
+          "lat": -31.952162238024975,
+          "lng": -357.1875
+        },
+        {
+          "lat": -31.952162238024975,
+          "lng": 182.81250000000003
+        },
+        {
+          "lat": 88.33883839556603,
+          "lng": 182.81250000000003
+        },
+        {
+          "lat": 88.33883839556603,
+          "lng": -357.1875
+        }
+      ],
+      []
+    ]
+  },
+  "lastUpdated": 1744886391,
+  "ambience": "kxqJuc1HHbg",
+  "init": {
+    "round": 1,
+    "try": "1",
+    "all": [
+      {
+        "cd": "14",
+        "exp": "9",
+        "hp_max": "50",
+        "hp_now": "50",
+        "init": "1",
+        "name": "\u041f\u0438\u043d\u043a\u0438",
+        "npc": "false",
+        "parent_name": "",
+        "surprise": "false"
+      }
+    ],
+    "rating": 0,
+    "next": "1",
+    "prev": "1"
+  },
+  "timer": 1739624095,
+  "markers": [],
+  "measure": {
+    "ft": "10",
+    "points": [
+      [
+        42.18782901059085,
+        -99.08569335937501
+      ],
+      [
+        42.17968819665963,
+        -95.09765625000001
+      ]
+    ]
+  },
+  "settings": {
+    "show_grid": false,
+    "Listner": {}
+  },
+  "measurePoints": {}
+}

@@ -1,0 +1,137 @@
+.npc-form {
+  min-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: Arial, sans-serif;
+}
+
+.npc-form__group {
+  margin-bottom: 15px;
+}
+
+.npc-form__label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+#npc-custom-text{
+    width: 784px; height: 178px;
+}
+
+.npc-form__input,
+.npc-form__select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.npc-form__checkbox {
+    width: 18px;
+}
+
+
+.npc-form__button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.npc-form__button:hover {
+  background-color: #0056b3;
+}
+.npc-form__button.hidden {
+  display: none;
+}
+
+
+#npc-list-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    min-width: 600px;
+    margin: 0 auto;
+}
+
+.npc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.npc-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.npc-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.npc-details p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.npc-details strong {
+    font-weight: bold;
+    color: #555;
+}
+
+.delete-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #e74c3c;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+}
+
+.delete-btn:focus {
+    outline: 2px solid #c0392b;
+}
+
+@media (max-width: 480px) {
+    #npc-list-content {
+        padding: 0.5rem;
+    }
+
+    .npc-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .delete-btn {
+        align-self: flex-end;
+    }
+}

@@ -1,8 +1,6 @@
 import {debounce} from './init/func.js';
-import {SpellsApi} from './api/spells.js';
-import {displayRes, displaySpells, renderSpellMenu, displaySkills} from './spells/display.js';
+import {displayRes, displaySkills, displaySpells, renderSpellMenu} from './spells/display.js';
 import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
-
 
 
 export class Spells {
@@ -179,8 +177,15 @@ export class Spells {
 
     }
 
-    initEventListeners(){
+    async initEventListeners() {
         document.body.addEventListener('ready_spells', async (e) => {
+            let api = window.GoogleSheetDB || new GoogleSheetDB();
+            await api.waitGoogle();
+            await this.getPlayersSheet();
+            let {resourses, skills, spells} = await this.playerTable.getAll({formated:true});
+            this.resourses = resourses;
+            this.skills = skills;
+            this.spells = spells;
             this.displayAll();
             document.getElementById('spell-search').addEventListener(
                 'input',
@@ -211,10 +216,6 @@ export class Spells {
                 }, 300) // Задержка 300 мс
             );
         });
-        document.body.addEventListener('g-list-ready', async () => {
-            await this.getPlayersSheet();
-        })
-
     }
 
     async addSpell(spell) {
@@ -282,17 +283,12 @@ export class Spells {
     }
 
     async getPlayersSheet() {//TODO почему-то не работает
-        let configTable = new Table({
+        let keysTable = new Table({
             list: 'KEYS',
             spreadsheetId: spreadsheetId
         });
-        let keys = await configTable.getAll({caching: true});
-        let playersSheet = '';
-        keys.forEach((key) => {
-                if (key[0] == "players") playersSheet = key[1]
-            }
-        );
-        this.playersSheet = playersSheet;
+        let keys = await keysTable.getAll({caching: true, formated:true});
+        this.playersSheet = keys.players;
         let playerTable = new Table({
             list: localStorage.getItem('auth_code'),
             spreadsheetId: this.playersSheet

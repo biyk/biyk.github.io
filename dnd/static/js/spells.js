@@ -1,6 +1,6 @@
 import {debounce} from './init/func.js';
 import {displayRes, displaySkills, displaySpells, renderSpellMenu} from './spells/display.js';
-import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
+import {GoogleSheetDB, ORM, spreadsheetId, Table} from "./db/google.js";
 
 
 export class Spells {
@@ -75,8 +75,24 @@ export class Spells {
 
     async infoSpell(spell) {
         const clear_name = spell.replace(/[0-9]/g, '').trim();
-        const response = await fetch(`/api/data/spells/html?name=${encodeURIComponent(clear_name)}`);
-        const text = await response.text();
+        let keysTable = new Table({
+            list: 'KEYS',
+            spreadsheetId: spreadsheetId
+        });
+        let keys = await keysTable.getAll({formated: true, caching: true});
+        let spellTable = new Table({
+            list: 'SPELLS',
+            spreadsheetId: keys.external
+        });
+        const data = await spellTable.getAll({caching: true});
+        let _data = new ORM(data[0]);
+
+        const result = data.filter(item => {
+            let formated = _data.getFormated(item);
+            return formated.name === clear_name
+        });
+
+        const text = _data.getFormated(result[0]).html;
 
         // Создание попапа
         const popup = document.createElement('div');
@@ -198,10 +214,30 @@ export class Spells {
                         return;
                     }
                     try {
-                        const response = await fetch(`/api/data/spells/json?name=${encodeURIComponent(query)}`);
-                        if (!response.ok) throw new Error('Error fetching data');
-                        const data = await response.json();
-                        spellsList.innerHTML = data.map((npc, index) => `<li data-index="${index}" data-json='${JSON.stringify(npc)}'>${npc.name}</li>`).join('');
+                        let keysTable = new Table({
+                            list: 'KEYS',
+                            spreadsheetId: spreadsheetId
+                        });
+                        let keys = await keysTable.getAll({formated: true, caching: true});
+                        let spellTable = new Table({
+                            list: 'SPELLS',
+                            spreadsheetId: keys.external
+                        });
+                        const data = await spellTable.getAll({caching: true});
+
+                        const result = data.filter(item => {
+                            let _data = new ORM(data[0]);
+                            let formated = _data.getFormated(item);
+                            return formated.name.includes(query)
+                        });
+
+                        spellsList.innerHTML = result.map(
+                            (npc, index) => {
+                                let _data = new ORM(data[0]);
+                                let formated = _data.getFormated(npc);
+                                delete formated.html;
+                                return `<li data-index="${index}" data-json='${JSON.stringify(formated)}'>${formated.name}</li>`}
+                        ).join('');
                         // Добавляем обработчики клика для каждого элемента списка
                         Array.from(spellsList.querySelectorAll('li')).forEach(li => {
                             li.addEventListener('click', async (event) => {
@@ -294,7 +330,7 @@ export class Spells {
             spreadsheetId: this.playersSheet
         });
         try {
-            await playerTable.createList(playerTable.list);
+            await playerTable.createList();
         } catch (e) {
             console.error(e);
         }

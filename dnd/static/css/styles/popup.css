@@ -1,0 +1,67 @@
+/* Общий стиль для затемнения фона */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000; /* Поверх всех элементов */
+    overflow: hidden; /* Убираем прокрутку для всего окна */
+}
+
+/* Содержимое попапа */
+.popup-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    width: 90%;
+    max-height: 90vh; /* Ограничение высоты попапа */
+    overflow-y: auto; /* Добавляем вертикальный скролл при переполнении */
+    position: relative;
+    box-sizing: border-box; /* Учитываем паддинги */
+}
+
+/* Текст внутри попапа */
+.popup-text {
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.5;
+    word-wrap: break-word; /* Перенос длинных слов */
+}
+
+.popup-text .icon-dice{
+    display: none;
+}
+.popup-text .abilities{
+   display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+.popup-text .abilities .stat{
+    margin: 4px;
+    text-align: center;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+/* Кнопка закрытия */
+.popup-close-btn {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.popup-close-btn:hover {
+    background-color: #0056b3;
+}

@@ -1,0 +1,43 @@
+/* Стили для панели вкладок */
+.tab-buttons {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 8px 15px;
+    border-radius: 8px;
+    z-index: 999;
+}
+
+.tab-button {
+    padding: 8px 12px;
+    cursor: pointer;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.tab-button.active {
+    background-color: #555;
+}
+
+/* Основные стили для скрытия и отображения вкладок */
+.tab-content {
+    display: none; /* Все вкладки скрыты по умолчанию */
+}
+
+.tab-content.active {
+    display: block; /* Отображение активной вкладки */
+}
+
+
+/* Стили для других вкладок */
+#ambience-tab, #initiative-tab {
+    padding: 20px;
+    color: #222;
+}

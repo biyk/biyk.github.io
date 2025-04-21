@@ -1,0 +1,42 @@
+
+.timer-container {
+    margin: auto;
+    width: 200px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 99999;
+    pointer-events: none;
+}
+
+.timer-text {
+    top: 25px;
+    position: absolute;
+    left: 25px;
+    color: blue;
+    font-weight: 900;
+}
+
+#skull {position: absolute;
+    font-size: 70px;
+    color: green;
+    transition: color 0.5s ease;
+    top: -20px;
+    right: 0px;
+    z-index: 999;
+}
+
+#map-controls {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 999;
+
+}
+
+#map-controls button{
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+}

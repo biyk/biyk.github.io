@@ -1,0 +1,178 @@
+
+/*инициатива*/
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    width: 100%;
+    margin: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.info-block, .character-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 5px;
+}
+.info-block {
+    background-color: #e0e7ff;
+    color: #2c3e50;
+}
+.info-block span {
+    font-weight: bold;
+    font-size: 16px;
+}
+.character-row {
+    background-color: #f0f4fc;
+    border: 1px solid #cce;
+}
+.character-row input[type="text"] {
+    width: 50px;
+    padding: 3px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+.character-row label {
+    margin-left: 5px;
+    color: #666;
+    font-size: 14px;
+}
+.character-row input[type="checkbox"] {
+    margin-left: 5px;
+}
+.character-row button {
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.character-row button:hover {
+    background-color: #ff4c4c;
+}
+.character-row span {
+    margin-right: 10px;
+    font-size: 14px;
+}
+.add-character-form {
+    display: none;
+    background-color: #e0f7fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+.add-character-form input, .add-character-form label {
+    margin-right: 10px;
+}
+.add-character-form button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.add-character-form button:hover {
+    background-color: #45a049;
+}
+.toggle-form-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: inline-block;
+    width: 20%;
+    text-align: center;
+}
+.toggle-form-button:hover {
+    background-color: #0056b3;
+}
+.character-row.current-turn {
+    background-color: #ffd700;
+}
+
+
+.character-player {
+    background-color: white;
+}
+
+
+#npc-list {
+    margin-top: 10px;
+    list-style-type: none;
+    padding: 0;
+}
+#npc-list li {
+    padding: 8px;
+    background: #f9f9f9;
+    margin-bottom: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+#npc-list li:hover {
+    background: #f1f1f1;
+}
+input[type="text"]#npc-input {
+    padding: 8px;
+    width: 300px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#info-bar {
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+    font-size: 14px; /* Стандартный размер шрифта */
+    position: absolute;
+    top: 10px;
+    left: 50%; /* Центрирование по горизонтали */
+    transform: translateX(-50%); /* Для точного центрирования */
+    z-index: 999;
+    background-color: rgba(0, 0, 0, 0.318);
+    width: auto;
+    max-width: 100%; /* Убедитесь, что ширина не выходит за пределы экрана */
+    box-sizing: border-box; /* Чтобы padding не выходил за пределы */
+}
+
+#info-bar span {
+    font-weight: bold;
+    padding: 0 5px;
+}
+
+/* Адаптивные изменения для мобильных устройств */
+@media (max-width: 768px) {
+    #info-bar {
+        font-size: 24px; /* Уменьшаем размер шрифта на мобильных */
+        padding: 8px; /* Уменьшаем отступы */
+        left: 50%; /* Оставляем центрирование */
+        transform: translateX(-50%); /* Для точного центрирования */
+    }
+}
+
+@media (max-width: 480px) {
+    #info-bar {
+        font-size: 10px; /* Еще меньше шрифт для очень маленьких экранов */
+        padding: 6px; /* Меньше отступов */
+    }
+}

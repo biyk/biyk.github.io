@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <title>Out of the Abyss - Map with Drawing Tools</title>
+    <link rel="stylesheet" href="static/css/external/leaflet.css" />
+    <link rel="stylesheet" href="static/css/external/leaflet.draw.css" />
+    <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body style="background: black">
+<div id="info-bar" ></div>
+
+<div id="map" style="background-color: black;"></div>
+<div id="map-controls" class="tab-content active">
+
+    <button id="spells-button">Spells</button>
+</div>
+<audio id="audio" src="/static/audio/0fICWTcQEnk.mp3" controls loop="true" ></audio>
+<template>https://rutube.ru/info/embed/#embed001</template>
+<button id="auth">Войти</button>
+<button id="settings">Настройки</button>
+<div style="display: none;">
+    <button id="authorize_button" >Authorize</button>
+    <button id="signout_button">Sign Out</button>
+</div>
+<div class="timer-container">
+    <canvas id="timerCanvas"></canvas>
+    <div class="timer-text" id="timerText"></div>
+</div>
+<div id="skull">&#9760;</div>
+<script src="static/js/external/turf.js" async defer></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script type="module" src="static/js/script.js" async defer></script>
+<script src="static/js/timer.js" async defer></script>
+<script src="static/js/skull.js" async defer></script>
+</body>
+</html>

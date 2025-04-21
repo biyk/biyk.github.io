@@ -17,6 +17,8 @@ export function setAudio(config) {
         let auth = localStorage.getItem('auth_code');
         if (!auth || auth === '1734002000849'){
             audio.play();
+        } else {
+            audio.style.display = 'none';
         }
     }
 }

@@ -304,18 +304,20 @@ export class Table {
         let storageKey = this.spreadsheetId + '/' + this.list + '/codes';
         let stored_codes = sessionStorage.getItem(storageKey);
 
-        if (!this.codes) {
+        if (!this.codes.length) {
             if (stored_codes) {
-                this.codes = stored_codes;
+                this.codes = JSON.parse(stored_codes);
             } else {
                 await this.getAll()
             }
+        } else {
+            console.log('все норм')
         }
         if (!values.code){
             values.code = code;
         }
-
         let id = this.codes[code] + 1;
+
         if (id) {
             await this.updateRow(id, values);
             return true;

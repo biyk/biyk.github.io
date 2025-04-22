@@ -121,7 +121,13 @@ export function toggleAdminMode(){
 
 export function exportImportStorageHandler(){
     document.querySelectorAll('.leaflet-control a').forEach(el => {
+        if (el.title){
+            el.innerText = 'export';
+        } else {
+            el.innerText = window.version;
+        }
         el.addEventListener('click', (e) => {
+
             e.preventDefault();
             const allData = {};
 
@@ -214,4 +220,19 @@ export async function loadSettingsToLocalStorageFromGoogleSheet(callback) {
     } else {
         await callback();
     }
+}
+
+export function base64EncodeUnicode(str) {
+    // Преобразуем строку в UTF-8 и затем кодируем в Base64
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+}
+
+export function base64DecodeUnicode(str) {
+    // Декодируем из Base64 и затем преобразуем из UTF-8
+    return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
+        return '%' + c.charCodeAt(0).toString(16).padStart(2, '0');
+    }).join(''));
 }

@@ -4,10 +4,11 @@ import {Spells} from "../spells.js";
 export function displaySpells() {
     const list = document.getElementById('my-spell-list');
     list.innerHTML = '';
+    if (!this.spells) return;
     this.spells.forEach((spell) => {
         const listItem = document.createElement('li');
         const span = document.createElement('span');
-        span.textContent = `[${spell.ac}] ${spell.name}` + (spell.ritual?'*':'');
+        span.textContent = `[${spell.ac}] ${spell.name}` + (spell.ritual ? '*' : '');
         span.onclick = () => this.infoSpell(spell.name);
         listItem.appendChild(span);
 
@@ -18,10 +19,12 @@ export function displaySpells() {
         list.appendChild(listItem);
     });
 }
+
 export function displayRes() {
     const list = document.getElementById('my-res-list');
     list.innerHTML = '';
     let that = this;
+    if (!this.resourses) return;
     this.resourses.forEach((res, index) => {
         const listItem = document.createElement('li');
         const span = document.createElement('span');
@@ -29,7 +32,7 @@ export function displayRes() {
         listItem.appendChild(span);
 
 
-        if (res.count > 5){
+        if (res.count > 5) {
             const checkbox = document.createElement('input');
             checkbox.type = 'number';
             checkbox.dataset.value = res.count;
@@ -42,7 +45,7 @@ export function displayRes() {
             listItem.appendChild(checkbox);
         } else {
             let used = res.used;
-            for (let i=1; i <= res.count; i++){
+            for (let i = 1; i <= res.count; i++) {
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.dataset.reset = res.reset;
@@ -69,14 +72,15 @@ export function displayRes() {
 export function displaySkills() {
     const list = document.getElementById('my-skill-list');
     list.innerHTML = '';
+    if (!this.skills) return;
     this.skills.forEach((res) => {
         const listItem = document.createElement('li');
         const span = document.createElement('span');
         span.textContent = `${res.name}`;
         listItem.appendChild(span);
         listItem.dataset.text = res.text;
-        span.onclick = ()=>{
-           this.infoSkill(res);
+        span.onclick = () => {
+            this.infoSkill(res);
         }
 
         const removeSpan = document.createElement('span');
@@ -118,7 +122,7 @@ export function renderSpellMenu() {
     const title = document.createElement('div');
     title.innerHTML = 'Ресурсы';
     CONFIG.reset.forEach(elem => {
-        const button =  document.createElement('button');
+        const button = document.createElement('button');
         button.innerHTML = elem.name;
         button.value = elem.code;
         button.type = 'button';
@@ -131,7 +135,7 @@ export function renderSpellMenu() {
                     elem.value = elem.dataset.value;
                 }
 
-                this.resourses.forEach( (e)=> {
+                this.resourses.forEach((e) => {
                     if (e.name === name) {
                         e.used = 0;
                     }
@@ -146,7 +150,7 @@ export function renderSpellMenu() {
                         elem.value = elem.dataset.value;
                     }
 
-                    this.resourses.forEach( (e)=> {
+                    this.resourses.forEach((e) => {
                         if (e.name === name) {
                             e.used = 0;
                         }
@@ -155,10 +159,10 @@ export function renderSpellMenu() {
             }
 
             console.log(this.resourses);
-            setTimeout(()=>{
+            setTimeout(() => {
                 window.mapManager.Spells.saveResourses();
 
-            },0)
+            }, 0)
 
 
         }
@@ -174,10 +178,10 @@ export function renderSpellMenu() {
     //ресурсы
     const addButton = document.createElement('button');
     addButton.textContent = 'Добавить ресурс';
-    addButton.addEventListener('click', (e)=>{
+    addButton.addEventListener('click', (e) => {
 
         //показываем форму
-        const form= document.createElement('form');
+        const form = document.createElement('form');
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = 'Название ресурса';
@@ -189,7 +193,7 @@ export function renderSpellMenu() {
         const select_reset = document.createElement('select');
 
         CONFIG.reset.forEach(elem => {
-            const option =  document.createElement('option');
+            const option = document.createElement('option');
             option.innerHTML = elem.name;
             option.value = elem.code;
             select_reset.appendChild(option)
@@ -222,10 +226,10 @@ export function renderSpellMenu() {
     //навыки
     const addSkillButton = document.createElement('button');
     addSkillButton.textContent = 'Добавить навык';
-    addSkillButton.onclick = (e)=> {
+    addSkillButton.onclick = (e) => {
         e.preventDefault();
         //показываем форму
-        const form= document.createElement('form');
+        const form = document.createElement('form');
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = 'Название навыка';

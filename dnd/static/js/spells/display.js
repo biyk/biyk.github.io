@@ -5,7 +5,7 @@ export function displaySpells() {
     const list = document.getElementById('my-spell-list');
     list.innerHTML = '';
     if (!this.spells) return;
-    this.spells.forEach((spell) => {
+    this.spells.sort((a, b) => b.ac - a.ac).forEach((spell) => {
         const listItem = document.createElement('li');
         const span = document.createElement('span');
         span.textContent = `[${spell.ac}] ${spell.name}` + (spell.ritual ? '*' : '');
@@ -25,7 +25,7 @@ export function displayRes() {
     list.innerHTML = '';
     let that = this;
     if (!this.resourses) return;
-    this.resourses.forEach((res, index) => {
+    this.resourses.sort((a, b) => a.name.localeCompare(b.name)).forEach((res, index) => {
         const listItem = document.createElement('li');
         const span = document.createElement('span');
         span.textContent = `${res.name}`;
@@ -73,7 +73,7 @@ export function displaySkills() {
     const list = document.getElementById('my-skill-list');
     list.innerHTML = '';
     if (!this.skills) return;
-    this.skills.forEach((res) => {
+    this.skills.sort((a, b) => a.name.localeCompare(b.name)).forEach((res) => {
         const listItem = document.createElement('li');
         const span = document.createElement('span');
         span.textContent = `${res.name}`;

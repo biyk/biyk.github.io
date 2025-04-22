@@ -111,7 +111,7 @@ class MapManager {
         setTimeout(async () => {
             await this.checkForConfigUpdates();
             this.checkConfig();
-        }, 1000);
+        }, 5000);
     }
 
     initializeMap(config) {

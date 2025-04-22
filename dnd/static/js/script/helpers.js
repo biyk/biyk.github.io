@@ -162,14 +162,32 @@ export function loadSettingsToLocalStorage(){
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
+                    console.log(data);
                     for (const [key, value] of Object.entries(data)) {
-                        localStorage.setItem(key, value);
+                        if (key.includes('resourses')) {
+                            localStorage.setItem(key, value);
+                            this.Spells.resourses = JSON.parse(value)
+                        }
+                        if (key.includes('skills')) {
+                            localStorage.setItem(key, value);
+                            this.Spells.skills = JSON.parse(value)
+                        }
+                        if (key.includes('spells')) {
+                            localStorage.setItem(key, value);
+                            this.Spells.spells = JSON.parse(value)
+                        }
                     }
+
+                    await this.Spells.saveSkills();
+                    await this.Spells.saveSpells();
+                    await this.Spells.saveResourses();
                     console.log("Данные успешно импортированы в localStorage!");
-                    this.Spells.displayAll();
+                    setTimeout(() => {
+                        this.Spells.displayAll();
+                    })
 
                 } catch (error) {
                     console.error("Ошибка при чтении файла:", error);

@@ -8,17 +8,15 @@ export class Spells {
         const el = id => document.getElementById(id);
         this.apiUrl = '/api/data/spells/json';
         this.auth_code = localStorage.getItem('auth_code');
-        this.spells = this.getSpells();
-        this.resourses = this.getRes();
-        this.skills = this.getSkills();
         this.playersSheet = '';
         this.initEventListeners();
         this.initializeSlesslMenu();
-
     }
 
 
-    getSkills(){
+    async getSkills() {
+        let api = window.GoogleSheetDB || new GoogleSheetDB();
+        await api.waitGoogle();
         return (JSON.parse(localStorage.getItem('skills_' + this.auth_code)) || [])
             .sort((a, b) => a.name.localeCompare(b.name));
     }

@@ -97,11 +97,14 @@ class MapManager {
                 localStorage.setItem('auth_code', auth_code);
 
                 await api.handleAuthClick(callbackLoadData);
-                //загрузка файла
-                loadSettingsToLocalStorage();
+
 
             });
-        } else {
+        }
+        if (settingsButton) {
+            settingsButton.addEventListener('click', async (e) => {
+                loadSettingsToLocalStorage.call(this);
+            });
         }
     }
     checkConfig() {

@@ -196,10 +196,10 @@ export class Spells {
             let api = window.GoogleSheetDB || new GoogleSheetDB();
             await api.waitGoogle();
             await this.getPlayersSheet();
-            let {resourses, skills, spells} = await this.playerTable.getAll({formated:true});
-            this.resourses = resourses;
-            this.skills = skills;
-            this.spells = spells;
+            let {resourses, skills, spells} = await this.playerTable.getAll({formated: true});
+            this.resourses = resourses || [];
+            this.skills = skills || [];
+            this.spells = spells || [];
             this.displayAll();
             document.getElementById('spell-search').addEventListener(
                 'input',

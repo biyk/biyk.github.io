@@ -59,6 +59,29 @@ export class Table {
         return sheetId;
     }
 
+    async addRawValues(values = []) {
+        await this.waitSending();
+        try {
+            this.sending = true;
+            let res = await this.spreadsheets.values.append({
+                spreadsheetId: this.spreadsheetId,
+                range: this.list + '!A1:Z1',
+                valueInputOption: "RAW",
+                insertDataOption: "INSERT_ROWS",
+                resource: {
+                    majorDimension: "ROWS",
+                    values: values,
+                    //values: [["Engine", "$100", "1", "3/20/2016"]],
+                }
+            });
+            console.log(res);
+        } catch (e) {
+            console.error(e)
+        } finally {
+            this.sending = false;
+        }
+    }
+
     async addRow(values = {}) {
 
         if (!this.columns[this.list]) {
@@ -74,25 +97,7 @@ export class Table {
         let table = new ORM(this.columns[this.list]);
         let rawValue = table.getRaw(values);
         await this.waitSending();
-        try {
-            this.sending = true;
-            let res = await this.spreadsheets.values.append({
-                spreadsheetId: this.spreadsheetId,
-                range: this.list + '!A1:Z1',
-                valueInputOption: "RAW",
-                insertDataOption: "INSERT_ROWS",
-                resource: {
-                    majorDimension: "ROWS",
-                    values: [rawValue],
-                    //values: [["Engine", "$100", "1", "3/20/2016"]],
-                }
-            });
-            console.log(res);
-        } catch (e) {
-            console.error(e)
-        } finally {
-            this.sending = false;
-        }
+        await this.addRawValues([rawValue]);
 
     }
 

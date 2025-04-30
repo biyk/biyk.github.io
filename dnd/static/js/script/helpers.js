@@ -1,5 +1,6 @@
 import {Table, spreadsheetId, GoogleSheetDB, API_KEY} from "../db/google.js";
 
+
 // Функция для создания кастомного маркера
 export function createNumberedIcon(number) {
     return L.divIcon({className: 'numbered-icon', iconSize: [10, 10], html: `<div style="display: flex; align-items: center;">
@@ -120,7 +121,7 @@ export function toggleAdminMode(){
 }
 
 export function exportImportStorageHandler(){
-    document.querySelectorAll('.leaflet-control a').forEach(el => {
+    document.querySelectorAll('.leaflet-control-attribution a').forEach(el => {
         if (el.title){
             el.innerText = 'export';
         } else {
@@ -235,4 +236,37 @@ export function base64DecodeUnicode(str) {
     return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
         return '%' + c.charCodeAt(0).toString(16).padStart(2, '0');
     }).join(''));
+}
+
+export function processPolygons(polygonsData) {
+    const updatedPolygons = [];
+
+    for (let polyData of polygonsData) {
+
+        let polygon = [[polyData.points]]; // 🟢 Глубина 3: [[[x, y], ...]]
+
+        for (let prevPoly of updatedPolygons) {
+            const prevPolygon = [[prevPoly.points]];
+            const result = polygonClipping.difference(polygon, prevPolygon);
+
+            if (!result.length) {
+                polygon = [];
+                break;
+            }
+
+            polygon = result;
+        }
+
+        if (!polygon.length) continue;
+
+        for (const poly of polygon) {
+            updatedPolygons.push({
+                points: poly[0], // Берем только внешний контур
+                isVisible: polyData.isVisible ?? true,
+                code: polyData.code
+            });
+        }
+    }
+
+    return updatedPolygons;
 }

@@ -1,6 +1,7 @@
 import {calculateEncounterData, debounce, createEditableSpan} from './init/func.js';
-import {displayInfoBlocks,displayCurrentAndNextTurn, fillEditForm} from './init/display.js';
+import {displayInfoBlocks, displayCurrentAndNextTurn, fillEditForm} from './init/display.js';
 import {loadInitiativeData, sendInit, infoCharacter} from './init/api.js';
+import {ORM, spreadsheetId, Table} from "./db/google.js";
 
 class InitiativeManager {
     constructor() {
@@ -25,36 +26,36 @@ class InitiativeManager {
     }
 
     // Функция для отправки данных на сервер
-    sendInit() {
-        sendInit.call(this);
+    async sendInit() {
+        await sendInit.call(this);
     }
 
-    displayCharactersAndSendInit(){
+    async displayCharactersAndSendInit() {
         this.displayCharacters();
-        this.sendInit();
+        await this.sendInit();
     }
 
     // Универсальная функция для обновления свойств персонажа
-    updateCharacterProperty(index, property, value) {
+    async updateCharacterProperty(index, property, value) {
         this.charactersData[index][property] = value;
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
-    updateCharacterPropertyHp(index, property, value){
-         this.charactersData[index][property] = this.charactersData[index][property] - value;
-          this.displayCharactersAndSendInit();
+    async updateCharacterPropertyHp(index, property, value) {
+        this.charactersData[index][property] = this.charactersData[index][property] - value;
+        await this.displayCharactersAndSendInit();
     }
 
-    updateCharacterPropertyInit(index, property, value) {
+    async updateCharacterPropertyInit(index, property, value) {
         while (!this.isUniqueInitiative(value)) {
             value = (parseFloat(value) + 0.1).toFixed(1);
         }
         this.charactersData[index][property] = value;
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
     // Переход к следующему персонажу
-    nextTurn() {
+    async nextTurn() {
         let characters = this.charactersData.sort((a, b) => parseFloat(b.init) - parseFloat(a.init));
         let _characters = characters;
 
@@ -69,11 +70,11 @@ class InitiativeManager {
             this.currentRound++;
         }
         this.fighting = true;
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
     // Переход к предыдущему персонажу
-    prevTurn() {
+    async prevTurn() {
         let characters = this.charactersData.sort((a, b) => parseFloat(b.init) - parseFloat(a.init));
 
         if (this.currentRound === 0) {
@@ -89,7 +90,7 @@ class InitiativeManager {
             this.currentCharacterIndex = characters[currentIndex - 1].init;
         }
 
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
 
@@ -98,7 +99,7 @@ class InitiativeManager {
         const container = document.getElementById('characters-container');
         container.innerHTML = '';
 
-        let { encounterDifficulty } = calculateEncounterData(this.charactersData);
+        let {encounterDifficulty} = calculateEncounterData(this.charactersData);
         document.getElementById('battle-rating').textContent = encounterDifficulty;
         this.rating = encounterDifficulty;
         const characters = this.charactersData.sort((a, b) => parseFloat(b.init) - parseFloat(a.init));
@@ -112,7 +113,7 @@ class InitiativeManager {
             const nameSpan = createEditableSpan(`Имя: ${character.name}`, "name", index, this.updateCharacterProperty.bind(this));
             const initSpan = createEditableSpan(`Init: ${character.init}`, "init", index, this.updateCharacterPropertyInit.bind(this));
             const cdSpan = createEditableSpan(`КД: ${character.cd}`, "cd", index, this.updateCharacterProperty.bind(this));
-            const hpSpan = createEditableSpan(`HP: ${character.hp_now}`, "hp_now", index, this.updateCharacterPropertyHp.bind(this),`/ ${character.hp_max}`);
+            const hpSpan = createEditableSpan(`HP: ${character.hp_now}`, "hp_now", index, this.updateCharacterPropertyHp.bind(this), `/ ${character.hp_max}`);
             const expSpanTitle = character.npc === 'true' ? 'DNG' : 'LVL';
             const expSpan = createEditableSpan(`${expSpanTitle}: ${character.exp}`, "exp", index, this.updateCharacterProperty.bind(this));
 
@@ -121,7 +122,7 @@ class InitiativeManager {
 
             const deleteButton = document.createElement('button');
             deleteButton.textContent = '-';
-            deleteButton.onclick = () => this.deleteCharacter(index);
+            deleteButton.onclick = async () => await this.deleteCharacter(index);
 
             const healButton = document.createElement('button');
             healButton.textContent = '+';
@@ -149,26 +150,26 @@ class InitiativeManager {
     }
 
     // Функция сброса инициативы
-    resetInitiative() {
+    async resetInitiative() {
         this.charactersData.forEach((character) => (character.init = '0'));
         this.currentRound = 1;
         this.fighting = false;
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
     // Функция восстановления здоровья
-    healCharacter(index) {
+    async healCharacter(index) {
         this.charactersData[index].hp_now = this.charactersData[index].hp_max;
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
     // Функция удаления персонажа
-    deleteCharacter(index) {
+    async deleteCharacter(index) {
         this.charactersData.splice(index, 1);
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
-        // Метод для переключения видимости формы добавления персонажа
+    // Метод для переключения видимости формы добавления персонажа
     toggleAddCharacterForm() {
         const form = document.getElementById('add-character-form');
         form.style.display = form.style.display === 'none' || form.style.display === '' ? 'grid' : 'none';
@@ -180,7 +181,7 @@ class InitiativeManager {
     }
 
     // Метод добавления нового персонажа
-    addCharacter() {
+    async addCharacter() {
         let init = document.getElementById('new-init').value;
         const name = document.getElementById('new-name').value;
         const cd = document.getElementById('new-cd').value;
@@ -193,13 +194,13 @@ class InitiativeManager {
         const parent = document.getElementById('new-parent').value;
         let parent_name = '';
         // Проверяем уникальность инициативы
-        if (parent){
-            init = parent-0.01;
+        if (parent) {
+            init = parent - 0.01;
 
-              this.charactersData.forEach((character) => {
-                  if (character.init === parent) {
-                      parent_name = character.name;
-                  }
+            this.charactersData.forEach((character) => {
+                if (character.init === parent) {
+                    parent_name = character.name;
+                }
 
             });
         } else {
@@ -209,10 +210,10 @@ class InitiativeManager {
         }
 
         for (let i = 0; i < count; i++) {
-            const _name = (count > 1 ?name + ' '+(i+1):name)
+            const _name = (count > 1 ? name + ' ' + (i + 1) : name)
             const newCharacter = {
                 init: init,
-                name: _name ,
+                name: _name,
                 cd: cd,
                 hp_now: hpNow,
                 hp_max: hpMax,
@@ -226,7 +227,7 @@ class InitiativeManager {
         }
 
         this.toggleAddCharacterForm();
-        this.displayCharactersAndSendInit();
+        await this.displayCharactersAndSendInit();
     }
 
     // Метод для заполнения формы редактирования данными
@@ -255,10 +256,31 @@ class InitiativeManager {
                         return;
                     }
                     try {
-                        const response = await fetch(`/api/data/monsters/json?name=${encodeURIComponent(query)}`);
-                        if (!response.ok) throw new Error('Error fetching data');
-                        const data = await response.json();
-                        npcList.innerHTML = data.map((npc, index) => `<li data-index="${index}" data-json='${JSON.stringify(npc)}'>${npc.name}</li>`).join('');
+                        const clear_name = query.replace(/[0-9]/g, '').trim();
+
+
+                        let keysTable = new Table({
+                            list: 'KEYS',
+                            spreadsheetId: spreadsheetId
+                        });
+                        let keys = await keysTable.getAll({formated: true, caching: true});
+                        let beastTable = new Table({
+                            list: 'BEASTS',
+                            spreadsheetId: keys.external
+                        });
+                        const data = await beastTable.getAll({caching: true});
+                        let _data = new ORM(data[0]);
+
+                        const result = data.filter(item => {
+                            let formated = _data.getFormated(item);
+                            return formated.name.includes(clear_name)
+                        });
+                        console.log(result);
+                        npcList.innerHTML = result.map((npc, index) => {
+                            let _npc = _data.getFormated(npc);
+                            let safeJson = JSON.stringify(_npc).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+                            return `<li data-index="${index}" data-json='${safeJson}'>${_npc.name}</li>`;
+                        }).join('');
 
                         // Добавляем обработчики клика для каждого элемента списка
                         Array.from(npcList.querySelectorAll('li')).forEach(li => {
@@ -297,4 +319,4 @@ class InitiativeManager {
 const initiativeManager = new InitiativeManager();
 window.initiativeManager = initiativeManager;
 initiativeManager.loadInitiativeData();
-export { InitiativeManager };
+export {InitiativeManager};

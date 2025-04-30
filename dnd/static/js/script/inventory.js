@@ -104,7 +104,7 @@ export class Inventory {
 
     async searchItems(query) {
         try {
-            const response = await fetch(`https://api.example.com/search?q=${encodeURIComponent(query)}`);
+            //const response = await fetch(`https://api.example.com/search?q=${encodeURIComponent(query)}`);
             const results = await response.json();
 
             const resultsContainer = document.getElementById('inventory-search-results');
@@ -128,7 +128,7 @@ export class Inventory {
                 resultsContainer.appendChild(resultItem);
             });
         } catch (error) {
-            console.error('Error fetching search results:', error);
+            console.error('Error get search results:', error);
         }
     }
 

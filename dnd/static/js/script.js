@@ -4,7 +4,7 @@ import {
     toggleAdminMode,
     updateInfoBar,
     exportImportStorageHandler,
-    loadSettingsToLocalStorage, loadSettingsToLocalStorageFromGoogleSheet
+    loadSettingsToLocalStorage, loadSettingsToLocalStorageFromGoogleSheet, processPolygons
 } from './script/helpers.js';
 import {checkTab} from './tabs.js';
 import {drowMarker, createMarkers, updateMarkers, initializeMarkerMenu} from './marker.js';
@@ -245,13 +245,16 @@ class MapManager {
         this.polygons.push({
             layer: polygonLayer,
             points: this.polygonPoints,
-            isVisible: polygonLayer.isVisible,
+            code: md5(new Date()),
+            isVisible: polygonLayer.isVisible || false,
         });
 
         this.polygonMarkers.forEach(marker => this.map.removeLayer(marker));
         this.polygonMarkers = [];
         this.polygonPoints = [];
         this.markerCount = 0;
+        //TODO поправить пересечения
+        this.polygons = (processPolygons(this.polygons));
     }
 
     toggleMainPolygonVisibility() {
@@ -375,38 +378,17 @@ class MapManager {
                 //await mapTable.updateRowByCode(code, {code, value: this.config[code]})
             }
 
-            if (0){
-                let spellTable = new Table({
-                    list: 'SPELLS',
-                    spreadsheetId: keys.external
-                });
-                await spellTable.createList(['code', 'name', 'ac', 'time', 'ritual', 'html']);
-                let responce = await fetch('/api/data/spells/json?name=asdf');
-                let spells = await responce.json();
-                const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-
-                for (let e of spells) {
-                    let code = e.link;
-                    e.code = code;
-                    e.html = await (await fetch('/api/data/spells/html?name='+e.name)).text()
-                }
-                await spellTable.addRows(spells);
-            }
-
             let bTable = new Table({
                 list: 'BEASTS',
                 spreadsheetId: keys.external
             });
             await bTable.createList(['code', 'name', 'armor_class', 'hit_points', 'hit_dice', 'challenge_rating', 'experience', 'html']);
-            let responce = await fetch('/api/data/monsters/json?name=asdf');
             let b = await responce.json();
 
 
             for (let e of b) {
                 let code = e.url;
                 e.code = code;
-                 e.html = await (await fetch('/api/data/monsters/html?name='+e.name)).text()
             }
             await bTable.addRows(b);
 

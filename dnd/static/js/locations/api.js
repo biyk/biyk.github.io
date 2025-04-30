@@ -1,6 +1,6 @@
 export async function loadMainLocations() {
     try {
-        const response = await fetch(`${this.apiUrl}?type=main`);
+
         const data = await response.json();
         if (data && Array.isArray(data)) {
             this.mainLocationSelect.innerHTML = '<option value="">Выберите основную локацию</option>';
@@ -24,7 +24,7 @@ export async function loadSubLocations() {
         return;
     }
     try {
-        const response = await fetch(`${this.apiUrl}?parent_id=${mainLocationId}&active=true`);
+
         const data = await response.json();
         this.subLocationList.innerHTML = ''; // очищаем список
         if (data && Array.isArray(data) && data.length > 0) {

@@ -49,12 +49,8 @@ export class LocationManager {
 
     async removeLocation(location) {
         try {
-            const response = await fetch('/api/data/location/remove', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ location })
-            });
-            response.ok ? await this.loadSubLocations() : console.error('Ошибка при удалении локации');
+
+
         } catch (error) {
             console.error('Ошибка при удалении локации:', error);
         }
@@ -68,11 +64,8 @@ export class LocationManager {
         const name = this.locationNameInput.value.trim();
         if (!name) return console.error('Введите название локации');
         try {
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, parent_id: this.mainLocationSelect.value })
-            });
+
+
             if (response.ok) {
                 this.toggleForm(false);
                 this.locationNameInput.value = '';
@@ -95,7 +88,7 @@ export class LocationManager {
 
     async loadNpcs(locationId) {
         try {
-            const response = await fetch(`/api/data/locations/npc/?location_id=${locationId}`);
+
             const data = await response.json();
             this.editNpcList.innerHTML = data?.length
                 ? data.map(npc => `
@@ -118,7 +111,7 @@ export class LocationManager {
         const query = this.searchNpcInput.value.trim();
         if (!query) return (this.searchNpcResults.innerHTML = '');
         try {
-            const response = await fetch(`/api/data/monsters/json?name=${encodeURIComponent(query)}`);
+
             const data = await response.json();
             this.searchNpcResults.innerHTML = data?.length
                 ? data.map(npc => `<li data-monster-id="${npc.id}" onclick="window.LocationManager.updateNpcInLocation(${npc.id}, 'add')">${npc.name}</li>`).join('')
@@ -132,11 +125,8 @@ export class LocationManager {
         if (!this.currentEditingLocationId) return;
         const url = `/api/data/locations/npc/${action}`;
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ location_id: this.currentEditingLocationId, monster_id: monsterId })
-            });
+
+
             if (response.ok) {
                 await this.loadNpcs(this.currentEditingLocationId);
                 console.info(`Персонаж ${action === 'add' ? 'добавлен' : 'удален'} успешно`);
@@ -156,18 +146,10 @@ export class LocationManager {
     async moveNpcToNewLocation(npcId, newLocationId) {
         try {
             // Удаление из текущей локации
-            await fetch('/api/data/locations/npc/remove', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ location_id: this.currentEditingLocationId, monster_id: npcId })
-            });
 
-            // Добавление в новую локацию
-            await fetch('/api/data/locations/npc/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ location_id: newLocationId, monster_id: npcId })
-            });
+
+
+
 
             await this.loadNpcs(this.currentEditingLocationId);
             console.info('Персонаж успешно перемещен');
@@ -180,11 +162,8 @@ export class LocationManager {
         const name = this.editNameInput.value.trim();
         const location = this.editNameInput.dataset.id;
         try {
-            const response = await fetch('/api/data/location/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name , location})
-            });
+
+
             response.ok ? await this.loadSubLocations() : console.error('Ошибка при удалении локации');
         } catch (error) {
             console.error('Ошибка при удалении локации:', error);

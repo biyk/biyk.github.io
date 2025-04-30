@@ -21,7 +21,7 @@ async function checkData(data) {
             }
         }
     } else {
-        console.error(`Error fetching map config for ${mapName}`);
+        console.error(`Error get map config for ${mapName}`);
     }
     return result;
 };
@@ -33,7 +33,7 @@ export async function getInit() {
         list: 'CONFIG',
         spreadsheetId: spreadsheetId
     });
-    let data = await configTable.getAll({caching: true, formated: true});
+    let data = await configTable.getAll({formated: true});
     let mapTable = await getMapTable();
     let mapData = await mapTable.getAll({formated: true});
     if (window.admin_mode){
@@ -45,20 +45,7 @@ export async function getInit() {
 // Функция для получения конфигурации карты по имени
 export async function getConfig(mapName) {
     let mapTable = await getMapTable();
-    let mapConfig = await mapTable.getAll({caching: true, formated: true});
-    return mapConfig;
-
-    const response = await fetch(`/api/configs/${mapName}`);
-
-    let result = null;
-    if (response.ok) {
-        result = await response.json();
-        console.debug(mapConfig, result);
-    } else {
-        console.error(`Error fetching map config for ${mapName}`);
-    }
-    return result;
-
+    return await mapTable.getAll({caching: true, formated: true});
 }
 
 export async function sendData(type = 'polygons') {
@@ -72,7 +59,7 @@ export async function sendData(type = 'polygons') {
     const polygonsData = this.polygons.map(polygon => ({
         points: polygon.points,
         code: polygon.code,
-        isVisible: polygon.layer.isVisible,
+        isVisible: polygon.isVisible,
     }));
     const markerData = Array.from(this.points.values()).map(point => {
         point.settings.latlng = point._latlng
@@ -104,21 +91,6 @@ export async function sendData(type = 'polygons') {
             };
             break;
     }
-
-
-    if (0) fetch('/api/polygons', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    })
-        .then(response => response.json())
-        .then((data) => {
-            this.config = data.updatedConfig;
-        })
-        .catch(error => console.error(`Error sending ${type} data:`, error));
-
     let mapTable = await getMapTable();
     let result = await mapTable.updateRowByCode(type, {code: type, value: body[type]});
 
@@ -142,29 +114,7 @@ export function sendPolygonsData() {
     });
     const center = this.map.getCenter();
     const zoomLevel = this.map.getZoom();
-    if (0) fetch('/api/polygons', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            mapName: this.mapName,
-            polygons: polygonsData,
-            markers: markerData,
-            measure: this.measure,
-            settings: this.settings,
-            mainPolygon: this.mainPolygon ? {points: this.mainPolygon.getLatLngs()} : null,
-            mapState: {
-                center: {lat: center.lat, lng: center.lng},
-                zoom: zoomLevel,
-            },
-        }),
-    })
-        .then(response => response.json())
-        .then((data) => {
-            this.config = data.updatedConfig;
-        })
-        .catch(error => console.error("Error sending polygons data:", error));
+
 }
 
 export async function checkForConfigUpdates() {

@@ -7,7 +7,7 @@ async function checkData(data) {
     await api.waitGoogle();
     let mapTable = await getMapTable();
 
-    const response = await fetch(`/static/json/default.json`);
+    const response = await fetch(`static/json/default.json`);
     let result = null;
     if (response.ok) {
         result = await response.json();

@@ -46,14 +46,7 @@ export class NpcManager {
 
     async editNpcAction(action='add') {
         try {
-            const response = await fetch('/api/data/npc/'+action, {
-                method: 'POST',
-                body: new FormData(this.npcForm)
-            });
-            if (!response.ok) throw new Error('Ошибка при отправке формы');
-            const { message } = await response.json();
-            console.info(message);
-            await this.loadNpc();
+
         } catch (error) {
             alert('Произошла ошибка: ' + error.message);
         }
@@ -66,12 +59,7 @@ export class NpcManager {
             return;
         }
         try {
-            const response = await fetch(`/api/data/monsters/json?name=${encodeURIComponent(query)}`);
-            const data = await response.json();
-            this.monsters = new Map(data.map(npc => [npc.id, npc]));
-            this.searchNpcResults.innerHTML = data.length
-                ? data.map(npc => `<li data-monster-id="${npc.id}" onclick="window.NpcManager.useTemplate(${npc.id})">${npc.name}</li>`).join('')
-                : '';
+
         } catch (error) {
             console.error('Ошибка поиска персонажей:', error);
         }
@@ -133,10 +121,7 @@ export class NpcManager {
 
     async deleteNpc(npcId) {
         try {
-            const response = await fetch(`/api/data/npc/delete/${npcId}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error('Ошибка удаления персонажа');
-            this.NpcList = this.NpcList.filter(npc => npc.id !== parseInt(npcId, 10)); // Обновляем локальный список
-            this.DisplayNpcList(); // Перерисовываем список
+
         } catch (error) {
             alert('Не удалось удалить персонажа: ' + error.message);
         }

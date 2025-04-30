@@ -1,22 +1,25 @@
+import {GoogleSheetDB, ORM, spreadsheetId, Table} from "../db/google.js";
+import {getMapTable} from "../script/api.js";
+
 export async function loadInitiativeData() {
-    fetch("/api/config/init")
-        .then(response => {
-            if (!response.ok) throw new Error(`Ошибка загрузки: ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            this.currentRound = data.round || 0;
-            this.currentCharacterIndex = data.try || 0;
-            this.charactersData = data.all || [];
-            this.displayInfoBlocks();
-            this.displayCharacters();
-            this.fillParentSelect()
-        })
-        .catch(error => console.error("Ошибка при загрузке данных:", error));
+    let api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
+    let mapTable = await getMapTable();
+
+    let data_ = await mapTable.getAll({formated: true});
+    let init = data_.init;
+    this.currentRound = parseInt(init.round) || 0;
+    this.currentCharacterIndex = parseInt(init.try)  || 0;
+    this.charactersData = init.all || [];
+    this.displayInfoBlocks();
+    this.displayCharacters();
+    this.fillParentSelect();
+
 }
 
 // Функция для отправки данных на сервер
-export  function  sendInit() {
+export async function sendInit() {
+
     const dataToSend = {
         round: this.currentRound,
         try: this.currentCharacterIndex,
@@ -25,17 +28,38 @@ export  function  sendInit() {
         next: this.nextCharacterIndex,
         fighting: this.fighting,
     };
-    fetch("/api/config/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json;charset=UTF-8" },
-        body: JSON.stringify(dataToSend)
-    }).catch(error => console.error("Ошибка при отправке данных:", error));
+
+    let api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
+    let mapTable = await getMapTable();
+    await mapTable.updateRowByCode('init', {value: dataToSend});
 }
+
 export async function infoCharacter(name) {
     // Поиск персонажа
     const clear_name = name.replace(/[0-9]/g, '').trim();
-    const response = await fetch(`/api/data/monsters/html?name=${encodeURIComponent(clear_name)}`);
-    const text = await response.text();
+
+
+    let keysTable = new Table({
+        list: 'KEYS',
+        spreadsheetId: spreadsheetId
+    });
+    let keys = await keysTable.getAll({formated: true, caching: true});
+    let beastTable = new Table({
+        list: 'BEASTS',
+        spreadsheetId: keys.external
+    });
+    const data = await beastTable.getAll({caching: true});
+    let _data = new ORM(data[0]);
+
+    const result = data.filter(item => {
+        let formated = _data.getFormated(item);
+        return formated.name === clear_name
+    });
+
+    let npc = _data.getFormated(result[0]);
+
+    const text = npc.html;
 
     // Создание попапа
     const popup = document.createElement('div');

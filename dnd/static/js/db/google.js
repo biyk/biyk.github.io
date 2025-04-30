@@ -1,3 +1,5 @@
+import {WebStorage} from "./webStorage.js";
+
 export const API_KEY = 'AIzaSyBTTqB_rSfwzuTIdF1gcQ5-U__fGzrQ_zs';
 export const spreadsheetId = '13zsZqGICZKQYMCcGkhgr7pzhH1z-LWFiH0LMrI6NGLM';
 const CLIENT_ID = '21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleusercontent.com';
@@ -14,11 +16,15 @@ export class ORM {
         this.columns.forEach((value, index) => {
             //console.log(index, value ,data[value])
 
-            if (typeof data[value] == 'object') {
-                result[index] = JSON.stringify(data[value]);
+            if (value === 'value') {
+                const raw = typeof data[value] === 'object' ? JSON.stringify(data[value]) : data[value];
+                const chunks = raw.match(/.{1,49000}/g);
+                result[index] = chunks[0];
+                result.push(...chunks.slice(1));
             } else {
                 result[index] = data[value];
             }
+
         });
         return result;
     }
@@ -161,6 +167,7 @@ export class Table {
         }
         let table = new ORM(this.columns[this.list]);
         let rawValue = table.getRaw(values);
+
         console.debug('values.update',new Error().stack);
         this.waitSending();
         this.sending = true;
@@ -256,7 +263,7 @@ export class Table {
 
     async getAll(options = {}) {
         let {caching, formated} = options;
-        const range = this.list + '!A1:Z1000';
+        const range = this.list + '!A1:Z5000';
         let spreadsheetId = this.spreadsheetId;
         let response = await this.api.fetchSheetValues({range, spreadsheetId, caching});
         if (response){
@@ -293,9 +300,10 @@ export class Table {
 
     formatData(response) {
         let result = {};
+
         response.forEach((e, i) => {
             if ('{['.includes(e[1][0])) {
-                result[e[0]] = JSON.parse(e[1])
+                result[e[0]] = JSON.parse(e.slice(1).join(''))
             } else {
                 result[e[0]] = e[1]
             }
@@ -510,6 +518,7 @@ export class GoogleSheetDB {
     }
 
     async fetchSheetValues(options) {
+        const webStorage = new WebStorage();
         if (this.expired()) {
             console.error('Нужно авторизоваться');
             return false;
@@ -518,7 +527,7 @@ export class GoogleSheetDB {
         let response;
         let data = [];
         let storageKey = range + spreadsheetId;
-        let storageData = sessionStorage.getItem(storageKey);
+        let storageData = await webStorage.getItem(storageKey);
         if (caching && storageData) {
             return JSON.parse(storageData);
         }
@@ -538,7 +547,7 @@ export class GoogleSheetDB {
             return data;
         }
         data = result.values;
-        sessionStorage.setItem(storageKey, JSON.stringify(data));
+        await webStorage.setItem(storageKey, JSON.stringify(data));
         return data;
     }
 }

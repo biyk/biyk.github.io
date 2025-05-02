@@ -62,11 +62,18 @@ class InitiativeManager {
         if (this.currentRound === 0) {
             characters = characters.filter(character => character.surprise === "true");
         }
-
+        let prev = characters.filter(character => parseFloat(character.init) === this.currentCharacterIndex)[0] || _characters[0];
         let next = characters.filter(character => parseFloat(character.init) < this.currentCharacterIndex)[0] || _characters[0];
+        let round_time = next.parent_name ? 30 : 60;
+
+        if (next && prev && prev.npc==='false'&& next.npc==='false') {
+            this.timer = Math.max(Math.floor(Date.now() / 1000) , this.timer) + round_time;
+        } else {
+            this.timer = Math.floor(Date.now() / 1000) + round_time;
+        }
 
         this.currentCharacterIndex = next.init;
-        if (next.init == characters[0].init) {
+        if (next.init === characters[0].init) {
             this.currentRound++;
         }
         this.fighting = true;

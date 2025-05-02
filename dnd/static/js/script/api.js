@@ -127,7 +127,8 @@ export async function checkForConfigUpdates() {
         this.lastUpdated = config.lastUpdated;
         this.createPolygons(config);
         setAudio(config);
-        if (typeof startCountdown !== 'undefined') startCountdown(config.timer);
+
+        if (typeof startCountdown !== 'undefined') startCountdown(config.init?.timer);
         if (typeof updateSkullColor !== 'undefined') updateSkullColor(config.init.rating);
         if (typeof updateInfoBar !== 'undefined') updateInfoBar(config);
         this.measurePoints = config.measure.points;

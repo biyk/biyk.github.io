@@ -24,7 +24,7 @@ async function checkData(data) {
         console.error(`Error get map config for ${mapName}`);
     }
     return result;
-};
+}
 
 export async function getInit() {
     let api = window.GoogleSheetDB || new GoogleSheetDB();
@@ -43,7 +43,7 @@ export async function getInit() {
 }
 
 // Функция для получения конфигурации карты по имени
-export async function getConfig(mapName) {
+export async function getConfig() {
     let mapTable = await getMapTable();
     return await mapTable.getAll({caching: true, formated: true});
 }
@@ -92,28 +92,8 @@ export async function sendData(type = 'polygons') {
             break;
     }
     let mapTable = await getMapTable();
-    let result = await mapTable.updateRowByCode(type, {code: type, value: body[type]});
+    await mapTable.updateRowByCode(type, {code: type, value: body[type]});
 
-
-}
-
-export function sendPolygonsData() {
-    if (!window.admin_mode) {
-        return true;
-    }
-    const polygonsData = this.polygons.map(polygon => ({
-        points: polygon.points,
-        code: polygon.code,
-        isVisible: polygon.layer.isVisible,
-    }));
-    const markerData = Array.from(this.points.values()).map(point => {
-        point.settings.latlng = point._latlng
-        return {
-            settings: point.settings,
-        };
-    });
-    const center = this.map.getCenter();
-    const zoomLevel = this.map.getZoom();
 
 }
 

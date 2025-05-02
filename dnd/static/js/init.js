@@ -115,7 +115,7 @@ class InitiativeManager {
             const row = document.createElement('div');
             row.classList.add('character-row');
 
-            if (parseInt(character.init) === this.currentCharacterIndex) row.classList.add('current-turn');
+            if (parseInt(character.init) === parseInt(this.currentCharacterIndex)) row.classList.add('current-turn');
             row.classList.add(character.npc === 'true' ? 'character-npc' : 'character-player');
 
             const nameSpan = createEditableSpan(`Имя: ${character.name}`, "name", index, this.updateCharacterProperty.bind(this));

@@ -11,6 +11,7 @@ export async function loadInitiativeData() {
     this.currentRound = parseInt(init.round) || 0;
     this.currentCharacterIndex = parseInt(init.try)  || 0;
     this.charactersData = init.all || [];
+    this.timer = parseInt(init.timer)  || 0;
     this.displayInfoBlocks();
     this.displayCharacters();
     this.fillParentSelect();
@@ -27,6 +28,7 @@ export async function sendInit() {
         rating: this.rating,
         next: this.nextCharacterIndex,
         fighting: this.fighting,
+        timer: this.timer,
     };
 
     let api = window.GoogleSheetDB || new GoogleSheetDB();

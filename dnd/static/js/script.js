@@ -1,13 +1,14 @@
-import {getInit, getConfig, sendPolygonsData, checkForConfigUpdates, sendData} from './script/api.js';
+import {checkForConfigUpdates, getConfig, getInit, sendData} from './script/api.js';
 import {
     createNumberedIcon,
-    toggleAdminMode,
-    updateInfoBar,
     exportImportStorageHandler,
-    loadSettingsToLocalStorage, loadSettingsToLocalStorageFromGoogleSheet, processPolygons
+    loadSettingsToLocalStorage,
+    processPolygons,
+    toggleAdminMode,
+    updateInfoBar
 } from './script/helpers.js';
 import {checkTab} from './tabs.js';
-import {drowMarker, createMarkers, updateMarkers, initializeMarkerMenu} from './marker.js';
+import {createMarkers, drowMarker, initializeMarkerMenu, updateMarkers} from './marker.js';
 import {Settings} from './settings.js';
 import {
     createMainPolygon,
@@ -19,7 +20,7 @@ import {
 import {SlideMenu} from './script/makrer.js'
 import {Inventory} from './script/inventory.js'
 import {Spells} from './spells.js'
-import {API_KEY, GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
+import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
 import {loadAmbienceRadios} from "./ambience.js";
 
 class MapManager {
@@ -175,10 +176,6 @@ class MapManager {
                 }
             };
         }
-    }
-
-    sendPolygonsData() {
-        sendPolygonsData.call(this);
     }
 
     async sendData(type = false) {
@@ -344,7 +341,6 @@ class MapManager {
                 await this.sendData(type);
             } else {
                 await this.sendData('polygons');
-                //this.sendPolygonsData();
             }
         });
 
@@ -387,8 +383,7 @@ class MapManager {
 
 
             for (let e of b) {
-                let code = e.url;
-                e.code = code;
+                e.code = e.url;
             }
             await bTable.addRows(b);
 
@@ -444,8 +439,8 @@ class MapManager {
         const [point1, point2] = points;
 
         // Добавление маркеров в точки
-        const marker1 = L.marker(point1).addTo(this.map);
-        const marker2 = L.marker(point2).addTo(this.map);
+        L.marker(point1).addTo(this.map);
+        L.marker(point2).addTo(this.map);
 
         // Вычисление расстояния между точками
         const distance = this.map.distance(point1, point2);

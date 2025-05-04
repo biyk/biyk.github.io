@@ -6,7 +6,10 @@ async function checkData(data) {
     let api = window.GoogleSheetDB || new GoogleSheetDB();
     await api.waitGoogle();
     let mapTable = await getMapTable();
-
+    let exist = await mapTable.exist();
+    if (!exist){
+        await mapTable.createList()
+    }
     const response = await fetch(`static/json/default.json`);
     let result = null;
     if (response.ok) {
@@ -35,7 +38,9 @@ export async function getInit() {
     });
     let data = await configTable.getAll({formated: true});
     let mapTable = await getMapTable();
+
     let mapData = await mapTable.getAll({formated: true});
+
     if (window.admin_mode){
         await checkData(mapData);
     }
@@ -120,6 +125,11 @@ export async function checkForConfigUpdates() {
     }
 }
 
+/**
+ *
+ * @param map
+ * @returns {Promise<Table>}
+ */
 export async function getMapTable(map = null) {
 
     let configTable = new Table({

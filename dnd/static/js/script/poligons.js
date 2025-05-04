@@ -23,7 +23,7 @@ export function createPolygons(config) {
         });
     }
 
-    if (config.mainPolygon) {
+    if (config.mainPolygon?.points) {
         if (this.mainPolygon) this.map.removeLayer(this.mainPolygon);
         this.mainPolygon = L.polygon(config.mainPolygon.points, {
             color: 'black',

@@ -102,6 +102,7 @@ export async function checkForConfigUpdates() {
     let mapTable = await getMapTable();
     const config = await mapTable.getAll({formated: true});
 
+    if (config.active=='0') return location.reload(true)
     if (config) {
         console.debug(config);
         this.lastUpdated = config.lastUpdated;
@@ -119,7 +120,7 @@ export async function checkForConfigUpdates() {
     }
 }
 
-export async function getMapTable() {
+export async function getMapTable(map = null) {
 
     let configTable = new Table({
         list: 'CONFIG',
@@ -132,7 +133,7 @@ export async function getMapTable() {
     });
     let keys = await keysTable.getAll({caching: true, formated: true});
     return new Table({
-        list: config.map,
+        list: map || config.map,
         spreadsheetId: keys.maps
     });
 }

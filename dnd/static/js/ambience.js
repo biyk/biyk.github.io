@@ -14,7 +14,7 @@ export async function loadAmbienceRadios() {
         let data = await ambienceTable.getAll({formated:true});
         let ambience = this.config.ambience;
 
-        const container = document.getElementById('ambience-tab');
+        const container = document.getElementById('ambience-tab-content');
         Object.entries(data).filter(([key, value]) => key!='code')
             .forEach(([key, value]) => {
                 const radio = document.createElement('input');

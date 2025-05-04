@@ -37,7 +37,7 @@
 
 
 /* Стили для других вкладок */
-#ambience-tab, #initiative-tab {
+#ambience-tab-content, #initiative-tab {
     padding: 20px;
     color: #222;
 }

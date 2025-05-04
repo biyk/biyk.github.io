@@ -100,6 +100,7 @@ export function updateInfoBar(data) {
          Следующий: ${next ? getParticipantHTML(next) : '---'}
        `;
 }
+
 export function getRandomColor() {
     const letters = '0123456789ABCDEF';
     let color = '#';

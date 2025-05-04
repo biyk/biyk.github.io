@@ -4,7 +4,7 @@ input[type="radio"][name="ambience"] {
     display: none;
 }
 /* Стиль для меток, чтобы выглядели как кнопки */
-#ambience-tab label {
+#ambience-tab-content label {
     display: inline-block;
     padding: 10px 20px;
     margin: 5px;
@@ -17,7 +17,7 @@ input[type="radio"][name="ambience"] {
     transition: all 0.3s ease;
 }
 /* Стиль для меток при наведении */
-#ambience-tab label:hover {
+#ambience-tab-content label:hover {
     background-color: #e0e0e0;
     border-color: #bbb;
 }

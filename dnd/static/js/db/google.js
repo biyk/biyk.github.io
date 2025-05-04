@@ -18,7 +18,7 @@ export class ORM {
 
             if (value === 'value') {
                 const raw = typeof data[value] === 'object' ? JSON.stringify(data[value]) : data[value];
-                const chunks = raw.match(/.{1,49000}/g);
+                const chunks = raw.toString().match(/.{1,49000}/g);
                 result[index] = chunks[0];
                 result.push(...chunks.slice(1));
             } else {
@@ -43,7 +43,7 @@ export class Table {
     constructor(options) {
         this.list = options.list;
         this.sheets = {}
-        this.spreadsheetId = options.spreadsheetId;
+        this.spreadsheetId = options.spreadsheetId || spreadsheetId;
         this.api = window.GoogleSheetDB || new GoogleSheetDB();
         this.spreadsheets = gapi.client.sheets.spreadsheets;
         this.columns = {};
@@ -416,6 +416,17 @@ export class GoogleSheetDB {
     async waitGoogle(timeout = 10000) {
         const startTime = Date.now();
         while (!(this.gapiInited && this.gisInited)) {
+            if (Date.now() - startTime > timeout) {
+                throw new Error('Инициализация Google API не завершена в течение отведенного времени.'
+                    + this.gapiInited + ' ' + this.gisInited);
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+
+    async waitGApi(timeout = 10000) {
+        const startTime = Date.now();
+        while (!this.gapiInited) {
             if (Date.now() - startTime > timeout) {
                 throw new Error('Инициализация Google API не завершена в течение отведенного времени.'
                     + this.gapiInited + ' ' + this.gisInited);

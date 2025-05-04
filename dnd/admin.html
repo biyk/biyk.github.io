@@ -18,14 +18,13 @@
 <!-- Панель навигации по вкладкам -->
 <div class="tab-buttons">
     <button class="tab-button active" onclick="showTab('map')">Карта</button>
-    <button class="tab-button" onclick="showTab('ambience-tab')">Амбиенс</button>
+    <button class="tab-button" onclick="showTab('admin-tab')">Ширма ДМа</button>
     <button class="tab-button" onclick="showTab('initiative-tab')">Инициатива</button>
     <button class="tab-button" onclick="showTab('dm-tab')">Для заметок</button>
     <!--    <button class="tab-button" onclick="showTab('monster-tab')">Зоны</button>-->
     <!--    <button class="tab-button" onclick="showTab('npc-tab')">НПС</button>-->
     <!--    <button class="tab-button" onclick="showTab('history-tab')">История</button>-->
     <button class="tab-button" onclick="showTab('settings-tab')">Настройки</button>
-    <button class="tab-button" onclick="showTab('timer-tab')">Таймер</button>
 </div>
 <div class="timer-container">
     <canvas id="timerCanvas"></canvas>
@@ -41,10 +40,222 @@
     <button id="inventory-button">Инвентарь</button>
     <button id="spells-button">Заклинания/ресурсы</button>
 </div>
-<div id="ambience-tab" class="tab-content">
+<div id="admin-tab" class="tab-content">
     <h2>Амбиенс</h2>
     <p>Здесь можно настроить амбиенс, выбрать звуковое сопровождение и эффекты для карты.</p>
     <div id="ambience-tab-content"></div>
+
+    <div id="timer-tab-content" style="width: 75%">
+
+        <style>
+
+            .radio-option {
+                margin-bottom: 20px;
+            }
+
+            .time {
+                margin-left: 10px;
+                font-weight: bold;
+                color: green;
+            }
+
+            .progress-bar {
+                height: 10px;
+                background-color: #ddd;
+                margin-top: 5px;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+
+            .progress {
+                height: 100%;
+                background-color: #4caf50;
+                width: 0%;
+                transition: width 0.5s;
+            }
+        </style>
+
+        <h2>Выберите Игрока:</h2>
+        <div id="radio-container">
+        </div>
+
+        <h3>Добавить новую опцию:</h3>
+        <form id="add-form">
+            <input type="text" id="new-option" placeholder="Введите название" required>
+            <button type="submit">Добавить</button>
+        </form>
+
+        <br>
+        <button id="start-button">Старт</button>
+
+        <script>
+            const radioContainer = document.getElementById('radio-container');
+            const addForm = document.getElementById('add-form');
+            const startButton = document.getElementById('start-button');
+            const timers = {};
+            let activeOption = 'All';
+            let tracking = false;
+            let intervalId = null;
+
+            // Сохраняем таймеры в localStorage
+            function saveTimers() {
+                const data = {};
+                for (let key in timers) {
+                    data[key] = {
+                        time: timers[key].time
+                    };
+                }
+                localStorage.setItem('timers', JSON.stringify(data));
+                localStorage.setItem('activeOption', activeOption);
+            }
+
+            // Загружаем таймеры из localStorage
+            function loadTimers() {
+                const saved = JSON.parse(localStorage.getItem('timers') || '{}');
+                const savedActive = localStorage.getItem('activeOption') || 'All';
+
+                for (let key in saved) {
+                    const div = document.createElement('div');
+                    div.className = 'radio-option';
+                    div.innerHTML = `
+            <label><input type="radio" name="option" value="${key}">
+            ${key}</label>
+            <span class="time" data-option="${key}">${saved[key].time}s</span>
+            <div class="progress-bar"><div class="progress" data-option="${key}"></div></div>
+        `;
+                    radioContainer.appendChild(div);
+
+                    const el = div.querySelector('.time');
+                    const bar = div.querySelector('.progress');
+                    timers[key] = {
+                        time: saved[key].time,
+                        active: false,
+                        el,
+                        bar
+                    };
+
+                    div.querySelector('input').addEventListener('change', onRadioChange);
+                }
+
+                // Восстанавливаем активную опцию
+                if (timers[savedActive]) {
+                    document.querySelector(`input[value="${savedActive}"]`).checked = true;
+                    activeOption = savedActive;
+                }
+            }
+
+            function getMaxTime() {
+                return Math.max(...Object.values(timers).map(t => t.time));
+            }
+
+            function updateProgressBars() {
+                const maxTime = getMaxTime() || 1;
+                for (let key in timers) {
+                    const percent = (timers[key].time / maxTime) * 100;
+                    timers[key].bar.style.width = percent + '%';
+                }
+            }
+
+            // Обновление времени
+            function updateTimers() {
+                for (let key in timers) {
+                    if (timers[key].active) {
+                        timers[key].time++;
+                        timers[key].el.textContent = timers[key].time + 's';
+                    }
+                }
+                updateProgressBars();
+                saveTimers();
+            }
+
+            // Обработчик переключения радио-кнопок
+            function onRadioChange(e) {
+                const newOption = e.target.value;
+                for (let key in timers) {
+                    timers[key].active = false;
+                }
+                if (timers[newOption]) {
+                    timers[newOption].active = true;
+                }
+                activeOption = newOption;
+            }
+
+            // Добавление новой опции
+            addForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const val = document.getElementById('new-option').value.trim();
+                if (!val || timers[val]) return;
+
+                const div = document.createElement('div');
+                div.className = 'radio-option';
+                div.innerHTML = `
+        <label><input type="radio" name="option" value="${val}">${val}</label>
+        <span class="time" data-option="${val}">0s</span>
+        <div class="progress-bar"><div class="progress" data-option="${val}"></div></div>
+      `;
+                radioContainer.appendChild(div);
+
+                const el = div.querySelector('.time');
+                const bar = div.querySelector('.progress');
+                timers[val] = { time: 0, active: false, el, bar };
+
+                div.querySelector('input').addEventListener('change', onRadioChange);
+
+                document.getElementById('new-option').value = '';
+                saveTimers();
+            });
+
+            // Поведение кнопки "Start"
+            startButton.addEventListener('click', function() {
+                if (!tracking) {
+                    // Начинаем отслеживание
+                    tracking = true;
+                    timers[activeOption].active = true;
+                    intervalId = setInterval(updateTimers, 1000);
+                    startButton.textContent = 'Reset';
+                } else {
+                    // Сброс
+                    clearInterval(intervalId);
+                    tracking = false;
+                    startButton.textContent = 'Start';
+                    localStorage.removeItem('timers');
+                    localStorage.removeItem('activeOption');
+                    Object.keys(timers).forEach(key => {
+                        timers[key].time = 0;
+                        timers[key].active = false;
+                        timers[key].el.textContent = '0s';
+                        timers[key].bar.style.width = '0%';
+                    });
+                    saveTimers();
+                }
+            });
+
+            // Первичная инициализация
+            window.addEventListener('DOMContentLoaded', () => {
+                loadTimers();
+
+                // Убедимся, что "All" существует
+                if (!timers['All']) {
+                    const div = document.createElement('div');
+                    div.className = 'radio-option';
+                    div.innerHTML = `
+            <label><input type="radio" name="option" value="All" checked>All</label>
+            <span class="time" data-option="All">0s</span>
+            <div class="progress-bar"><div class="progress" data-option="All"></div></div>
+        `;
+                    radioContainer.appendChild(div);
+                    const el = div.querySelector('.time');
+                    const bar = div.querySelector('.progress');
+                    timers['All'] = { time: 0, active: false, el, bar };
+                    div.querySelector('input').addEventListener('change', onRadioChange);
+                }
+            });
+        </script>
+
+        </script>
+
+
+    </div>
 </div>
 <div id="initiative-tab" class="tab-content">
     <h2>Инициатива</h2>
@@ -165,220 +376,10 @@
     <h2>История </h2>
 
 </div>
-<div id="timer-tab" class="tab-content" style="width: 75%">
 
-    <style>
-
-        .radio-option {
-            margin-bottom: 20px;
-        }
-
-        .time {
-            margin-left: 10px;
-            font-weight: bold;
-            color: green;
-        }
-
-        .progress-bar {
-            height: 10px;
-            background-color: #ddd;
-            margin-top: 5px;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            background-color: #4caf50;
-            width: 0%;
-            transition: width 0.5s;
-        }
-    </style>
-
-    <h2>Выберите опцию:</h2>
-    <div id="radio-container">
-    </div>
-
-    <h3>Добавить новую опцию:</h3>
-    <form id="add-form">
-        <input type="text" id="new-option" placeholder="Введите название" required>
-        <button type="submit">Добавить</button>
-    </form>
-
-    <br>
-    <button id="start-button">Старт</button>
-
-    <script>
-        const radioContainer = document.getElementById('radio-container');
-        const addForm = document.getElementById('add-form');
-        const startButton = document.getElementById('start-button');
-        const timers = {};
-        let activeOption = 'All';
-        let tracking = false;
-        let intervalId = null;
-
-        // Сохраняем таймеры в localStorage
-        function saveTimers() {
-            const data = {};
-            for (let key in timers) {
-                data[key] = {
-                    time: timers[key].time
-                };
-            }
-            localStorage.setItem('timers', JSON.stringify(data));
-            localStorage.setItem('activeOption', activeOption);
-        }
-
-        // Загружаем таймеры из localStorage
-        function loadTimers() {
-            const saved = JSON.parse(localStorage.getItem('timers') || '{}');
-            const savedActive = localStorage.getItem('activeOption') || 'All';
-
-            for (let key in saved) {
-                const div = document.createElement('div');
-                div.className = 'radio-option';
-                div.innerHTML = `
-            <label><input type="radio" name="option" value="${key}">
-            ${key}</label>
-            <span class="time" data-option="${key}">${saved[key].time}s</span>
-            <div class="progress-bar"><div class="progress" data-option="${key}"></div></div>
-        `;
-                radioContainer.appendChild(div);
-
-                const el = div.querySelector('.time');
-                const bar = div.querySelector('.progress');
-                timers[key] = {
-                    time: saved[key].time,
-                    active: false,
-                    el,
-                    bar
-                };
-
-                div.querySelector('input').addEventListener('change', onRadioChange);
-            }
-
-            // Восстанавливаем активную опцию
-            if (timers[savedActive]) {
-                document.querySelector(`input[value="${savedActive}"]`).checked = true;
-                activeOption = savedActive;
-            }
-        }
-
-        function getMaxTime() {
-            return Math.max(...Object.values(timers).map(t => t.time));
-        }
-
-        function updateProgressBars() {
-            const maxTime = getMaxTime() || 1;
-            for (let key in timers) {
-                const percent = (timers[key].time / maxTime) * 100;
-                timers[key].bar.style.width = percent + '%';
-            }
-        }
-
-        // Обновление времени
-        function updateTimers() {
-            for (let key in timers) {
-                if (timers[key].active) {
-                    timers[key].time++;
-                    timers[key].el.textContent = timers[key].time + 's';
-                }
-            }
-            updateProgressBars();
-            saveTimers();
-        }
-
-        // Обработчик переключения радио-кнопок
-        function onRadioChange(e) {
-            const newOption = e.target.value;
-            for (let key in timers) {
-                timers[key].active = false;
-            }
-            if (timers[newOption]) {
-                timers[newOption].active = true;
-            }
-            activeOption = newOption;
-        }
-
-        // Добавление новой опции
-        addForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const val = document.getElementById('new-option').value.trim();
-            if (!val || timers[val]) return;
-
-            const div = document.createElement('div');
-            div.className = 'radio-option';
-            div.innerHTML = `
-        <label><input type="radio" name="option" value="${val}">${val}</label>
-        <span class="time" data-option="${val}">0s</span>
-        <div class="progress-bar"><div class="progress" data-option="${val}"></div></div>
-      `;
-            radioContainer.appendChild(div);
-
-            const el = div.querySelector('.time');
-            const bar = div.querySelector('.progress');
-            timers[val] = { time: 0, active: false, el, bar };
-
-            div.querySelector('input').addEventListener('change', onRadioChange);
-
-            document.getElementById('new-option').value = '';
-            saveTimers();
-        });
-
-        // Поведение кнопки "Start"
-        startButton.addEventListener('click', function() {
-            if (!tracking) {
-                // Начинаем отслеживание
-                tracking = true;
-                timers[activeOption].active = true;
-                intervalId = setInterval(updateTimers, 1000);
-                startButton.textContent = 'Reset';
-            } else {
-                // Сброс
-                clearInterval(intervalId);
-                tracking = false;
-                startButton.textContent = 'Start';
-                localStorage.removeItem('timers');
-                localStorage.removeItem('activeOption');
-                Object.keys(timers).forEach(key => {
-                    timers[key].time = 0;
-                    timers[key].active = false;
-                    timers[key].el.textContent = '0s';
-                    timers[key].bar.style.width = '0%';
-                });
-                saveTimers();
-            }
-        });
-
-        // Первичная инициализация
-        window.addEventListener('DOMContentLoaded', () => {
-            loadTimers();
-
-            // Убедимся, что "All" существует
-            if (!timers['All']) {
-                const div = document.createElement('div');
-                div.className = 'radio-option';
-                div.innerHTML = `
-            <label><input type="radio" name="option" value="All" checked>All</label>
-            <span class="time" data-option="All">0s</span>
-            <div class="progress-bar"><div class="progress" data-option="All"></div></div>
-        `;
-                radioContainer.appendChild(div);
-                const el = div.querySelector('.time');
-                const bar = div.querySelector('.progress');
-                timers['All'] = { time: 0, active: false, el, bar };
-                div.querySelector('input').addEventListener('change', onRadioChange);
-            }
-        });
-    </script>
-
-    </script>
-
-
-</div>
 <div id="settings-tab" class="tab-content">
     <h2>Настройки</h2>
-    <form id="settings-form" class="npc-form" action="/api/data/npc/add" method="POST">
+    <form id="settings-form" class="npc-form" method="POST">
         <div class="npc-form__group">
             <label for="npc-kd" class="npc-form__label">Показать сетку:
                 <input type="checkbox" id="settings-show-grid" name="show_grid" class="npc-form__checkbox" >
@@ -387,6 +388,11 @@
         <div class="npc-form__group">
             <label for="npc-kd" class="npc-form__label">Режим администратора:
                 <input type="checkbox" id="settings-admin-mode" name="admin_mode" class="npc-form__checkbox" checked>
+            </label>
+        </div>
+        <div class="npc-form__group">
+            <label class="npc-form__label">Карта:
+                <select id="settings-map" name="admin_mode" class=""></select>
             </label>
         </div>
     </form>

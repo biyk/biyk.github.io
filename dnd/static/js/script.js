@@ -22,6 +22,7 @@ import {Inventory} from './script/inventory.js'
 import {Spells} from './spells.js'
 import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
 import {loadAmbienceRadios} from "./ambience.js";
+import {loadMaps} from "./map.js";
 
 class MapManager {
     constructor() {
@@ -69,7 +70,8 @@ class MapManager {
         this.Inventory = new Inventory();
         this.Spells = new Spells();
         await loadAmbienceRadios.call(this);
-
+        await loadMaps.call(this);
+        await
         this.checkConfig();
     }
 

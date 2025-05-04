@@ -51,6 +51,10 @@ export class Table {
         this.sending = false;
     }
 
+    async exist(){
+        return await this.getSheetIdByName(this.list) || false;
+    }
+
     async getSheetIdByName(sheetName) {
         if (this.sheets[sheetName]) return this.sheets[sheetName];
         const response = await this.spreadsheets.get({

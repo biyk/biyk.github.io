@@ -412,6 +412,7 @@ export class GoogleSheetDB {
             if (this.expired()) {
                 if (typeof gapi !=='undefined')gapi.client.setToken('');
                 console.log('нужно авторизоваться');
+                document.body.dispatchEvent(new Event('doAuth'));
                 clearInterval(timer);
             }
         })

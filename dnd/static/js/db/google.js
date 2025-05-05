@@ -112,9 +112,8 @@ export class Table {
     }
 
     async waitSending(timeout = 10000) {
-        const startTime = Date.now();
         while (this.sending) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, timeout));
         }
     }
 
@@ -248,7 +247,6 @@ export class Table {
             });
         } catch (err) {
             console.error(err.message)
-            return;
         }
     }
 
@@ -305,7 +303,7 @@ export class Table {
     formatData(response) {
         let result = {};
 
-        response.forEach((e, i) => {
+        response.forEach((e) => {
             if ('{['.includes(e[1][0])) {
                 result[e[0]] = JSON.parse(e.slice(1).join(''))
             } else {

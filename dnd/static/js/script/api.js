@@ -59,12 +59,12 @@ export async function sendData(type = 'polygons') {
     }
     console.log('sendData', type);
     let api = window.GoogleSheetDB || new GoogleSheetDB();
-    await api.waitGoogle();
+    await api.waitWrite();
 
     const polygonsData = this.polygons.map(polygon => ({
         points: polygon.points,
         code: polygon.code,
-        isVisible: polygon.isVisible,
+        isVisible: polygon.layer.isVisible,
     }));
     const markerData = Array.from(this.points.values()).map(point => {
         point.settings.latlng = point._latlng

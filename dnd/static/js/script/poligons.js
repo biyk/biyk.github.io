@@ -41,6 +41,7 @@ export function toggleMainPolygonVisibility() {
         this.mainPolygon.addTo(this.map);
     }
 }
+
 export function createMainPolygon(config) {
     const bounds = this.map.getBounds();
     const polygonPoints = [

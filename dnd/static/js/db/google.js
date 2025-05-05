@@ -440,6 +440,18 @@ export class GoogleSheetDB {
         }
     }
 
+
+    async waitWrite(timeout = 10000) {
+        const startTime = Date.now();
+        while (!this.gisInited) {
+            if (Date.now() - startTime > timeout) {
+                throw new Error('Инициализация Google API не завершена в течение отведенного времени.'
+                    + this.gapiInited + ' ' + this.gisInited);
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+
     expired() {
         return localStorage.getItem('gapi_token_expires') - this.getTime() < 10
     }

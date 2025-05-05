@@ -171,6 +171,7 @@ class MapManager {
                         fillOpacity: polygonLayer.isVisible ? 1.0 : 0.0,
                         opacity: polygonLayer.isVisible ? 1.0 : 0.0,
                     });
+                    console.log(polygonLayer);
                     this.sendData('polygons');
                 }
             };

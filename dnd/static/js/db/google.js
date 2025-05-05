@@ -410,7 +410,7 @@ export class GoogleSheetDB {
             let worked = localStorage.getItem('gapi_token_expires') - this.getTime();
             document.getElementById('signout_button').textContent = worked;
             if (this.expired()) {
-                gapi?.client?.setToken('');
+                if (typeof gapi !=='undefined')gapi.client.setToken('');
                 console.log('нужно авторизоваться');
                 clearInterval(timer);
             }

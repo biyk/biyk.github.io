@@ -12,7 +12,7 @@ export function createNumberedIcon(number) {
 
 export function setAudio(config) {
     const audio = document.getElementById('audio');
-    let src = '/static/audio/' + config.ambience + '.mp3';
+    let src = 'static/audio/' + config.ambience + '.mp3';
     if (audio && audio.src.indexOf(src) === -1) {
         audio.src = src;
         let auth = localStorage.getItem('auth_code');

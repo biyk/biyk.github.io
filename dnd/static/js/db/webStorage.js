@@ -8,30 +8,29 @@ export class WebStorage {
     }
 
     async initDB() {
+    const versionCode = this.versionToNumber(this.version); // Например, '1.2.3' -> 1002003
+
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
+        const request = indexedDB.open(this.dbName, versionCode);
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                if (!db.objectStoreNames.contains(this.storeName)) {
+
+            // Удаляем все старые stores, если они есть
+            for (const storeName of db.objectStoreNames) {
+                db.deleteObjectStore(storeName);
+            }
+
+            // Создаём заново нужные хранилища
                     db.createObjectStore(this.storeName);
-                }
-                if (!db.objectStoreNames.contains(this.metaStoreName)) {
                     db.createObjectStore(this.metaStoreName);
-                }
             };
 
             request.onsuccess = async () => {
                 const db = request.result;
 
                 try {
-                    const storedVersion = await this.getMeta('app_version', db);
-
-                    if (storedVersion !== this.version) {
-                        await this.clearAllStores(db);
                         await this.setMeta('app_version', this.version, db);
-                    }
-
                     resolve(db);
                 } catch (error) {
                     reject(error);
@@ -137,5 +136,14 @@ export class WebStorage {
             };
             request.onerror = () => reject(request.error);
         });
+    }
+    versionToNumber(versionStr) {
+        // '1.2.3' => 1002003
+        return versionStr
+            .split('.')
+            .map(part => part.padStart(2, '0'))
+            .join('')
+            .padEnd(7, '0')
+            .slice(0, 7) * 1;
     }
 }

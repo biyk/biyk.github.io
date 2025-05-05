@@ -98,10 +98,7 @@ class MapManager {
             authButton.addEventListener('click', async (e) => {
                 let auth_code = prompt('Enter auth code', localStorage.getItem('auth_code'));
                 localStorage.setItem('auth_code', auth_code);
-
                 await api.handleAuthClick(callbackLoadData);
-
-
             });
         }
         if (settingsButton) {
@@ -348,6 +345,10 @@ class MapManager {
 
         document.body.addEventListener('admin_mode', (e) => {
             this.toggleAdminMode();
+        });
+
+        document.body.addEventListener('doAuth', (e) => {
+            this.doAuth();
         });
 
 

@@ -1,1 +1,1 @@
-window.version = '0.2.25'
+window.version = '0.2.26'

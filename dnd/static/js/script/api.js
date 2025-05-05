@@ -31,7 +31,7 @@ async function checkData(data) {
 
 export async function getInit() {
     let api = window.GoogleSheetDB || new GoogleSheetDB();
-    await api.waitGoogle();
+    await api.waitRead();
     let configTable = new Table({
         list: 'CONFIG',
         spreadsheetId: spreadsheetId

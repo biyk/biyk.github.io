@@ -5,7 +5,7 @@ export async function loadMaps() {
     let selectMap = document.getElementById('settings-map');
     if (!selectMap) return;
     let api = window.GoogleSheetDB || new GoogleSheetDB();
-    await api.waitGApi();
+    await api.waitRead();
     let keysTable = new Table({
         list: 'KEYS'
     });
@@ -34,5 +34,6 @@ export async function loadMaps() {
             list: 'CONFIG',
         });
         await configTable.updateRowByCode('map', {value: map})
+        location.reload(true);
     }
 }

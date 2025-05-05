@@ -46,7 +46,7 @@ class MapManager {
     }
 
     async initMap() {
-        await this.doAuth();
+
         const init = await getInit();
         if (!init) return console.error('no init');
 
@@ -71,7 +71,7 @@ class MapManager {
         this.Spells = new Spells();
         await loadAmbienceRadios.call(this);
         await loadMaps.call(this);
-        await
+        await this.doAuth();
         this.checkConfig();
     }
 

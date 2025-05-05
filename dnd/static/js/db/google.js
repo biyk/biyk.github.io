@@ -418,6 +418,7 @@ export class GoogleSheetDB {
     }
 
     async waitGoogle(timeout = 10000) {
+        console.trace('ждем гугла');
         const startTime = Date.now();
         while (!(this.gapiInited && this.gisInited)) {
             if (Date.now() - startTime > timeout) {
@@ -428,7 +429,7 @@ export class GoogleSheetDB {
         }
     }
 
-    async waitGApi(timeout = 10000) {
+    async waitRead(timeout = 10000) {
         const startTime = Date.now();
         while (!this.gapiInited) {
             if (Date.now() - startTime > timeout) {
@@ -534,10 +535,7 @@ export class GoogleSheetDB {
 
     async fetchSheetValues(options) {
         const webStorage = new WebStorage();
-        if (this.expired()) {
-            console.error('Нужно авторизоваться');
-            return false;
-        }
+
         let {range, spreadsheetId, caching} = options;
         let response;
         let data = [];

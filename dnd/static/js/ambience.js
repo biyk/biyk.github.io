@@ -4,6 +4,8 @@ import {getMapTable} from "./script/api.js";
 
 export async function loadAmbienceRadios() {
     try {
+        const container = document.getElementById('ambience-tab-content');
+        if (!container) return;
         let api = window.GoogleSheetDB || new GoogleSheetDB();
         await api.waitGoogle();
         let ambienceTable = new Table({
@@ -14,7 +16,7 @@ export async function loadAmbienceRadios() {
         let data = await ambienceTable.getAll({formated:true});
         let ambience = this.config.ambience;
 
-        const container = document.getElementById('ambience-tab-content');
+
         Object.entries(data).filter(([key, value]) => key!='code')
             .forEach(([key, value]) => {
                 const radio = document.createElement('input');

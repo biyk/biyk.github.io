@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.39";
+window.version = "0.2.43";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9888,26 +9888,46 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
 }
 const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v]]);
 const TodoList$1 = "";
+function makeTaskDone(task, store2) {
+  let {
+    task_uuid,
+    repeat_mode,
+    start_date,
+    task_finish_date
+  } = task[0];
+  if (repeat_mode === "1") {
+    start_date = new Date().getTime() + 1e3 * 30 * 24 * 60 * 60;
+    task_finish_date = new Date().getTime() + 1e3 * 31 * 24 * 60 * 60;
+  }
+  if (repeat_mode === "0") {
+    const now2 = new Date();
+    start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
+    task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+  }
+  const updatedTask = {
+    ...task[0],
+    start_date,
+    task_finish_date
+  };
+  store2.dispatch("todos/updateTodo", updatedTask);
+}
 const _sfc_main$2A = {
   computed: {
     todos() {
       return this.$store.getters["todos/getTodos"];
-    },
-    filteredTodos() {
+    }
+  },
+  props: {
+    filter: {
+      type: String,
+      default: "all"
+    }
+  },
+  methods: {
+    getFilteredTodos() {
       const now2 = new Date();
-      const today = now2.getTime();
-      console.log(this.filter);
-      const tomorrow = new Date(
-        now2.getFullYear(),
-        now2.getMonth(),
-        now2.getDate() + 1,
-        // Завтра
-        23,
-        59,
-        0,
-        0
-        // Время: 23:59:00.000
-      ).getTime();
+      const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
+      const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       return this.todos.filter((todo) => {
         if (todo.task_title === "task_title")
           return false;
@@ -9921,20 +9941,16 @@ const _sfc_main$2A = {
             return true;
         }
       });
-    }
-  },
-  props: {
-    filter: {
-      type: String,
-      default: "all"
-    }
-  },
-  methods: {
-    toggleTodo(id) {
-      this.$store.dispatch("todos/toggleTodo", id);
+    },
+    toggleTodo(task_uuid) {
+      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
+      makeTaskDone(task, this.$store);
     },
     deleteTodo(id) {
       this.$store.dispatch("todos/deleteTodo", id);
+    },
+    getSortedTodos() {
+      return this.getFilteredTodos().sort((a2, b2) => a2.task_sort - b2.task_sort);
     }
   },
   mounted() {
@@ -9947,11 +9963,11 @@ const _hoisted_3$1 = ["title"];
 const _hoisted_4$1 = ["onClick"];
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock("ul", _hoisted_1$2, [
-    (openBlock(true), createElementBlock(Fragment, null, renderList($options.filteredTodos, (todo) => {
+    (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
       return openBlock(), createElementBlock("li", {
         key: todo.id,
-        class: normalizeClass([{ completed: todo.completed }, "task"]),
-        onClick: ($event) => $options.toggleTodo(todo.id)
+        class: normalizeClass(["task", todo.task_color, { completed: todo.completed }]),
+        onClick: ($event) => $options.toggleTodo(todo.task_uuid)
       }, [
         createBaseVNode("span", {
           title: todo.task_description
@@ -10922,7 +10938,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
-    _cache[2] || (_cache[2] = createBaseVNode("h1", null, "To-Do List", -1)),
+    _cache[3] || (_cache[3] = createBaseVNode("h1", null, "To-Do List", -1)),
     createVNode(_component_el_tabs, {
       modelValue: $setup.activeTab,
       "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.activeTab = $event)
@@ -10965,11 +10981,28 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1
         }),
         createVNode(_component_el_tab_pane, {
+          label: "Магазин",
+          name: "shop"
+        }, {
+          default: withCtx(() => _cache[1] || (_cache[1] = [
+            createBaseVNode("div", null, "Тут будут покупки", -1)
+          ])),
+          _: 1
+        }),
+        createVNode(_component_el_tab_pane, {
+          label: "Персонаж",
+          name: "player"
+        }, {
+          default: withCtx(() => _cache[2] || (_cache[2] = [
+            createBaseVNode("div", null, "Тут будут данные игрока", -1)
+          ])),
+          _: 1
+        }),
+        createVNode(_component_el_tab_pane, {
           label: "Настройки",
           name: "settings"
         }, {
           default: withCtx(() => [
-            _cache[1] || (_cache[1] = createBaseVNode("div", null, "Тут будут настройки", -1)),
             createVNode(_component_Settings)
           ]),
           _: 1
@@ -10977,7 +11010,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
       ]),
       _: 1
     }, 8, ["modelValue"]),
-    _cache[3] || (_cache[3] = createBaseVNode("img", {
+    _cache[4] || (_cache[4] = createBaseVNode("img", {
       src: _imports_0,
       class: "vue-logo",
       alt: "Vue.js Logo"
@@ -67464,6 +67497,7 @@ class ORM {
   getRaw(data = {}) {
     let result = [];
     this.columns.forEach((value, index2) => {
+      console.log(index2, value, data[value]);
       if (value === "value") {
         const raw = typeof data[value] === "object" ? JSON.stringify(data[value]) : data[value];
         const chunks = raw.toString().match(/.{1,49000}/g);
@@ -67490,7 +67524,7 @@ class Table {
     this.spreadsheetId = options.spreadsheetId || spreadsheetId;
     this.api = window.GoogleSheetDB || new GoogleSheetDB();
     this.spreadsheets = gapi.client.sheets.spreadsheets;
-    this.columns = {};
+    this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + "/" + options.list + "/columns")) || {};
     this.codes = {};
     this.sending = false;
   }
@@ -67978,20 +68012,27 @@ function loadScriptOnce({ src, onload, async = true, defer = true }) {
   document.head.appendChild(script);
 }
 const LOCAL_STORAGE_KEY$1 = "todo-list";
-function saveToStorage$1(todos2) {
+const saveTodos = (todos2) => {
   localStorage.setItem(LOCAL_STORAGE_KEY$1, JSON.stringify(todos2));
-}
-function loadFromStorage$1() {
+};
+const loadTodos = () => {
   const data = localStorage.getItem(LOCAL_STORAGE_KEY$1);
   return data ? JSON.parse(data) : [];
-}
+};
 const state$1 = {
-  todos: loadFromStorage$1()
+  todos: loadTodos()
 };
 const getters$1 = {
   getTodos: (state2) => state2.todos
 };
 const mutations$1 = {
+  UPDATE_TODO(state2, updatedTask) {
+    const index2 = state2.todos.findIndex((t) => t.task_uuid === updatedTask.task_uuid);
+    if (index2 !== -1) {
+      state2.todos.splice(index2, 1, updatedTask);
+      saveTodos(state2.todos);
+    }
+  },
   SET_TODOS(state2, todos2) {
     state2.todos = todos2;
   },
@@ -68002,13 +68043,13 @@ const mutations$1 = {
       completed: false
     };
     state2.todos.unshift(newTask);
-    saveToStorage$1(state2.todos);
+    saveTodos(state2.todos);
   },
   TOGGLE_TODO(state2, payload) {
     const item = state2.todos.find((todo) => todo.id === payload);
     if (item) {
       item.completed = !item.completed;
-      saveToStorage$1(state2.todos);
+      saveTodos(state2.todos);
     } else {
       console.error("Todo not found with id:", payload);
     }
@@ -68017,35 +68058,36 @@ const mutations$1 = {
     const index2 = state2.todos.findIndex((todo) => todo.id === payload);
     if (index2 !== -1) {
       state2.todos.splice(index2, 1);
-      saveToStorage$1(state2.todos);
+      saveTodos(state2.todos);
     } else {
       console.error("Todo not found with id:", payload);
     }
   }
 };
+async function getGoogleSheetTable(rootGetters) {
+  const settings2 = rootGetters["settings/allSettings"];
+  const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
+  if (!spreadsheetSetting) {
+    console.warn("spreadsheetId not found in settings");
+    return null;
+  }
+  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  await api.waitGoogle();
+  return new Table({
+    spreadsheetId: spreadsheetSetting.value,
+    list: "real_life_tasks"
+  });
+}
 const actions$1 = {
   async initTodos({ commit: commit2, rootGetters }) {
-    const settings2 = rootGetters["settings/allSettings"];
-    const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
-    if (!spreadsheetSetting) {
-      console.warn("spreadsheetId not found in settings");
-      commit2("SET_TODOS", loadFromStorage$1());
+    const table = await getGoogleSheetTable(rootGetters);
+    if (!table) {
+      commit2("SET_TODOS", loadTodos());
       return;
     }
-    console.log(spreadsheetSetting.value);
-    let api = window.GoogleSheetDB || new GoogleSheetDB();
-    await api.waitGoogle();
-    const table = new Table({
-      spreadsheetId: spreadsheetSetting.value,
-      list: "real_life_tasks"
-    });
-    let list = await table.getAll();
-    let _todos = [];
-    let orm = new ORM(table.columns["real_life_tasks"]);
-    list.forEach((e) => {
-      _todos.push(orm.getFormated(e));
-    });
-    const todos2 = _todos;
+    const list = await table.getAll();
+    const orm = new ORM(table.columns["real_life_tasks"]);
+    const todos2 = list.map((e) => orm.getFormated(e));
     commit2("SET_TODOS", todos2);
   },
   addTodo({ commit: commit2 }, payload) {
@@ -68056,6 +68098,13 @@ const actions$1 = {
   },
   deleteTodo({ commit: commit2 }, payload) {
     commit2("DELETE_TODO", payload);
+  },
+  async updateTodo({ commit: commit2, rootGetters }, updatedTask) {
+    commit2("UPDATE_TODO", updatedTask);
+    const table = await getGoogleSheetTable(rootGetters);
+    if (!table)
+      return;
+    await table.updateRowByCode(updatedTask.task_title, updatedTask);
   }
 };
 const todos = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({

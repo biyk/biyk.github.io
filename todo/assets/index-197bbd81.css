@@ -22,6 +22,25 @@
     font-weight: bold;
 }
 
+.task.red {
+    background-color: #f46d6d;
+    color: yellow;
+}
+
+.task.purple {
+    background-color: #c306f6;
+    color: white;
+}
+
+.task.blue {
+    background-color: #424ee8;
+    color: white;
+}
+.task.green {
+    background-color: #30f339;
+    color: white;
+}
+
 .task:before {
     content: "\2002";
 }
@@ -81,7 +100,6 @@ li button[data-v-839f65da] {
 html {
     font-family: "Open Sans", sans-serif;
     background: linear-gradient(45deg, #5189c1 25%, #41b883);
-    height: 100%;
     color: #333;
 }
 

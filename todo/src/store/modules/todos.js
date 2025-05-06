@@ -1,4 +1,4 @@
-import {GoogleSheetDB, Table} from "../../../../dnd/static/js/db/google.js";
+import {GoogleSheetDB, ORM, Table} from "../../../../dnd/static/js/db/google.js";
 
 const LOCAL_STORAGE_KEY = "todo-list";
 
@@ -57,25 +57,31 @@ export const actions = {
         // Получаем spreadsheetId из settings
         const settings = rootGetters["settings/allSettings"];
         const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
-        console.log(spreadsheetSetting)
         if (!spreadsheetSetting) {
             console.warn("spreadsheetId not found in settings");
             commit("SET_TODOS", loadFromStorage());
             return;
         }
+        console.log(spreadsheetSetting.value)
 
         let api = window.GoogleSheetDB || new GoogleSheetDB();
         await api.waitGoogle();
 
         const table = new Table({
             spreadsheetId: spreadsheetSetting.value,
+            list:'real_life_tasks'
         });
-
+        let list = await table.getAll()
+        let _todos = [];
+        let orm = new ORM(table.columns['real_life_tasks'])
+        list.forEach(e=>{
+            _todos.push(orm.getFormated(e))
+        })
 
         // Здесь можно загрузить что-то из Google Sheets, если надо
         // let rows = await table.getData(); // например
         // Но мы пока загружаем из localStorage
-        const todos = loadFromStorage();
+        const todos = _todos;
         commit("SET_TODOS", todos);
     },
 

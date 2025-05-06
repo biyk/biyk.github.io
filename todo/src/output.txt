@@ -2,65 +2,243 @@
 <template>
     <div class="container">
         <h1>To-Do List</h1>
-        <div id="app">
-            <div>
+        <el-tabs v-model="activeTab">
+            <el-tab-pane label="Добавить" name="new">
                 <TodoNew />
-                <TodoList />
-            </div>
-        </div>
+            </el-tab-pane>
+            <el-tab-pane label="Сегодня" name="today">
+                <TodoList :filter="today"  />
+            </el-tab-pane>
+            <el-tab-pane label="Список" name="list">
+                <TodoList :filter="all" />
+            </el-tab-pane>
+            <el-tab-pane label="Настройки" name="settings">
+                <div>Тут будут настройки</div>
+                <Settings/>
+            </el-tab-pane>
+        </el-tabs>
         <img src="@/assets/logo.png" class="vue-logo" alt="Vue.js Logo" />
     </div>
 </template>
 
 <script>
-import TodoNew from "@/components/TodoNew.vue";
-import TodoList from "@/components/TodoList.vue";
-import './assets/styles/App.css';
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import TodoNew from "@/components/TodoNew.vue"
+import TodoList from "@/components/TodoList.vue"
+import 'element-plus/dist/index.css'
+import './assets/styles/App.css'
+import Settings from "@/components/Settings.vue";
 
 export default {
     components: {
+        Settings,
         TodoNew,
         TodoList
+    },
+    setup() {
+        const route = useRoute()
+        const router = useRouter()
+
+        const activeTab = computed({
+            get() {
+                return route.query.tab || 'new'
+            },
+            set(val) {
+                router.replace({ query: { ...route.query, tab: val } })
+            }
+        })
+
+        return { activeTab }
     }
-};
+}
 </script>
 
 
 
+--- FILE: E:\work\biyk.github.io\todo\src\components\Settings.vue ---
+<template>
+    <div class="settings">
+        <h2>Настройки</h2>
+
+        <!-- Кнопка "Добавить" -->
+        <button @click="showForm = !showForm">
+            {{ showForm ? 'Отмена' : 'Добавить' }}
+        </button>
+
+        <!-- Форма для ввода нового значения -->
+        <div v-if="showForm" class="form">
+            <input
+                v-model="code"
+                placeholder="Код (code)"
+                type="text"
+            />
+            <input
+                v-model="value"
+                placeholder="Значение (value)"
+                type="text"
+            />
+            <button @click="saveSetting">Сохранить</button>
+        </div>
+
+        <!-- Отображаем список сохранённых пар код/значение -->
+        <div v-if="settings.length > 0">
+            <h3>Сохранённые настройки:</h3>
+            <ul>
+                <li v-for="(setting, index) in settings" :key="index">
+                    <span>{{ setting.code }}: {{ setting.value }}</span>
+                    <button @click="deleteSetting(index)">Удалить</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</template>
+
+<script>
+import {v4 as uuidv4} from "uuid";
+
+export default {
+    name: 'Settings',
+    data() {
+        return {
+            showForm: false,
+            code: '',
+            value: '',
+        }
+    },
+    computed: {
+        // Получаем все настройки из хранилища
+        settings() {
+            return this.$store.state.settings.settings  // assuming you're using the 'settings' module
+        }
+    },
+    methods: {
+        // Сохраняем новую пару код/значение
+        saveSetting() {
+            const setting = {
+                code: this.code.trim(),
+                uid: uuidv4(),
+                value: this.value.trim(),
+            }
+
+            if (!setting.code || !setting.value) {
+                alert("Оба поля обязательны")
+                return
+            }
+
+            // Отправляем сохранение в Vuex
+            this.$store.dispatch("settings/saveSettings", setting)
+
+            // Очистить форму и скрыть её
+            this.code = ''
+            this.value = ''
+            this.showForm = false
+        },
+        // Удаляем настройку по индексу
+        deleteSetting(index) {
+            this.$store.dispatch("settings/deleteSetting", index)
+        }
+    },
+}
+</script>
+
+<style scoped>
+.settings {
+    margin-top: 1rem;
+}
+.form {
+    margin-top: 1rem;
+}
+input {
+    display: inline-block;
+    margin-right: 0.5rem;
+    padding: 0.5rem;
+    width: 150px;
+}
+button {
+    padding: 0.5rem 1rem;
+    margin-left: 1rem;
+}
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+li button {
+    margin-left: 10px;
+    padding: 0.2rem 0.5rem;
+}
+</style>
+
+
 --- FILE: E:\work\biyk.github.io\todo\src\components\TodoList.vue ---
 <template>
-  <ul class="tasks">
-    <li
-      v-for="todo in todos"
-      :key="todo.id"
-      :class="{ completed: todo.completed }"
-      class="task"
-      @click="toggleTodo(todo.id)"
-    >
-      {{ todo.task }}
-      <span class="delete" @click="deleteTodo(todo.id)">ⓧ</span>
-    </li>
-  </ul>
+    <ul class="tasks">
+        <li
+            v-for="todo in filteredTodos"
+            :key="todo.id"
+            :class="{ completed: todo.completed }"
+            class="task"
+            @click="toggleTodo(todo.id)"
+
+        >
+            <span :title="todo.task_description">({{ todo.money_reward }}) {{ todo.task_title }}</span>
+            <span class="delete" @click="deleteTodo(todo.id)">ⓧ</span>
+        </li>
+    </ul>
 </template>
 
 <script>
 import '../assets/styles/components/TodoList.css';
 export default {
-  computed: {
-    todos() {
-      return this.$store.getters.getTodos;
-    }
-  },
-  methods: {
-    toggleTodo: function(id) {
-      this.$store.dispatch("toggleTodo", id);
+    computed: {
+        todos() {
+            return this.$store.getters["todos/getTodos"];
+        },
+        filteredTodos() {
+            const now = new Date();
+            const today = now.toISOString().slice(0, 10); // формат: YYYY-MM-DD
+            const tomorrow = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
+
+            return this.todos.filter(todo => {
+                if (todo.task_title === 'task_title') return false;
+
+                const due = todo.due_date?.slice(0, 10); // предполагаем, что есть поле `due_date`
+                switch (this.filter) {
+                    case 'today':
+                        return due === today;
+                    case 'tomorrow':
+                        return due === tomorrow;
+                    default:
+                        return true;
+                }
+            });
+        }
     },
-    deleteTodo: function(id) {
-      this.$store.dispatch("deleteTodo", id);
+    props: {
+        filter: {
+            type: String,
+            default: 'all'
+        }
+    },
+    methods: {
+        toggleTodo(id) {
+            this.$store.dispatch("todos/toggleTodo", id);
+        },
+        deleteTodo(id) {
+            this.$store.dispatch("todos/deleteTodo", id);
+        }
+    },
+    mounted() {
+        this.$store.dispatch("todos/initTodos");
     }
-  }
 };
 </script>
+
 
 
 
@@ -71,7 +249,7 @@ export default {
             class="todo-input"
             type="text"
             placeholder="Enter a new task"
-            v-model="task"
+            v-model="task_title"
         />
         <button @click="addTodo" type="button">+</button>
     </form>
@@ -79,21 +257,22 @@ export default {
 
 <script>
 import '../assets/styles/components/TodoNew.css';
+import { v4 as uuidv4 } from 'uuid';
 export default {
     data() {
         return {
-            task: "",
-            newId: 0
+            task_title: "",
+            task_uuid: uuidv4()
         };
     },
     methods: {
         addTodo: function() {
-            this.$store.dispatch("addTodo", {
-                newId: this.newId,
-                task: this.task
+            this.$store.dispatch("todos/addTodo", {
+                task_uuid: this.newId,
+                task_title: this.task_title
             });
-            this.newId++;
-            this.task = "";
+            this.task_uuid = uuidv4();
+            this.task_title = "";
         }
     }
 
@@ -105,88 +284,206 @@ export default {
 --- FILE: E:\work\biyk.github.io\todo\src\index.html ---
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Vue</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="main.js"></script>
-  </body>
+    <script>window.version = '0.2.37'</script>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="main.js"></script>
+</body>
 </html>
 
 
 --- FILE: E:\work\biyk.github.io\todo\src\main.js ---
 import { createApp } from 'vue'
 import App from './App.vue'
+import ElementPlus from 'element-plus'
+import router from './router'
 import store from './store/store.js'
 
 createApp(App)
+    .use(router)
     .use(store)
+    .use(ElementPlus)
     .mount('#app')
 
 
---- FILE: E:\work\biyk.github.io\todo\src\store\modules\todos.js ---
+--- FILE: E:\work\biyk.github.io\todo\src\router.js ---
+import { createRouter, createWebHistory } from 'vue-router'
+import App from '@/App.vue'
+
+const routes = [
+    {
+        path: '/',
+        name: 'Home',
+        component: App,
+    },
+]
+
+const router = createRouter({
+    history: createWebHistory(),
+    routes,
+})
+
+export default router
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\store\modules\settings.js ---
+const LOCAL_STORAGE_KEY = "todo-settings";
+
+async function saveToStorage(todos) {
+    await localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos));
+}
+
+async function loadFromStorage() {
+    const data =  localStorage.getItem(LOCAL_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+}
+
+
 export const state = {
-    todos: []
+    settings: await loadFromStorage(),  // Массив настроек
+}
+
+export const getters = {
+    allSettings: (state) => state.settings,  // Получить все настройки
+}
+
+export const mutations = {
+    async SET_SETTINGS(state, setting) {
+        state.settings.push(setting)  // Добавляем новую настройку в массив
+        await saveToStorage(state.settings)
+    },
+    async DELETE_SETTING(state, index) {
+        state.settings.splice(index, 1)  // Удаляем настройку по индексу
+        await saveToStorage(state.settings)
+    },
+}
+
+export const actions = {
+    saveSettings({ commit }, setting) {
+        commit('SET_SETTINGS', setting)  // Вызываем мутацию для сохранения
+    },
+    deleteSetting({ commit }, index) {
+        commit('DELETE_SETTING', index)  // Вызываем мутацию для удаления
+    },
+}
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\store\modules\todos.js ---
+import {GoogleSheetDB, ORM, Table} from "../../../../dnd/static/js/db/google.js";
+
+const LOCAL_STORAGE_KEY = "todo-list";
+
+function saveToStorage(todos) {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos));
+}
+
+function loadFromStorage() {
+    const data =  localStorage.getItem(LOCAL_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+}
+
+export const state = {
+    todos: loadFromStorage()
 };
 
 export const getters = {
-    getTodos: state => state.todos
+    getTodos: (state) => state.todos,
 };
 
 export const mutations = {
-    ADD_TODO: (state, payload) => {
+    SET_TODOS(state, todos) {
+        state.todos = todos;
+    },
+    ADD_TODO(state, payload) {
         const newTask = {
             id: payload.newId,
             task: payload.task,
-            completed: false
+            completed: false,
         };
         state.todos.unshift(newTask);
+        saveToStorage(state.todos);
     },
-    TOGGLE_TODO: (state, payload) => {
-        const item = state.todos.find(todo => todo.id === payload);
-        if (item) { // Проверяем, существует ли todo с таким id
+    TOGGLE_TODO(state, payload) {
+        const item = state.todos.find((todo) => todo.id === payload);
+        if (item) {
             item.completed = !item.completed;
+            saveToStorage(state.todos);
         } else {
-            console.error('Todo not found with id:', payload); // Для отладки
+            console.error('Todo not found with id:', payload);
         }
     },
-    DELETE_TODO: (state, payload) => {
-        const index = state.todos.findIndex(todo => todo.id === payload);
+    DELETE_TODO(state, payload) {
+        const index = state.todos.findIndex((todo) => todo.id === payload);
         if (index !== -1) {
             state.todos.splice(index, 1);
+            saveToStorage(state.todos);
         } else {
-            console.error('Todo not found with id:', payload); // Для отладки
+            console.error('Todo not found with id:', payload);
         }
     }
 };
 
 export const actions = {
-    addTodo: (context, payload) => {
-        context.commit("ADD_TODO", payload);
+    async initTodos({ commit, rootGetters }) {
+        // Получаем spreadsheetId из settings
+        const settings = rootGetters["settings/allSettings"];
+        const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+        if (!spreadsheetSetting) {
+            console.warn("spreadsheetId not found in settings");
+            commit("SET_TODOS", loadFromStorage());
+            return;
+        }
+        console.log(spreadsheetSetting.value)
+
+        let api = window.GoogleSheetDB || new GoogleSheetDB();
+        await api.waitGoogle();
+
+        const table = new Table({
+            spreadsheetId: spreadsheetSetting.value,
+            list:'real_life_tasks'
+        });
+        let list = await table.getAll()
+        let _todos = [];
+        let orm = new ORM(table.columns['real_life_tasks'])
+        list.forEach(e=>{
+            _todos.push(orm.getFormated(e))
+        })
+
+        // Здесь можно загрузить что-то из Google Sheets, если надо
+        // let rows = await table.getData(); // например
+        // Но мы пока загружаем из localStorage
+        const todos = _todos;
+        commit("SET_TODOS", todos);
     },
-    toggleTodo: (context, payload) => {
-        context.commit("TOGGLE_TODO", payload);
+
+    addTodo({ commit }, payload) {
+        commit("ADD_TODO", payload);
     },
-    deleteTodo: (context, payload) => {
-        context.commit("DELETE_TODO", payload);
-    }
+    toggleTodo({ commit }, payload) {
+        commit("TOGGLE_TODO", payload);
+    },
+    deleteTodo({ commit }, payload) {
+        commit("DELETE_TODO", payload);
+    },
 };
 
 
 --- FILE: E:\work\biyk.github.io\todo\src\store\store.js ---
-// store.js (Vue 3 + Vuex 4)
 import { createStore } from 'vuex'
-import * as todos from '@/store/modules/todos.js'
+import * as todos from '@/store/modules/todos.js'  // твой модуль для задач
+import * as settings from '@/store/modules/settings.js'  // новый модуль для настроек
 
 export default createStore({
-    state: todos.state,
-    getters: todos.getters,
-    mutations: todos.mutations,
-    actions: todos.actions
+    modules: {
+        todos: { ...todos, namespaced: true },
+        settings: { ...settings, namespaced: true }
+    }
 })
 
 

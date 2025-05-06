@@ -1,0 +1,11 @@
+.todo-input {
+    font-family: "Open Sans", sans-serif;
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    outline: none;
+    border-radius: 0.25rem;
+    border-style: none;
+    border: solid 1px lightgray;
+    box-sizing: border-box;
+}

@@ -389,6 +389,7 @@ export class GoogleSheetDB {
         this.tokenClient = {};
         this.gapiInited = false;
         this.gisInited = false;
+        this.authorize_button = document.getElementById('authorize_button')
 
         this.headers = [];
         this.columns = {};
@@ -409,8 +410,11 @@ export class GoogleSheetDB {
         });
 
         let timer = setInterval(async () => {
-            document.getElementById('signout_button').textContent =
-                localStorage.getItem('gapi_token_expires') - this.getTime();
+            if (document.getElementById('signout_button')){
+                document.getElementById('signout_button').textContent =
+                    localStorage.getItem('gapi_token_expires') - this.getTime();
+            }
+
             if (this.expired()) {
                 console.log('нужно авторизоваться');
                 document.body.dispatchEvent(new Event('doAuth'));
@@ -470,7 +474,9 @@ export class GoogleSheetDB {
 
     maybeEnableButtons() {
         if (this.gapiInited && this.gisInited) {
-            document.getElementById('authorize_button').style.visibility = 'visible';
+            if (this.authorize_button){
+                this.authorize_button.style.visibility = 'visible';
+            }
         }
     }
 
@@ -508,11 +514,14 @@ export class GoogleSheetDB {
     }
 
     eventHandler() {
-        document.getElementById('authorize_button').onclick = this.handleAuthClick.bind(this,()=>{
-            location.reload();
-        });
-
-        document.getElementById('signout_button').onclick = this.handleSignoutClick.bind(this);
+        if (this.authorize_button){
+            this.authorize_button.onclick = this.handleAuthClick.bind(this,()=>{
+                location.reload();
+            });
+        }
+        if (document.getElementById('signout_button')){
+            document.getElementById('signout_button').onclick = this.handleSignoutClick.bind(this);
+        }
     }
 
     handleAuthClick(callback) {
@@ -521,7 +530,7 @@ export class GoogleSheetDB {
                 throw (resp);
             }
             document.getElementById('signout_button').style.visibility = 'visible';
-            document.getElementById('authorize_button').innerText = 'Refresh';
+            this.authorize_button.innerText = 'Refresh';
 
             // Сохраняем токен в localStorage
             const token = gapi.client.getToken();
@@ -545,7 +554,7 @@ export class GoogleSheetDB {
             gapi.client.setToken('');
             localStorage.removeItem('gapi_token'); // удаляем токен из localStorage
             document.getElementById('content').innerText = '';
-            document.getElementById('authorize_button').innerText = 'Authorize';
+            this.authorize_button.innerText = 'Authorize';
 
         }
     }

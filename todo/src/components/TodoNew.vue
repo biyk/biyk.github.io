@@ -4,7 +4,7 @@
             class="todo-input"
             type="text"
             placeholder="Enter a new task"
-            v-model="task"
+            v-model="task_title"
         />
         <button @click="addTodo" type="button">+</button>
     </form>
@@ -16,18 +16,18 @@ import { v4 as uuidv4 } from 'uuid';
 export default {
     data() {
         return {
-            task: "",
-            newId: uuidv4()
+            task_title: "",
+            task_uuid: uuidv4()
         };
     },
     methods: {
         addTodo: function() {
             this.$store.dispatch("todos/addTodo", {
-                newId: this.newId,
-                task: this.task
+                task_uuid: this.newId,
+                task_title: this.task_title
             });
-            this.newId = uuidv4();
-            this.task = "";
+            this.task_uuid = uuidv4();
+            this.task_title = "";
         }
     }
 

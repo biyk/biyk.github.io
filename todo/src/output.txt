@@ -1,0 +1,215 @@
+--- FILE: E:\work\biyk.github.io\todo\src\App.vue ---
+<template>
+    <div class="container">
+        <h1>To-Do List</h1>
+        <div id="app">
+            <div>
+                <TodoNew />
+                <TodoList />
+            </div>
+        </div>
+        <img src="@/assets/logo.png" class="vue-logo" alt="Vue.js Logo" />
+    </div>
+</template>
+
+<script>
+import TodoNew from "@/components/TodoNew.vue";
+import TodoList from "@/components/TodoList.vue";
+import './assets/styles/App.css';
+
+export default {
+    components: {
+        TodoNew,
+        TodoList
+    }
+};
+</script>
+
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\components\TodoList.vue ---
+<template>
+  <ul class="tasks">
+    <li
+      v-for="todo in todos"
+      :key="todo.id"
+      :class="{ completed: todo.completed }"
+      class="task"
+      @click="toggleTodo(todo.id)"
+    >
+      {{ todo.task }}
+      <span class="delete" @click="deleteTodo(todo.id)">ⓧ</span>
+    </li>
+  </ul>
+</template>
+
+<script>
+import '../assets/styles/components/TodoList.css';
+export default {
+  computed: {
+    todos() {
+      return this.$store.getters.getTodos;
+    }
+  },
+  methods: {
+    toggleTodo: function(id) {
+      this.$store.dispatch("toggleTodo", id);
+    },
+    deleteTodo: function(id) {
+      this.$store.dispatch("deleteTodo", id);
+    }
+  }
+};
+</script>
+
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\components\TodoNew.vue ---
+<template>
+    <form>
+        <input
+            class="todo-input"
+            type="text"
+            placeholder="Enter a new task"
+            v-model="task"
+        />
+        <button @click="addTodo" type="button">+</button>
+    </form>
+</template>
+
+<script>
+import '../assets/styles/components/TodoNew.css';
+export default {
+    data() {
+        return {
+            task: "",
+            newId: 0
+        };
+    },
+    methods: {
+        addTodo: function() {
+            this.$store.dispatch("addTodo", {
+                newId: this.newId,
+                task: this.task
+            });
+            this.newId++;
+            this.task = "";
+        }
+    }
+
+};
+</script>
+
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\index.html ---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + Vue</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\main.js ---
+import { createApp } from 'vue'
+import App from './App.vue'
+import store from './store/store.js'
+
+createApp(App)
+    .use(store)
+    .mount('#app')
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\store\modules\todos.js ---
+export const state = {
+    todos: []
+};
+
+export const getters = {
+    getTodos: state => state.todos
+};
+
+export const mutations = {
+    ADD_TODO: (state, payload) => {
+        const newTask = {
+            id: payload.newId,
+            task: payload.task,
+            completed: false
+        };
+        state.todos.unshift(newTask);
+    },
+    TOGGLE_TODO: (state, payload) => {
+        const item = state.todos.find(todo => todo.id === payload);
+        if (item) { // Проверяем, существует ли todo с таким id
+            item.completed = !item.completed;
+        } else {
+            console.error('Todo not found with id:', payload); // Для отладки
+        }
+    },
+    DELETE_TODO: (state, payload) => {
+        const index = state.todos.findIndex(todo => todo.id === payload);
+        if (index !== -1) {
+            state.todos.splice(index, 1);
+        } else {
+            console.error('Todo not found with id:', payload); // Для отладки
+        }
+    }
+};
+
+export const actions = {
+    addTodo: (context, payload) => {
+        context.commit("ADD_TODO", payload);
+    },
+    toggleTodo: (context, payload) => {
+        context.commit("TOGGLE_TODO", payload);
+    },
+    deleteTodo: (context, payload) => {
+        context.commit("DELETE_TODO", payload);
+    }
+};
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\store\store.js ---
+// store.js (Vue 3 + Vuex 4)
+import { createStore } from 'vuex'
+import * as todos from '@/store/modules/todos.js'
+
+export default createStore({
+    state: todos.state,
+    getters: todos.getters,
+    mutations: todos.mutations,
+    actions: todos.actions
+})
+
+
+--- FILE: E:\work\biyk.github.io\todo\src\vite.config.js ---
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { resolve } from 'path'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+    plugins: [vue()],
+    base: "",
+    resolve: {
+        alias: {
+            '@': resolve(__dirname, './') // ← если vite.config.js внутри src
+            // если vite.config.js в корне проекта, то './src'
+        }
+    },
+    build: {
+        // Папка выше относительно src => это ../
+        outDir: resolve(__dirname, '../'),
+        emptyOutDir: false, // очищает папку перед сборкой (по умолчанию true только если outDir внутри проекта)
+    }
+})
+
+

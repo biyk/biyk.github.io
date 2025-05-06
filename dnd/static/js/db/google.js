@@ -14,7 +14,7 @@ export class ORM {
     getRaw(data = {}) {
         let result = [];
         this.columns.forEach((value, index) => {
-            //console.log(index, value ,data[value])
+            console.log(index, value ,data[value])
 
             if (value === 'value') {
                 const raw = typeof data[value] === 'object' ? JSON.stringify(data[value]) : data[value];
@@ -46,7 +46,7 @@ export class Table {
         this.spreadsheetId = options.spreadsheetId || spreadsheetId;
         this.api = window.GoogleSheetDB || new GoogleSheetDB();
         this.spreadsheets = gapi.client.sheets.spreadsheets;
-        this.columns = {};
+        this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + '/' + options.list + '/columns')) || {};
         this.codes = {};
         this.sending = false;
     }

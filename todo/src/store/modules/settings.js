@@ -4,14 +4,14 @@ async function saveToStorage(todos) {
     await localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos));
 }
 
-async function loadFromStorage() {
+function loadFromStorage() {
     const data =  localStorage.getItem(LOCAL_STORAGE_KEY);
     return data ? JSON.parse(data) : [];
 }
 
 
 export const state = {
-    settings: await loadFromStorage(),  // Массив настроек
+    settings: loadFromStorage(),  // Массив настроек
 }
 
 export const getters = {

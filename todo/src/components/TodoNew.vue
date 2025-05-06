@@ -12,12 +12,12 @@
 
 <script>
 import '../assets/styles/components/TodoNew.css';
-import { v4 as uuidv4 } from 'uuid';
+import { generateUUIDv4 } from '@/utils/uuid';
 export default {
     data() {
         return {
             task_title: "",
-            task_uuid: uuidv4()
+            task_uuid: generateUUIDv4()
         };
     },
     methods: {
@@ -26,7 +26,7 @@ export default {
                 task_uuid: this.newId,
                 task_title: this.task_title
             });
-            this.task_uuid = uuidv4();
+            this.task_uuid = generateUUIDv4();
             this.task_title = "";
         }
     }

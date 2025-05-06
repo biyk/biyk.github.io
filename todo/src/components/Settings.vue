@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import {v4 as uuidv4} from "uuid";
+import { generateUUIDv4 } from '@/utils/uuid';
 
 export default {
     name: 'Settings',
@@ -58,7 +58,7 @@ export default {
         saveSetting() {
             const setting = {
                 code: this.code.trim(),
-                uid: uuidv4(),
+                uid: generateUUIDv4(),
                 value: this.value.trim(),
             }
 

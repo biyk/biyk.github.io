@@ -392,6 +392,10 @@ export class GoogleSheetDB {
 
         this.headers = [];
         this.columns = {};
+
+        if (this.expired()){
+            localStorage.setItem('gapi_token', '');
+        }
         this.storedToken = localStorage.getItem('gapi_token');
         this.callback = options.callback;
         loadScriptOnce({
@@ -408,11 +412,6 @@ export class GoogleSheetDB {
             let worked = localStorage.getItem('gapi_token_expires') - this.getTime();
             document.getElementById('signout_button').textContent = worked;
             if (this.expired()) {
-                if (typeof gapi !=='undefined') {
-                    gapi.client.setToken('');
-                }
-                localStorage.setItem('gapi_token', '');
-
                 console.log('нужно авторизоваться');
                 document.body.dispatchEvent(new Event('doAuth'));
                 clearInterval(timer);

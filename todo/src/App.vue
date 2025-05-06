@@ -14,6 +14,12 @@
             <el-tab-pane label="Список" name="list">
                 <TodoList filter="all" />
             </el-tab-pane>
+            <el-tab-pane label="Магазин" name="shop">
+                <div>Тут будут покупки</div>
+            </el-tab-pane>
+            <el-tab-pane label="Персонаж" name="player">
+                <div>Тут будут данные игрока</div>
+            </el-tab-pane>
             <el-tab-pane label="Настройки" name="settings">
                 <div>Тут будут настройки</div>
                 <Settings/>

@@ -1,10 +1,9 @@
 <template>
     <ul class="tasks">
         <li
-            v-for="todo in filteredTodos"
+            v-for="todo in sortedTodos"
             :key="todo.id"
-            :class="{ completed: todo.completed }"
-            class="task"
+            :class="['task', todo.task_color, { completed: todo.completed }]"
             @click="toggleTodo(todo.id)"
 
         >
@@ -45,6 +44,11 @@ export default {
                         return true;
                 }
             });
+        },
+        sortedTodos() {
+            let todos = this.filteredTodos;
+            // Сортировка по полю `task_sort`, предполагается, что это число
+            return todos.sort((a, b) => a.task_sort - b.task_sort);
         }
     },
     props: {

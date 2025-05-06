@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import App from '@/App.vue'
+import { createRouter, createWebHashHistory } from 'vue-router';
+import App from '@/App.vue';
 
 const routes = [
     {
@@ -7,11 +7,11 @@ const routes = [
         name: 'Home',
         component: App,
     },
-]
+];
 
 const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHashHistory(), // ← заменили здесь
     routes,
-})
+});
 
-export default router
+export default router;

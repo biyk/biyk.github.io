@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.43";
+window.version = "0.2.44";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8392,6 +8392,12 @@ function createWebHistory(base) {
   });
   return routerHistory;
 }
+function createWebHashHistory(base) {
+  base = location.host ? base || location.pathname + location.search : "";
+  if (!base.includes("#"))
+    base += "#";
+  return createWebHistory(base);
+}
 function isRouteLocation(route) {
   return typeof route === "string" || route && typeof route === "object";
 }
@@ -9831,12 +9837,6 @@ function extractChangingRecords(to, from) {
   }
   return [leavingRecords, updatingRecords, enteringRecords];
 }
-function useRouter() {
-  return inject(routerKey);
-}
-function useRoute(_name) {
-  return inject(routeLocationKey);
-}
 const TodoNew$1 = "";
 function generateUUIDv4() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(char) {
@@ -10910,17 +10910,15 @@ const _sfc_main$2y = {
     TodoList
   },
   setup() {
-    const route = useRoute();
-    const router2 = useRouter();
-    const store2 = useStore$1();
     const activeTab = computed({
       get() {
-        return route.query.tab || "new";
+        return window.location.hash.replace("#", "") || "new";
       },
       set(val) {
-        router2.replace({ query: { ...route.query, tab: val } });
+        window.location.hash = val;
       }
     });
+    const store2 = useStore$1();
     onMounted(() => {
       startTaskAgent(store2);
     });
@@ -67359,7 +67357,8 @@ const routes = [
   }
 ];
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
+  // ← заменили здесь
   routes
 });
 class WebStorage {

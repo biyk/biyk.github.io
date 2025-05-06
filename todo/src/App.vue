@@ -47,29 +47,28 @@ export default {
         TodoList
     },
     setup() {
-        const route = useRoute()
-        const router = useRouter()
-        const store = useStore()
-
         const activeTab = computed({
             get() {
-                return route.query.tab || 'new'
+                return window.location.hash.replace('#', '') || 'new';
             },
             set(val) {
-                router.replace({ query: { ...route.query, tab: val } })
+                window.location.hash = val;
             }
-        })
+        });
+
+        const store = useStore();
 
         onMounted(() => {
-            startTaskAgent(store);  // 🟢 запускаем
-        })
+            startTaskAgent(store);
+        });
 
         onBeforeUnmount(() => {
-            stopTaskAgent();  // 🔴 останавливаем
-        })
+            stopTaskAgent();
+        });
 
-        return { activeTab }
+        return { activeTab };
     }
+
 }
 </script>
 

@@ -33,12 +33,14 @@
             </ul>
         </div>
         <button @click="setTaskToCalendar">Заполнить календарь</button>
+        <button @click="setTaskCompleted">Отметить завершенные</button>
     </div>
 </template>
 
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
 import {addEvent, getFreeSlots, listEvents} from "@/utils/calendar.js";
+import {makeTaskDone} from "@/utils/tasks.js";
 
 export default {
     name: 'Settings',
@@ -81,9 +83,28 @@ export default {
         deleteSetting(index) {
             this.$store.dispatch("settings/deleteSetting", index)
         },
+        async setTaskCompleted(){
+            this.$store.dispatch("todos/initTodos");
+            let all = this.$store.getters["todos/getTodos"];
+            const now = new Date();
+            //получаем список дел на сегодня
+            let today_events = await listEvents();
+            today_events.forEach((event)=>{
+                let task_uuid = event.description;
+                let todos = this.$store.getters["todos/getTodos"];
+                const task = todos.filter(todo => todo.task_uuid === task_uuid);
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , now.getHours(), now.getMinutes(), 0, 0).getTime();
+
+                if (task.length && task[0].start_date < today){
+                    console.log(task);
+                    makeTaskDone(task, this.$store);
+                }
+            });
+        },
         async setTaskToCalendar() {
             //получаем список задач на сегодня
-            let all = this.$store.getters["todos/getTodos"];
+            this.$store.dispatch("todos/initTodos");
+            let all = this.$store.getters["todos/getTodos"].sort((a, b) => a.task_sort - b.task_sort);
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
@@ -101,16 +122,15 @@ export default {
             let count = 0;
             for (const task of today_tasks) {
                 let duration = task.task_time;
-                if (!duration) continue;
+                if (!duration || duration==='0') continue;
                 //поиск свободного слота под задачу
                 let slotIndex = freeSlots.findIndex(slot => slot.duration >= duration);
                 if (slotIndex === -1) continue; // нет подходящего слота
                 if (count++ > 20) continue;
 
                 let slot = freeSlots[slotIndex];
-                let exist = today_events.filter((e)=>task.task_title.includes(e.summary));
+                let exist = today_events.filter((e)=>task.task_title.includes(e.summary)||e.summary.includes(task.task_title));
                 if (exist?.length) continue;
-                console.log(exist);
                 //добавление события в календарь
                 //TODO проверить что событие еще не добавлено в календарь
                 const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);

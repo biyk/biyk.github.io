@@ -4,7 +4,9 @@ export function startTaskAgent(store) {
     if (intervalId) return; // агент уже работает
 
     intervalId = setInterval(() => {
+        store.dispatch("todos/initTodos");
         const todos = store.getters['todos/getTodos'];
+
         const now = new Date();
 
         todos.forEach(todo => {

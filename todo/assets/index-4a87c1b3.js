@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.45";
+window.version = "0.2.46";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7986,9 +7986,9 @@ async function listEvents() {
   const events = response.result.items;
   if (events.length > 0) {
     events.forEach((event) => {
-      const start2 = event.start.dateTime || event.start.date;
-      const end2 = event.start.dateTime || event.start.date;
-      console.log(`${start2} — ${end2} : ${event.summary}`, event);
+      event.start.dateTime || event.start.date;
+      event.start.dateTime || event.start.date;
+      console.log(event.summary);
     });
   } else {
     console.log("Событий на сегодня нет.");
@@ -7996,11 +7996,11 @@ async function listEvents() {
   return events;
 }
 async function addEvent(event) {
-  let response = await gapi.client.calendar.events.insert({
+  await gapi.client.calendar.events.insert({
     calendarId: "primary",
     resource: event
   });
-  console.log("Событие добавлено:", response.result.htmlLink);
+  console.log("Событие добавлено:", event.summary);
 }
 function getFreeSlots(events, workStart = "00:00", workEnd = "23:00", minSlotMinutes = 15) {
   if (!Array.isArray(events))
@@ -8043,7 +8043,7 @@ function getFreeSlots(events, workStart = "00:00", workEnd = "23:00", minSlotMin
   }
   return freeSlots;
 }
-const Settings_vue_vue_type_style_index_0_scoped_38d72625_lang = "";
+const Settings_vue_vue_type_style_index_0_scoped_6d127d1d_lang = "";
 const _sfc_main$2z = {
   name: "Settings",
   data() {
@@ -8096,12 +8096,18 @@ const _sfc_main$2z = {
       let count = 0;
       for (const task of today_tasks) {
         let duration = task.task_time;
+        if (!duration)
+          continue;
         let slotIndex = freeSlots.findIndex((slot2) => slot2.duration >= duration);
         if (slotIndex === -1)
           continue;
-        if (count++ > 10)
+        if (count++ > 20)
           continue;
         let slot = freeSlots[slotIndex];
+        let exist = today_events.filter((e) => task.task_title.includes(e.summary));
+        if (exist == null ? void 0 : exist.length)
+          continue;
+        console.log(exist);
         const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
         const event = {
           summary: task.task_title,
@@ -8177,7 +8183,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     }, "Заполнить календарь")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-38d72625"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-6d127d1d"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }
@@ -9142,6 +9148,7 @@ function startTaskAgent(store2) {
   if (intervalId)
     return;
   intervalId = setInterval(() => {
+    store2.dispatch("todos/initTodos");
     const todos2 = store2.getters["todos/getTodos"];
     const now2 = new Date();
     todos2.forEach((todo) => {
@@ -67645,7 +67652,11 @@ class Table {
     this.spreadsheetId = options.spreadsheetId || spreadsheetId;
     this.api = window.GoogleSheetDB || new GoogleSheetDB();
     this.spreadsheets = gapi.client.sheets.spreadsheets;
-    this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + "/" + options.list + "/columns")) || {};
+    this.columns = [];
+    try {
+      this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + "/" + options.list + "/columns")) || {};
+    } catch (e) {
+    }
     this.codes = {};
     this.sending = false;
   }

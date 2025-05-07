@@ -17,7 +17,7 @@ export async function listEvents() {
         events.forEach(event => {
             const start = event.start.dateTime || event.start.date;
             const end = event.start.dateTime || event.start.date;
-            console.log(`${start} — ${end} : ${event.summary}`, event);
+            console.log(event.summary);
         });
     } else {
         console.log('Событий на сегодня нет.');
@@ -30,7 +30,7 @@ export async function addEvent(event) {
         calendarId: 'primary',
         resource: event,
     });
-    console.log('Событие добавлено:', response.result.htmlLink);
+    console.log('Событие добавлено:', event.summary);
 
 }
 

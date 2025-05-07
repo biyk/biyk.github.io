@@ -101,12 +101,16 @@ export default {
             let count = 0;
             for (const task of today_tasks) {
                 let duration = task.task_time;
+                if (!duration) continue;
                 //поиск свободного слота под задачу
                 let slotIndex = freeSlots.findIndex(slot => slot.duration >= duration);
                 if (slotIndex === -1) continue; // нет подходящего слота
-                if (count++ > 10) continue;
-                let slot = freeSlots[slotIndex];
+                if (count++ > 20) continue;
 
+                let slot = freeSlots[slotIndex];
+                let exist = today_events.filter((e)=>task.task_title.includes(e.summary));
+                if (exist?.length) continue;
+                console.log(exist);
                 //добавление события в календарь
                 //TODO проверить что событие еще не добавлено в календарь
                 const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);

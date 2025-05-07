@@ -48,7 +48,12 @@ export class Table {
         this.spreadsheetId = options.spreadsheetId || spreadsheetId;
         this.api = window.GoogleSheetDB || new GoogleSheetDB();
         this.spreadsheets = gapi.client.sheets.spreadsheets;
-        this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + '/' + options.list + '/columns')) || {};
+        this.columns = [];
+        try {
+            this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + '/' + options.list + '/columns')) || {};
+        } catch (e) {
+
+        }
         this.codes = {};
         this.sending = false;
     }

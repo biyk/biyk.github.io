@@ -31,7 +31,6 @@
 
 <script>
 import { computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import TodoNew from "@/components/TodoNew.vue"
 import TodoList from "@/components/TodoList.vue"
 import Settings from "@/components/Settings.vue"
@@ -49,9 +48,10 @@ export default {
     setup() {
         const activeTab = computed({
             get() {
-                return window.location.hash.replace('#', '') || 'new';
+                return window.location.hash.replace('#/', '') || 'new';
             },
             set(val) {
+                console.log(val)
                 window.location.hash = val;
             }
         });

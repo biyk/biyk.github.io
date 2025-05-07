@@ -32,11 +32,13 @@
                 </li>
             </ul>
         </div>
+        <button @click="setTaskToCalendar">Заполнить календарь</button>
     </div>
 </template>
 
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
+import {addEvent, getFreeSlots, listEvents} from "@/utils/calendar.js";
 
 export default {
     name: 'Settings',
@@ -78,6 +80,63 @@ export default {
         // Удаляем настройку по индексу
         deleteSetting(index) {
             this.$store.dispatch("settings/deleteSetting", index)
+        },
+        async setTaskToCalendar() {
+            //получаем список задач на сегодня
+            let all = this.$store.getters["todos/getTodos"];
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
+            let today_tasks = all.filter(todo => {
+                if (todo.task_title === 'task_title') return false;
+                const start = todo.start_date;
+                return start < today;
+            });
+
+            //получаем список дел на сегодня
+            let today_events = await listEvents();
+
+            //записываем в свободные места календаря события
+            let freeSlots = getFreeSlots(today_events);
+            let count = 0;
+            for (const task of today_tasks) {
+                let duration = task.task_time;
+                //поиск свободного слота под задачу
+                let slotIndex = freeSlots.findIndex(slot => slot.duration >= duration);
+                if (slotIndex === -1) continue; // нет подходящего слота
+                if (count++ > 10) continue;
+                let slot = freeSlots[slotIndex];
+
+                //добавление события в календарь
+                //TODO проверить что событие еще не добавлено в календарь
+                const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
+                const event = {
+                    summary: task.task_title,
+                    description: task.task_uuid,
+                    start: {
+                        dateTime: slot.start,
+                        timeZone: 'Europe/Samara',
+                    },
+                    end: {
+                        dateTime: endDate.toISOString(),
+                        timeZone: 'Europe/Samara',
+                    },
+                };
+
+                //
+                await addEvent(event);
+
+                // обновление или удаление слота
+                const updatedDuration = slot.duration - duration;
+                if (updatedDuration < 15) {
+                    //удалить слот
+                    freeSlots.splice(slotIndex, 1);
+                } else {
+                    //обновить слот
+                    freeSlots[slotIndex].start = endDate.toISOString();
+                    freeSlots[slotIndex].duration = updatedDuration;
+                }
+            }
         }
     },
 }

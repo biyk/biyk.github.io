@@ -66,32 +66,32 @@
     height: 1.25rem;
     text-align: center;
 }
-.settings[data-v-839f65da] {
+.settings[data-v-38d72625] {
     margin-top: 1rem;
 }
-.form[data-v-839f65da] {
+.form[data-v-38d72625] {
     margin-top: 1rem;
 }
-input[data-v-839f65da] {
+input[data-v-38d72625] {
     display: inline-block;
     margin-right: 0.5rem;
     padding: 0.5rem;
     width: 150px;
 }
-button[data-v-839f65da] {
+button[data-v-38d72625] {
     padding: 0.5rem 1rem;
     margin-left: 1rem;
 }
-ul[data-v-839f65da] {
+ul[data-v-38d72625] {
     list-style-type: none;
     padding: 0;
 }
-li[data-v-839f65da] {
+li[data-v-38d72625] {
     display: flex;
     align-items: center;
     margin-bottom: 0.5rem;
 }
-li button[data-v-839f65da] {
+li button[data-v-38d72625] {
     margin-left: 10px;
     padding: 0.2rem 0.5rem;
 }

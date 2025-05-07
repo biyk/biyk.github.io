@@ -3,7 +3,9 @@ import {WebStorage} from "./webStorage.js";
 export const API_KEY = 'AIzaSyBTTqB_rSfwzuTIdF1gcQ5-U__fGzrQ_zs';
 export const spreadsheetId = '13zsZqGICZKQYMCcGkhgr7pzhH1z-LWFiH0LMrI6NGLM';
 const CLIENT_ID = '21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const DISCOVERY_DOC_CALENDAR = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+const DISCOVERY_DOC_SHEETS = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets';
 
 
 export class ORM {
@@ -483,7 +485,7 @@ export class GoogleSheetDB {
     async initializeGapiClient() {
         await gapi.client.init({
             apiKey: this.apiKey,
-            discoveryDocs: [this.DISCOVERY_DOC],
+            discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS],
         });
 
         if (this.storedToken) {
@@ -505,6 +507,7 @@ export class GoogleSheetDB {
         this.tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
+            discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS],
             callback: () => {
             }, // пустой, определим в handleAuthClick
         });

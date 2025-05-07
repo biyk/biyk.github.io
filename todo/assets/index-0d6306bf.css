@@ -66,32 +66,32 @@
     height: 1.25rem;
     text-align: center;
 }
-.settings[data-v-6d127d1d] {
+.settings[data-v-d3882f31] {
     margin-top: 1rem;
 }
-.form[data-v-6d127d1d] {
+.form[data-v-d3882f31] {
     margin-top: 1rem;
 }
-input[data-v-6d127d1d] {
+input[data-v-d3882f31] {
     display: inline-block;
     margin-right: 0.5rem;
     padding: 0.5rem;
     width: 150px;
 }
-button[data-v-6d127d1d] {
+button[data-v-d3882f31] {
     padding: 0.5rem 1rem;
     margin-left: 1rem;
 }
-ul[data-v-6d127d1d] {
+ul[data-v-d3882f31] {
     list-style-type: none;
     padding: 0;
 }
-li[data-v-6d127d1d] {
+li[data-v-d3882f31] {
     display: flex;
     align-items: center;
     margin-bottom: 0.5rem;
 }
-li button[data-v-6d127d1d] {
+li button[data-v-d3882f31] {
     margin-left: 10px;
     padding: 0.2rem 0.5rem;
 }

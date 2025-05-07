@@ -30,6 +30,7 @@ export const mutations = {
 
     SET_TODOS(state, todos) {
         state.todos = todos;
+        saveTodos(state.todos);
     },
     ADD_TODO(state, payload) {
         const newTask = {

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.46";
+window.version = "0.2.47";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7880,19 +7880,29 @@ const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_ren
 const TodoList$1 = "";
 function makeTaskDone(task, store2) {
   let {
-    task_uuid,
+    repeat_index,
     repeat_mode,
     start_date,
     task_finish_date
   } = task[0];
-  if (repeat_mode === "1") {
-    start_date = new Date().getTime() + 1e3 * 30 * 24 * 60 * 60;
-    task_finish_date = new Date().getTime() + 1e3 * 31 * 24 * 60 * 60;
-  }
-  if (repeat_mode === "0") {
-    const now2 = new Date();
-    start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
-    task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+  repeat_index = parseInt(repeat_index);
+  const now2 = new Date();
+  switch (repeat_mode) {
+    case "1":
+      start_date = new Date().getTime() + 1e3 * 30 * 24 * 60 * 60;
+      task_finish_date = new Date().getTime() + 1e3 * 31 * 24 * 60 * 60;
+      break;
+    case "0":
+      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+      break;
+    case "6":
+      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
+      break;
+    default:
+      console.log(task[0]);
+      return;
   }
   const updatedTask = {
     ...task[0],
@@ -7988,7 +7998,6 @@ async function listEvents() {
     events.forEach((event) => {
       event.start.dateTime || event.start.date;
       event.start.dateTime || event.start.date;
-      console.log(event.summary);
     });
   } else {
     console.log("Событий на сегодня нет.");
@@ -8043,7 +8052,7 @@ function getFreeSlots(events, workStart = "00:00", workEnd = "23:00", minSlotMin
   }
   return freeSlots;
 }
-const Settings_vue_vue_type_style_index_0_scoped_6d127d1d_lang = "";
+const Settings_vue_vue_type_style_index_0_scoped_d3882f31_lang = "";
 const _sfc_main$2z = {
   name: "Settings",
   data() {
@@ -8080,8 +8089,25 @@ const _sfc_main$2z = {
     deleteSetting(index2) {
       this.$store.dispatch("settings/deleteSetting", index2);
     },
+    async setTaskCompleted() {
+      this.$store.dispatch("todos/initTodos");
+      this.$store.getters["todos/getTodos"];
+      const now2 = new Date();
+      let today_events = await listEvents();
+      today_events.forEach((event) => {
+        let task_uuid = event.description;
+        let todos2 = this.$store.getters["todos/getTodos"];
+        const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
+        const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
+        if (task.length && task[0].start_date < today) {
+          console.log(task);
+          makeTaskDone(task, this.$store);
+        }
+      });
+    },
     async setTaskToCalendar() {
-      let all = this.$store.getters["todos/getTodos"];
+      this.$store.dispatch("todos/initTodos");
+      let all = this.$store.getters["todos/getTodos"].sort((a2, b2) => a2.task_sort - b2.task_sort);
       const now2 = new Date();
       const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
       new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
@@ -8096,7 +8122,7 @@ const _sfc_main$2z = {
       let count = 0;
       for (const task of today_tasks) {
         let duration = task.task_time;
-        if (!duration)
+        if (!duration || duration === "0")
           continue;
         let slotIndex = freeSlots.findIndex((slot2) => slot2.duration >= duration);
         if (slotIndex === -1)
@@ -8104,10 +8130,9 @@ const _sfc_main$2z = {
         if (count++ > 20)
           continue;
         let slot = freeSlots[slotIndex];
-        let exist = today_events.filter((e) => task.task_title.includes(e.summary));
+        let exist = today_events.filter((e) => task.task_title.includes(e.summary) || e.summary.includes(task.task_title));
         if (exist == null ? void 0 : exist.length)
           continue;
-        console.log(exist);
         const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
         const event = {
           summary: task.task_title,
@@ -8142,7 +8167,7 @@ const _hoisted_3 = { key: 1 };
 const _hoisted_4 = ["onClick"];
 function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock("div", _hoisted_1$1, [
-    _cache[6] || (_cache[6] = createBaseVNode("h2", null, "Настройки", -1)),
+    _cache[7] || (_cache[7] = createBaseVNode("h2", null, "Настройки", -1)),
     createBaseVNode("button", {
       onClick: _cache[0] || (_cache[0] = ($event) => $data.showForm = !$data.showForm)
     }, toDisplayString($data.showForm ? "Отмена" : "Добавить"), 1),
@@ -8166,7 +8191,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
       }, "Сохранить")
     ])) : createCommentVNode("", true),
     $options.settings.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_3, [
-      _cache[5] || (_cache[5] = createBaseVNode("h3", null, "Сохранённые настройки:", -1)),
+      _cache[6] || (_cache[6] = createBaseVNode("h3", null, "Сохранённые настройки:", -1)),
       createBaseVNode("ul", null, [
         (openBlock(true), createElementBlock(Fragment, null, renderList($options.settings, (setting, index2) => {
           return openBlock(), createElementBlock("li", { key: index2 }, [
@@ -8180,10 +8205,13 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true),
     createBaseVNode("button", {
       onClick: _cache[4] || (_cache[4] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
-    }, "Заполнить календарь")
+    }, "Заполнить календарь"),
+    createBaseVNode("button", {
+      onClick: _cache[5] || (_cache[5] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
+    }, "Отметить завершенные")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-6d127d1d"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-d3882f31"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }
@@ -68168,6 +68196,7 @@ const mutations$1 = {
   },
   SET_TODOS(state2, todos2) {
     state2.todos = todos2;
+    saveTodos(state2.todos);
   },
   ADD_TODO(state2, payload) {
     const newTask = {

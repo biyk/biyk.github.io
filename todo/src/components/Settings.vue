@@ -85,7 +85,6 @@ export default {
         },
         async setTaskCompleted(){
             this.$store.dispatch("todos/initTodos");
-            let all = this.$store.getters["todos/getTodos"];
             const now = new Date();
             //получаем список дел на сегодня
             let today_events = await listEvents();
@@ -107,7 +106,6 @@ export default {
             let all = this.$store.getters["todos/getTodos"].sort((a, b) => a.task_sort - b.task_sort);
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
-            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             let today_tasks = all.filter(todo => {
                 if (todo.task_title === 'task_title') return false;
                 const start = todo.start_date;
@@ -126,17 +124,21 @@ export default {
                 //поиск свободного слота под задачу
                 let slotIndex = freeSlots.findIndex(slot => slot.duration >= duration);
                 if (slotIndex === -1) continue; // нет подходящего слота
-                if (count++ > 20) continue;
 
                 let slot = freeSlots[slotIndex];
-                let exist = today_events.filter((e)=>task.task_title.includes(e.summary)||e.summary.includes(task.task_title));
+                let exist = today_events.filter((e)=>{
+                    console.log(e)
+                    return e.description?.includes(task.task_uuid)
+                });
                 if (exist?.length) continue;
+
                 //добавление события в календарь
                 //TODO проверить что событие еще не добавлено в календарь
                 const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
                 const event = {
                     summary: task.task_title,
                     description: task.task_uuid,
+                    colorId:7,
                     start: {
                         dateTime: slot.start,
                         timeZone: 'Europe/Samara',

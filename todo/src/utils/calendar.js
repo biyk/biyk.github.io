@@ -26,7 +26,7 @@ export async function listEvents() {
 }
 
 export async function addEvent(event) {
-    let response = await gapi.client.calendar.events.insert({
+    await gapi.client.calendar.events.insert({
         calendarId: 'primary',
         resource: event,
     });

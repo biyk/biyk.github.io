@@ -94,7 +94,7 @@ export default {
                 const task = todos.filter(todo => todo.task_uuid === task_uuid);
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , now.getHours(), now.getMinutes(), 0, 0).getTime();
 
-                if (task.length && task[0].start_date < today){
+                if (task.length && task[0].start_date < today && (new Date(event)).getTime() < today){
                     console.log(task);
                     makeTaskDone(task, this.$store);
                 }
@@ -117,7 +117,6 @@ export default {
 
             //записываем в свободные места календаря события
             let freeSlots = getFreeSlots(today_events);
-            let count = 0;
             for (const task of today_tasks) {
                 let duration = task.task_time;
                 if (!duration || duration==='0') continue;
@@ -133,7 +132,6 @@ export default {
                 if (exist?.length) continue;
 
                 //добавление события в календарь
-                //TODO проверить что событие еще не добавлено в календарь
                 const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
                 const event = {
                     summary: task.task_title,

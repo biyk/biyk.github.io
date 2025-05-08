@@ -34,6 +34,17 @@ export async function addEvent(event) {
 
 }
 
+export async function updateEvent(event) {
+    console.log(event);
+    await gapi.client.calendar.events.update({
+        calendarId: 'primary',
+        eventId: event.id,
+        resource:event
+    });
+    console.log('Событие обновлено:', event.summary);
+
+}
+
 export function getFreeSlots(events, workStart = '00:00', workEnd = '23:00', minSlotMinutes = 15) {
     if (!Array.isArray(events)) return [];
 

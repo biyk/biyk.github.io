@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.47";
+window.version = "0.2.49";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7911,76 +7911,6 @@ function makeTaskDone(task, store2) {
   };
   store2.dispatch("todos/updateTodo", updatedTask);
 }
-const _sfc_main$2A = {
-  computed: {
-    todos() {
-      return this.$store.getters["todos/getTodos"];
-    }
-  },
-  props: {
-    filter: {
-      type: String,
-      default: "all"
-    }
-  },
-  methods: {
-    getFilteredTodos() {
-      const now2 = new Date();
-      const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
-      const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
-      return this.todos.filter((todo) => {
-        if (todo.task_title === "task_title")
-          return false;
-        const start = todo.start_date;
-        switch (this.filter) {
-          case "today":
-            return start < today;
-          case "tomorrow":
-            return start > today && start < tomorrow;
-          default:
-            return true;
-        }
-      });
-    },
-    toggleTodo(task_uuid) {
-      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
-      makeTaskDone(task, this.$store);
-    },
-    deleteTodo(id) {
-      this.$store.dispatch("todos/deleteTodo", id);
-    },
-    getSortedTodos() {
-      return this.getFilteredTodos().sort((a2, b2) => a2.task_sort - b2.task_sort);
-    }
-  },
-  mounted() {
-    this.$store.dispatch("todos/initTodos");
-  }
-};
-const _hoisted_1$2 = { class: "tasks" };
-const _hoisted_2$1 = ["onClick"];
-const _hoisted_3$1 = ["title"];
-const _hoisted_4$1 = ["onClick"];
-function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
-  return openBlock(), createElementBlock("ul", _hoisted_1$2, [
-    (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
-      return openBlock(), createElementBlock("li", {
-        key: todo.id,
-        class: normalizeClass(["task", todo.task_color, { completed: todo.completed }]),
-        onClick: ($event) => $options.toggleTodo(todo.task_uuid)
-      }, [
-        createBaseVNode("span", {
-          title: todo.task_description
-        }, "(" + toDisplayString(todo.money_reward) + ") " + toDisplayString(todo.task_title), 9, _hoisted_3$1),
-        createBaseVNode("span", {
-          class: "delete",
-          onClick: ($event) => $options.deleteTodo(todo.id)
-        }, "ⓧ", 8, _hoisted_4$1)
-      ], 10, _hoisted_2$1);
-    }), 128))
-  ]);
-}
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u]]);
 async function listEvents() {
   const today = new Date();
   const start = new Date(today.setHours(0, 0, 0, 0)).toISOString();
@@ -8010,6 +7940,15 @@ async function addEvent(event) {
     resource: event
   });
   console.log("Событие добавлено:", event.summary);
+}
+async function updateEvent(event) {
+  console.log(event);
+  await gapi.client.calendar.events.update({
+    calendarId: "primary",
+    eventId: event.id,
+    resource: event
+  });
+  console.log("Событие обновлено:", event.summary);
 }
 function getFreeSlots(events, workStart = "00:00", workEnd = "23:00", minSlotMinutes = 15) {
   if (!Array.isArray(events))
@@ -8052,7 +7991,103 @@ function getFreeSlots(events, workStart = "00:00", workEnd = "23:00", minSlotMin
   }
   return freeSlots;
 }
-const Settings_vue_vue_type_style_index_0_scoped_d3882f31_lang = "";
+const _sfc_main$2A = {
+  computed: {
+    todos() {
+      return this.$store.getters["todos/getTodos"];
+    }
+  },
+  props: {
+    filter: {
+      type: String,
+      default: "all"
+    }
+  },
+  methods: {
+    getFilteredTodos() {
+      const now2 = new Date();
+      const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
+      const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+      return this.todos.filter((todo) => {
+        if (todo.task_title === "task_title")
+          return false;
+        const start = todo.start_date;
+        switch (this.filter) {
+          case "today":
+            return start < today;
+          case "tomorrow":
+            return start > today && start < tomorrow;
+          default:
+            return true;
+        }
+      });
+    },
+    async toggleTodo(task_uuid) {
+      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
+      const endDate = new Date();
+      const startDate = new Date(endDate.getTime() - 15 * 60 * 1e3);
+      const event = {
+        summary: task[0].task_title,
+        description: task[0].task_uuid,
+        colorId: 7,
+        start: {
+          dateTime: startDate.toISOString(),
+          timeZone: "Europe/Samara"
+        },
+        end: {
+          dateTime: endDate.toISOString(),
+          timeZone: "Europe/Samara"
+        }
+      };
+      let list = await listEvents();
+      let exist = list.filter((event2) => {
+        var _a2;
+        return (_a2 = event2.description) == null ? void 0 : _a2.includes(task_uuid);
+      });
+      if (exist.length) {
+        event.id = exist[0].id;
+        await updateEvent(event);
+      } else {
+        await addEvent(event);
+      }
+      makeTaskDone(task, this.$store);
+    },
+    deleteTodo(id) {
+      this.$store.dispatch("todos/deleteTodo", id);
+    },
+    getSortedTodos() {
+      return this.getFilteredTodos().sort((a2, b2) => a2.task_sort - b2.task_sort);
+    }
+  },
+  mounted() {
+    this.$store.dispatch("todos/initTodos");
+  }
+};
+const _hoisted_1$2 = { class: "tasks" };
+const _hoisted_2$1 = ["onClick"];
+const _hoisted_3$1 = ["title"];
+const _hoisted_4$1 = ["onClick"];
+function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
+  return openBlock(), createElementBlock("ul", _hoisted_1$2, [
+    (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
+      return openBlock(), createElementBlock("li", {
+        key: todo.id,
+        class: normalizeClass(["task", todo.task_color, { completed: todo.completed }]),
+        onClick: ($event) => $options.toggleTodo(todo.task_uuid)
+      }, [
+        createBaseVNode("span", {
+          title: todo.task_description
+        }, "(" + toDisplayString(todo.money_reward) + ") " + toDisplayString(todo.task_title), 9, _hoisted_3$1),
+        createBaseVNode("span", {
+          class: "delete",
+          onClick: ($event) => $options.deleteTodo(todo.id)
+        }, "ⓧ", 8, _hoisted_4$1)
+      ], 10, _hoisted_2$1);
+    }), 128))
+  ]);
+}
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u]]);
+const Settings_vue_vue_type_style_index_0_scoped_588a2434_lang = "";
 const _sfc_main$2z = {
   name: "Settings",
   data() {
@@ -8091,7 +8126,6 @@ const _sfc_main$2z = {
     },
     async setTaskCompleted() {
       this.$store.dispatch("todos/initTodos");
-      this.$store.getters["todos/getTodos"];
       const now2 = new Date();
       let today_events = await listEvents();
       today_events.forEach((event) => {
@@ -8099,7 +8133,7 @@ const _sfc_main$2z = {
         let todos2 = this.$store.getters["todos/getTodos"];
         const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
         const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
-        if (task.length && task[0].start_date < today) {
+        if (task.length && task[0].start_date < today && new Date(event).getTime() < today) {
           console.log(task);
           makeTaskDone(task, this.$store);
         }
@@ -8110,7 +8144,6 @@ const _sfc_main$2z = {
       let all = this.$store.getters["todos/getTodos"].sort((a2, b2) => a2.task_sort - b2.task_sort);
       const now2 = new Date();
       const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
-      new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       let today_tasks = all.filter((todo) => {
         if (todo.task_title === "task_title")
           return false;
@@ -8119,7 +8152,6 @@ const _sfc_main$2z = {
       });
       let today_events = await listEvents();
       let freeSlots = getFreeSlots(today_events);
-      let count = 0;
       for (const task of today_tasks) {
         let duration = task.task_time;
         if (!duration || duration === "0")
@@ -8127,16 +8159,19 @@ const _sfc_main$2z = {
         let slotIndex = freeSlots.findIndex((slot2) => slot2.duration >= duration);
         if (slotIndex === -1)
           continue;
-        if (count++ > 20)
-          continue;
         let slot = freeSlots[slotIndex];
-        let exist = today_events.filter((e) => task.task_title.includes(e.summary) || e.summary.includes(task.task_title));
+        let exist = today_events.filter((e) => {
+          var _a2;
+          console.log(e);
+          return (_a2 = e.description) == null ? void 0 : _a2.includes(task.task_uuid);
+        });
         if (exist == null ? void 0 : exist.length)
           continue;
         const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
         const event = {
           summary: task.task_title,
           description: task.task_uuid,
+          colorId: 7,
           start: {
             dateTime: slot.start,
             timeZone: "Europe/Samara"
@@ -8211,7 +8246,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     }, "Отметить завершенные")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-d3882f31"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-588a2434"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }

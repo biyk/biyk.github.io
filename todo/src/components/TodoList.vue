@@ -16,6 +16,7 @@
 <script>
 import '../assets/styles/components/TodoList.css';
 import {makeTaskDone} from "@/utils/tasks.js";
+import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 export default {
     computed: {
         todos() {
@@ -48,8 +49,32 @@ export default {
                 }
             });
         },
-        toggleTodo(task_uuid) {
+        async toggleTodo(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
+            const endDate = new Date();
+            const startDate = new Date(endDate.getTime() - 15 * 60 * 1000);
+            const event = {
+                summary: task[0].task_title,
+                description: task[0].task_uuid,
+                colorId: 7,
+                start: {
+                    dateTime: startDate.toISOString(),
+                    timeZone: 'Europe/Samara',
+                },
+                end: {
+                    dateTime: endDate.toISOString(),
+                    timeZone: 'Europe/Samara',
+                },
+            };
+            let list = await listEvents();
+
+            let exist = list.filter(event => event.description?.includes(task_uuid));
+            if(exist.length){
+                event.id = exist[0].id
+                await updateEvent(event)
+            } else {
+                await addEvent(event);
+            }
             makeTaskDone(task, this.$store);
         },
         deleteTodo(id) {

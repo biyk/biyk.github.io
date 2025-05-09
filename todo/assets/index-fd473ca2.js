@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.49";
+window.version = "0.2.50";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7880,6 +7880,7 @@ const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_ren
 const TodoList$1 = "";
 function makeTaskDone(task, store2) {
   let {
+    repeat_days_of_week,
     repeat_index,
     repeat_mode,
     start_date,
@@ -7896,22 +7897,722 @@ function makeTaskDone(task, store2) {
       start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       break;
+    case "1":
+      start_date = new Date(now2.getFullYear(), now2.getMonth() + 1, now2.getDate(), 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+      break;
+    case "2":
+      start_date = new Date(now2.getFullYear() + 1, now2.getMonth(), now2.getDate(), 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+      break;
     case "6":
       start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
       break;
-    default:
-      console.log(task[0]);
-      return;
+    case "3":
+      let getNextWorkingDayOffset = function(repeatDays, currentDay2) {
+        for (let offset2 = 1; offset2 <= 7; offset2++) {
+          let dayIndex = (currentDay2 + offset2) % 7;
+          if (repeatDays[dayIndex] === "1") {
+            return offset2;
+          }
+        }
+        return null;
+      };
+      const currentDay = now2.getDay();
+      const repeat_index3 = getNextWorkingDayOffset(repeat_days_of_week, currentDay);
+      if (repeat_index3 === null) {
+        throw new Error("Нет рабочих дней в расписании");
+      }
+      start_date = new Date(
+        now2.getFullYear(),
+        now2.getMonth(),
+        now2.getDate() + repeat_index3,
+        0,
+        0,
+        1,
+        0
+      ).getTime();
+      task_finish_date = new Date(
+        now2.getFullYear(),
+        now2.getMonth(),
+        now2.getDate() + repeat_index3,
+        23,
+        59,
+        0,
+        0
+      ).getTime();
+      break;
   }
   const updatedTask = {
     ...task[0],
     start_date,
     task_finish_date
   };
+  let hero2 = { ...store2.getters["hero/getHero"] };
+  hero2.hero_money = parseInt(hero2.hero_money) + parseInt(task[0].money_reward);
   store2.dispatch("todos/updateTodo", updatedTask);
+  store2.dispatch("hero/updateHero", hero2);
 }
-async function listEvents() {
+class WebStorage {
+  constructor(dbName = "WebStorageDB", storeName = "keyval") {
+    this.dbName = dbName;
+    this.storeName = storeName;
+    this.metaStoreName = "meta";
+    this.version = window.version || "";
+    this.dbPromise = this.initDB();
+  }
+  async initDB() {
+    const versionCode = this.versionToNumber(this.version);
+    return new Promise((resolve2, reject) => {
+      const request = indexedDB.open(this.dbName, versionCode);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        for (const storeName of db.objectStoreNames) {
+          db.deleteObjectStore(storeName);
+        }
+        db.createObjectStore(this.storeName);
+        db.createObjectStore(this.metaStoreName);
+      };
+      request.onsuccess = async () => {
+        const db = request.result;
+        try {
+          await this.setMeta("app_version", this.version, db);
+          resolve2(db);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+  async clearAllStores(db) {
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction([this.storeName], "readwrite");
+      const store2 = tx.objectStore(this.storeName);
+      const request = store2.clear();
+      request.onsuccess = () => resolve2();
+      request.onerror = () => reject(request.error);
+    });
+  }
+  async getMeta(key, db) {
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction(this.metaStoreName, "readonly");
+      const store2 = tx.objectStore(this.metaStoreName);
+      const request = store2.get(key);
+      request.onsuccess = () => resolve2(request.result ?? null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  async setMeta(key, value, db) {
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction(this.metaStoreName, "readwrite");
+      const store2 = tx.objectStore(this.metaStoreName);
+      const request = store2.put(value, key);
+      request.onsuccess = () => resolve2();
+      request.onerror = () => reject(request.error);
+    });
+  }
+  // Остальные методы без изменений
+  async setItem(key, value) {
+    const db = await this.dbPromise;
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction(this.storeName, "readwrite");
+      const store2 = tx.objectStore(this.storeName);
+      const request = store2.put(value, key);
+      request.onsuccess = () => resolve2();
+      request.onerror = () => reject(request.error);
+    });
+  }
+  async getItem(key) {
+    const db = await this.dbPromise;
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction(this.storeName, "readonly");
+      const store2 = tx.objectStore(this.storeName);
+      const request = store2.get(key);
+      request.onsuccess = () => resolve2(request.result ?? null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  async removeItem(key) {
+    const db = await this.dbPromise;
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction(this.storeName, "readwrite");
+      const store2 = tx.objectStore(this.storeName);
+      const request = store2.delete(key);
+      request.onsuccess = () => resolve2();
+      request.onerror = () => reject(request.error);
+    });
+  }
+  async clear() {
+    const db = await this.dbPromise;
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction(this.storeName, "readwrite");
+      const store2 = tx.objectStore(this.storeName);
+      const request = store2.clear();
+      request.onsuccess = () => resolve2();
+      request.onerror = () => reject(request.error);
+    });
+  }
+  // Вспомогательный метод: получить все ключи (если нужно)
+  async keys() {
+    const db = await this.dbPromise;
+    return new Promise((resolve2, reject) => {
+      const tx = db.transaction(this.storeName, "readonly");
+      const store2 = tx.objectStore(this.storeName);
+      const keys2 = [];
+      const request = store2.openCursor();
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          keys2.push(cursor.key);
+          cursor.continue();
+        } else {
+          resolve2(keys2);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+  versionToNumber(versionStr) {
+    return versionStr.split(".").map((part) => part.padStart(2, "0")).join("").padEnd(7, "0").slice(0, 7) * 1;
+  }
+}
+const API_KEY = "AIzaSyBTTqB_rSfwzuTIdF1gcQ5-U__fGzrQ_zs";
+const spreadsheetId = "13zsZqGICZKQYMCcGkhgr7pzhH1z-LWFiH0LMrI6NGLM";
+const CLIENT_ID = "21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleusercontent.com";
+const DISCOVERY_DOC_CALENDAR = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+const DISCOVERY_DOC_SHEETS = "https://sheets.googleapis.com/$discovery/rest?version=v4";
+const SCOPES = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets";
+class ORM {
+  constructor(columns2 = []) {
+    this.columns = columns2;
+  }
+  getRaw(data = {}) {
+    let result = [];
+    this.columns.forEach((value, index2) => {
+      console.log(index2, value, data[value]);
+      if (value === "value") {
+        const raw = typeof data[value] === "object" ? JSON.stringify(data[value]) : data[value];
+        const chunks = raw.toString().match(/.{1,49000}/g);
+        result[index2] = chunks[0];
+        result.push(...chunks.slice(1));
+      } else {
+        result[index2] = data[value];
+      }
+    });
+    return result;
+  }
+  getFormated(data = []) {
+    let result = {};
+    this.columns.forEach((value, index2) => {
+      result[value] = data[index2];
+    });
+    return result;
+  }
+}
+let Table$2 = class Table {
+  constructor(options) {
+    this.list = options.list;
+    this.sheets = {};
+    this.spreadsheetId = options.spreadsheetId || spreadsheetId;
+    this.api = window.GoogleSheetDB || new GoogleSheetDB();
+    this.spreadsheets = gapi.client.sheets.spreadsheets;
+    this.columns = [];
+    try {
+      this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + "/" + options.list + "/columns")) || {};
+    } catch (e) {
+    }
+    this.codes = {};
+    this.sending = false;
+  }
+  async exist() {
+    return await this.getSheetIdByName(this.list) || false;
+  }
+  async getSheetIdByName(sheetName) {
+    if (this.sheets[sheetName])
+      return this.sheets[sheetName];
+    const response = await this.spreadsheets.get({
+      spreadsheetId: this.spreadsheetId
+    });
+    const sheet = response.result.sheets.find(
+      (s2) => s2.properties.title === sheetName
+    );
+    const sheetId = sheet ? sheet.properties.sheetId : null;
+    this.sheets[sheetName] = sheetId;
+    return sheetId;
+  }
+  async addRawValues(values = []) {
+    await this.waitSending();
+    try {
+      this.sending = true;
+      let res = await this.spreadsheets.values.append({
+        spreadsheetId: this.spreadsheetId,
+        range: this.list + "!A1:Z1",
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        resource: {
+          majorDimension: "ROWS",
+          values
+          //values: [["Engine", "$100", "1", "3/20/2016"]],
+        }
+      });
+      console.log(res);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this.sending = false;
+    }
+  }
+  async addRow(values = {}) {
+    if (!this.columns[this.list]) {
+      let columnsRaw = sessionStorage.getItem(spreadsheetId + "/" + this.list + "/columns");
+      if (columnsRaw) {
+        this.columns[this.list] = JSON.parse(columnsRaw);
+      } else {
+        await this.getAll();
+      }
+    }
+    let table = new ORM(this.columns[this.list]);
+    let rawValue = table.getRaw(values);
+    await this.waitSending();
+    await this.addRawValues([rawValue]);
+  }
+  async waitSending(timeout = 1e4) {
+    while (this.sending) {
+      await new Promise((resolve2) => setTimeout(resolve2, timeout));
+    }
+  }
+  async addColumns(values = []) {
+    try {
+      let res = await this.spreadsheets.values.append({
+        spreadsheetId: this.spreadsheetId,
+        range: this.list + "!A1:Z1",
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        resource: {
+          majorDimension: "ROWS",
+          values: [values]
+          //values: [["Engine", "$100", "1", "3/20/2016"]],
+        }
+      });
+      console.log(res);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  async deleteRow(rowIndex) {
+    const sheetId = await this.getSheetIdByName(this.list);
+    if (sheetId === null) {
+      throw new Error("Лист 'API' не найден");
+    }
+    await this.spreadsheets.batchUpdate({
+      spreadsheetId: this.spreadsheetId,
+      resource: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId,
+                dimension: "ROWS",
+                startIndex: rowIndex - 1,
+                endIndex: rowIndex
+              }
+            }
+          }
+        ]
+      }
+    });
+  }
+  async updateRow(row, values = {}) {
+    if (!this.columns[this.list]) {
+      await this.getColumns(this.list);
+    }
+    let table = new ORM(this.columns[this.list]);
+    let rawValue = table.getRaw(values);
+    console.debug("values.update", new Error().stack);
+    this.waitSending();
+    this.sending = true;
+    await gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: this.spreadsheetId,
+      range: this.list + "!A" + row,
+      valueInputOption: "RAW",
+      resource: {
+        values: [rawValue]
+      }
+    }).then((response) => {
+      console.log("Value updated successfully:", response);
+    }).catch((err) => {
+      console.log("Value update failed:", err);
+    });
+    this.sending = false;
+  }
+  async getLists() {
+    let response = await this.spreadsheets.get({
+      spreadsheetId: this.spreadsheetId,
+      fields: "sheets.properties.title"
+    });
+    return response.result.sheets;
+  }
+  async createList(columns2 = ["code", "value"]) {
+    let title = this.list;
+    await this.spreadsheets.get({
+      spreadsheetId: this.spreadsheetId,
+      fields: "sheets.properties.title"
+    }).then((response) => {
+      const sheets = response.result.sheets;
+      const sheetExists = sheets.some((sheet) => sheet.properties.title === title);
+      if (sheetExists) {
+        console.debug(`Лист с названием "${title}" уже существует.`);
+        return;
+      }
+      this.spreadsheets.batchUpdate({
+        spreadsheetId: this.spreadsheetId,
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title
+              }
+            }
+          }
+        ]
+      }).then((response2) => {
+        console.log("Лист добавлен:", response2.result.replies[0].addSheet.properties.sheetId);
+        this.addColumns(columns2);
+      }).catch((error) => {
+        console.error("Ошибка при добавлении листа:", error);
+      });
+    }).catch((error) => {
+      console.error("Ошибка при получении информации о таблице:", error);
+    });
+  }
+  createSpreadSheet(title, callback = null) {
+    try {
+      this.spreadsheets.create({
+        properties: {
+          title
+        }
+      }).then((response) => {
+        if (callback)
+          callback(response);
+        console.log("Spreadsheet ID: " + response.result.spreadsheetId);
+      });
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+  async clearList() {
+    await this.spreadsheets.values.clear({
+      spreadsheetId: this.spreadsheetId,
+      range: this.list + "!A2:Z1000"
+    });
+  }
+  async getRow(row) {
+    let range3 = this.list + "!A" + row + ":Z" + row;
+    let spreadsheetId2 = this.spreadsheetId;
+    return await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2 });
+  }
+  async getAll(options = {}) {
+    let { caching, formated } = options;
+    const range3 = this.list + "!A1:Z5000";
+    let spreadsheetId2 = this.spreadsheetId;
+    let response = await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2, caching });
+    if (response) {
+      this.columns[this.list] = response[0];
+      sessionStorage.setItem(spreadsheetId2 + "/" + this.list + "/columns", JSON.stringify(response[0]));
+      this.setCodes(response);
+      if (formated) {
+        return this.formatData(response);
+      }
+    }
+    return response;
+  }
+  async getColumns(list) {
+    if (!this.columns[list]) {
+      const range3 = (list ? list + "!" : "") + "A1:Z1";
+      let spreadsheetId2 = this.spreadsheetId;
+      const values = await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2 });
+      if (values.length > 0) {
+        this.columns[list] = values[0];
+      }
+    }
+  }
+  setCodes(response) {
+    response.forEach((e, i) => {
+      this.codes[e[0]] = i;
+    });
+    let storageKey = this.spreadsheetId + "/" + this.list + "/codes";
+    sessionStorage.setItem(storageKey, JSON.stringify(this.codes));
+  }
+  formatData(response) {
+    let result = {};
+    response.forEach((e) => {
+      if ("{[".includes(e[1][0])) {
+        result[e[0]] = JSON.parse(e.slice(1).join(""));
+      } else {
+        result[e[0]] = e[1];
+      }
+    });
+    return result;
+  }
+  async updateRowByCode(code, values = {}) {
+    let storageKey = this.spreadsheetId + "/" + this.list + "/codes";
+    let stored_codes = sessionStorage.getItem(storageKey);
+    if (!this.codes.length) {
+      if (stored_codes) {
+        this.codes = JSON.parse(stored_codes);
+      } else {
+        await this.getAll();
+      }
+    } else {
+      console.log("все норм");
+    }
+    if (!values.code) {
+      values.code = code;
+    }
+    let id = this.codes[code] + 1;
+    if (id) {
+      await this.updateRow(id, values);
+      return true;
+    } else {
+      await this.addRow(values);
+      return false;
+    }
+  }
+  async addRows(values = []) {
+    if (!this.columns[this.list]) {
+      let columnsRaw = sessionStorage.getItem(spreadsheetId + "/" + this.list + "/columns");
+      if (columnsRaw) {
+        this.columns[this.list] = JSON.parse(columnsRaw);
+      } else {
+        await this.getAll();
+      }
+    }
+    let table = new ORM(this.columns[this.list]);
+    let rawValues = [];
+    values.forEach((e) => {
+      rawValues.push(table.getRaw(e));
+    });
+    await this.waitSending();
+    try {
+      this.sending = true;
+      let res = await this.spreadsheets.values.append({
+        spreadsheetId: this.spreadsheetId,
+        range: this.list + "!A1:Z1",
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        resource: {
+          majorDimension: "ROWS",
+          values: rawValues
+          //values: [["Engine", "$100", "1", "3/20/2016"]],
+        }
+      });
+      console.log(res);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this.sending = false;
+    }
+  }
+};
+class GoogleSheetDB {
+  constructor(options = {}) {
+    this.DISCOVERY_DOC = "https://sheets.googleapis.com/$discovery/rest?version=v4";
+    this.apiKey = API_KEY;
+    this.tokenClient = {};
+    this.gapiInited = false;
+    this.gisInited = false;
+    this.authorize_button = document.getElementById("authorize_button");
+    this.headers = [];
+    this.columns = {};
+    if (this.expired()) {
+      localStorage.setItem("gapi_token", "");
+    }
+    this.storedToken = localStorage.getItem("gapi_token");
+    this.callback = options.callback;
+    loadScriptOnce({
+      src: "https://apis.google.com/js/api.js",
+      onload: this.gapiLoaded.bind(this)
+    });
+    loadScriptOnce({
+      src: "https://accounts.google.com/gsi/client",
+      onload: this.gisLoaded.bind(this)
+    });
+    let timer = setInterval(async () => {
+      if (document.getElementById("signout_button")) {
+        document.getElementById("signout_button").textContent = localStorage.getItem("gapi_token_expires") - this.getTime();
+      }
+      if (this.expired()) {
+        console.log("нужно авторизоваться");
+        document.body.dispatchEvent(new Event("doAuth"));
+        clearInterval(timer);
+      }
+    });
+    window.GoogleSheetDB = this;
+  }
+  async waitGoogle(timeout = 1e4) {
+    console.trace("ждем гугла");
+    const startTime = Date.now();
+    while (!(this.gapiInited && this.gisInited)) {
+      if (Date.now() - startTime > timeout) {
+        throw new Error("Инициализация Google API не завершена в течение отведенного времени." + this.gapiInited + " " + this.gisInited);
+      }
+      await new Promise((resolve2) => setTimeout(resolve2, 100));
+    }
+  }
+  async waitRead(timeout = 1e4) {
+    const startTime = Date.now();
+    while (!this.gapiInited) {
+      if (Date.now() - startTime > timeout) {
+        throw new Error("Инициализация Google API не завершена в течение отведенного времени." + this.gapiInited + " " + this.gisInited);
+      }
+      await new Promise((resolve2) => setTimeout(resolve2, 100));
+    }
+  }
+  async waitWrite(timeout = 1e4) {
+    const startTime = Date.now();
+    while (!this.gisInited) {
+      if (Date.now() - startTime > timeout) {
+        throw new Error("Инициализация Google API не завершена в течение отведенного времени." + this.gapiInited + " " + this.gisInited);
+      }
+      await new Promise((resolve2) => setTimeout(resolve2, 100));
+    }
+  }
+  expired() {
+    return localStorage.getItem("gapi_token_expires") - this.getTime() < 10;
+  }
+  getTime() {
+    return Math.floor(Date.now() / 1e3);
+  }
+  async gapiLoaded() {
+    gapi.load("client", this.initializeGapiClient.bind(this));
+  }
+  maybeEnableButtons() {
+    if (this.gapiInited && this.gisInited) {
+      if (this.authorize_button) {
+        this.authorize_button.style.visibility = "visible";
+      }
+    }
+  }
+  async initializeGapiClient() {
+    await gapi.client.init({
+      apiKey: this.apiKey,
+      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS]
+    });
+    if (this.storedToken) {
+      try {
+        const parsedToken = JSON.parse(this.storedToken);
+        gapi.client.setToken(parsedToken);
+      } catch (e) {
+        console.warn("Failed to parse stored token:", e);
+      }
+    }
+    this.gapiInited = true;
+    if (this.callback)
+      this.callback();
+    this.maybeEnableButtons();
+  }
+  gisLoaded() {
+    this.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS],
+      callback: () => {
+      }
+      // пустой, определим в handleAuthClick
+    });
+    this.gisInited = true;
+    this.maybeEnableButtons();
+    this.eventHandler();
+  }
+  eventHandler() {
+    if (this.authorize_button) {
+      this.authorize_button.onclick = this.handleAuthClick.bind(this, () => {
+        location.reload();
+      });
+    }
+    if (document.getElementById("signout_button")) {
+      document.getElementById("signout_button").onclick = this.handleSignoutClick.bind(this);
+    }
+  }
+  handleAuthClick(callback) {
+    this.tokenClient.callback = async (resp) => {
+      if (resp.error !== void 0) {
+        throw resp;
+      }
+      document.getElementById("signout_button").style.visibility = "visible";
+      this.authorize_button.innerText = "Refresh";
+      const token = gapi.client.getToken();
+      localStorage.setItem("gapi_token", JSON.stringify(token));
+      localStorage.setItem("gapi_token_expires", JSON.stringify(this.getTime() + resp.expires_in));
+      callback();
+    };
+    if (gapi.client.getToken() === null) {
+      this.tokenClient.requestAccessToken({ prompt: "consent" });
+    } else {
+      this.tokenClient.requestAccessToken({ prompt: "" });
+    }
+  }
+  handleSignoutClick() {
+    const token = gapi.client.getToken();
+    if (token !== null) {
+      google.accounts.oauth2.revoke(token.access_token);
+      gapi.client.setToken("");
+      localStorage.removeItem("gapi_token");
+      document.getElementById("content").innerText = "";
+      this.authorize_button.innerText = "Authorize";
+    }
+  }
+  async fetchSheetValues(options) {
+    const webStorage = new WebStorage();
+    let { range: range3, spreadsheetId: spreadsheetId2, caching } = options;
+    let response;
+    let data = [];
+    let storageKey = range3 + spreadsheetId2;
+    let storageData = await webStorage.getItem(storageKey);
+    if (caching && storageData) {
+      return JSON.parse(storageData);
+    }
+    try {
+      response = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: spreadsheetId2,
+        range: range3
+      });
+      console.debug("values.get", new Error().stack);
+    } catch (err) {
+      console.error(err);
+      return data;
+    }
+    const result = response.result;
+    if (!result || !result.values || result.values.length === 0) {
+      console.error("No values found.");
+      return data;
+    }
+    data = result.values;
+    await webStorage.setItem(storageKey, JSON.stringify(data));
+    return data;
+  }
+}
+function loadScriptOnce({ src, onload, async = true, defer = true }) {
+  const existingScript = Array.from(document.getElementsByTagName("script")).find((script2) => script2.src === src);
+  if (existingScript) {
+    console.log(`Скрипт уже загружен: ${src}`);
+    onload();
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = src;
+  script.async = async;
+  script.defer = defer;
+  if (onload && typeof onload === "function") {
+    script.onload = onload;
+  }
+  document.head.appendChild(script);
+}
+async function listEvents(store2 = false) {
+  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  await api.waitGoogle();
   const today = new Date();
   const start = new Date(today.setHours(0, 0, 0, 0)).toISOString();
   const end = new Date(today.setHours(23, 59, 59, 999)).toISOString();
@@ -7923,16 +8624,19 @@ async function listEvents() {
     singleEvents: true,
     orderBy: "startTime"
   });
-  const events = response.result.items;
-  if (events.length > 0) {
-    events.forEach((event) => {
+  const events2 = response.result.items;
+  if (events2.length > 0) {
+    events2.forEach((event) => {
       event.start.dateTime || event.start.date;
       event.start.dateTime || event.start.date;
     });
   } else {
     console.log("Событий на сегодня нет.");
   }
-  return events;
+  if (store2) {
+    store2.dispatch("events/setEvents", events2);
+  }
+  return events2;
 }
 async function addEvent(event) {
   await gapi.client.calendar.events.insert({
@@ -7942,7 +8646,6 @@ async function addEvent(event) {
   console.log("Событие добавлено:", event.summary);
 }
 async function updateEvent(event) {
-  console.log(event);
   await gapi.client.calendar.events.update({
     calendarId: "primary",
     eventId: event.id,
@@ -7950,14 +8653,14 @@ async function updateEvent(event) {
   });
   console.log("Событие обновлено:", event.summary);
 }
-function getFreeSlots(events, workStart = "00:00", workEnd = "23:00", minSlotMinutes = 15) {
-  if (!Array.isArray(events))
+function getFreeSlots(events2, workStart = "00:00", workEnd = "23:00", minSlotMinutes = 15) {
+  if (!Array.isArray(events2))
     return [];
   const day = new Date().toISOString().slice(0, 10);
   const toDateTime = (timeStr) => new Date(`${day}T${timeStr}:00`);
   const startOfDay = toDateTime(workStart);
   const endOfDay = toDateTime(workEnd);
-  const busySlots = events.map((e) => ({
+  const busySlots = events2.map((e) => ({
     start: new Date(e.start.dateTime || e.start.date),
     end: new Date(e.end.dateTime || e.end.date)
   }));
@@ -7995,6 +8698,9 @@ const _sfc_main$2A = {
   computed: {
     todos() {
       return this.$store.getters["todos/getTodos"];
+    },
+    events() {
+      return this.$store.getters["events/getEvents"];
     }
   },
   props: {
@@ -8009,12 +8715,21 @@ const _sfc_main$2A = {
       const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
       const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       return this.todos.filter((todo) => {
-        if (todo.task_title === "task_title")
+        if (todo.task_title.includes("task_title"))
           return false;
         const start = todo.start_date;
         switch (this.filter) {
           case "today":
             return start < today;
+          case "calendar":
+            const calendarEvents = this.events;
+            const hasMatchingEvent = calendarEvents == null ? void 0 : calendarEvents.some(
+              (event) => {
+                var _a2;
+                return (_a2 = event.description) == null ? void 0 : _a2.includes(todo.task_uuid);
+              }
+            );
+            return start < today && hasMatchingEvent;
           case "tomorrow":
             return start > today && start < tomorrow;
           default:
@@ -8025,7 +8740,7 @@ const _sfc_main$2A = {
     async toggleTodo(task_uuid) {
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       const endDate = new Date();
-      const startDate = new Date(endDate.getTime() - 15 * 60 * 1e3);
+      const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1e3);
       const event = {
         summary: task[0].task_title,
         description: task[0].task_uuid,
@@ -8039,7 +8754,7 @@ const _sfc_main$2A = {
           timeZone: "Europe/Samara"
         }
       };
-      let list = await listEvents();
+      let list = await listEvents(this.$store);
       let exist = list.filter((event2) => {
         var _a2;
         return (_a2 = event2.description) == null ? void 0 : _a2.includes(task_uuid);
@@ -8061,6 +8776,7 @@ const _sfc_main$2A = {
   },
   mounted() {
     this.$store.dispatch("todos/initTodos");
+    listEvents(this.$store);
   }
 };
 const _hoisted_1$2 = { class: "tasks" };
@@ -8087,7 +8803,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
   ]);
 }
 const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u]]);
-const Settings_vue_vue_type_style_index_0_scoped_588a2434_lang = "";
+const Settings_vue_vue_type_style_index_0_scoped_7409fe87_lang = "";
 const _sfc_main$2z = {
   name: "Settings",
   data() {
@@ -8133,8 +8849,7 @@ const _sfc_main$2z = {
         let todos2 = this.$store.getters["todos/getTodos"];
         const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
         const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
-        if (task.length && task[0].start_date < today && new Date(event).getTime() < today) {
-          console.log(task);
+        if (task.length && task[0].start_date < today && new Date(event.start.dateTime).getTime() < today) {
           makeTaskDone(task, this.$store);
         }
       });
@@ -8246,7 +8961,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     }, "Отметить завершенные")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-588a2434"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-7409fe87"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }
@@ -9236,6 +9951,11 @@ const _sfc_main$2y = {
     TodoNew,
     TodoList
   },
+  computed: {
+    hero() {
+      return this.$store.getters["hero/getHero"];
+    }
+  },
   setup() {
     const activeTab = computed({
       get() {
@@ -9254,6 +9974,9 @@ const _sfc_main$2y = {
       stopTaskAgent();
     });
     return { activeTab };
+  },
+  mounted() {
+    this.$store.dispatch("hero/initHero");
   }
 };
 const _hoisted_1 = { class: "container" };
@@ -9264,7 +9987,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
-    _cache[3] || (_cache[3] = createBaseVNode("h1", null, "To-Do List", -1)),
+    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString($options.hero.hero_money), 1),
     createVNode(_component_el_tabs, {
       modelValue: $setup.activeTab,
       "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.activeTab = $event)
@@ -9289,11 +10012,11 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1
         }),
         createVNode(_component_el_tab_pane, {
-          label: "Завтра",
-          name: "tomorrow"
+          label: "Календарь",
+          name: "calendar"
         }, {
           default: withCtx(() => [
-            createVNode(_component_TodoList, { filter: "tomorrow" })
+            createVNode(_component_TodoList, { filter: "calendar" })
           ]),
           _: 1
         }),
@@ -9336,7 +10059,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
       ]),
       _: 1
     }, 8, ["modelValue"]),
-    _cache[4] || (_cache[4] = createBaseVNode("img", {
+    _cache[3] || (_cache[3] = createBaseVNode("img", {
       src: _imports_0,
       class: "vue-logo",
       alt: "Vue.js Logo"
@@ -11598,19 +12321,19 @@ const defaultWindow = isClient ? window : void 0;
 const defaultDocument = isClient ? window.document : void 0;
 function useEventListener(...args) {
   let target;
-  let events;
+  let events2;
   let listeners;
   let options;
   if (isString(args[0]) || Array.isArray(args[0])) {
-    [events, listeners, options] = args;
+    [events2, listeners, options] = args;
     target = defaultWindow;
   } else {
-    [target, events, listeners, options] = args;
+    [target, events2, listeners, options] = args;
   }
   if (!target)
     return noop$1;
-  if (!Array.isArray(events))
-    events = [events];
+  if (!Array.isArray(events2))
+    events2 = [events2];
   if (!Array.isArray(listeners))
     listeners = [listeners];
   const cleanups = [];
@@ -11626,7 +12349,7 @@ function useEventListener(...args) {
     cleanup();
     if (!el)
       return;
-    cleanups.push(...events.flatMap((event) => {
+    cleanups.push(...events2.flatMap((event) => {
       return listeners.map((listener) => register3(el, event, listener, options2));
     }));
   }, { immediate: true, flush: "post" });
@@ -50513,7 +51236,7 @@ function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 46, ["data-prefix", "onMouseleave"]);
 }
-var Table$2 = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["render", _sfc_render$3], ["__file", "table.vue"]]);
+var Table$1 = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["render", _sfc_render$3], ["__file", "table.vue"]]);
 const defaultClassNames = {
   selection: "table-column--selection",
   expand: "table__expand-column"
@@ -51130,7 +51853,7 @@ var ElTableColumn$1 = defineComponent({
     }
   }
 });
-const ElTable = withInstall(Table$2, {
+const ElTable = withInstall(Table$1, {
   TableColumn: ElTableColumn$1
 });
 const ElTableColumn = withNoopInstall(ElTableColumn$1);
@@ -53071,7 +53794,7 @@ const TableGrid = defineComponent({
     };
   }
 });
-var Table$1 = TableGrid;
+var Table2 = TableGrid;
 function _isSlot$5(s2) {
   return typeof s2 === "function" || Object.prototype.toString.call(s2) === "[object Object]" && !isVNode(s2);
 }
@@ -53082,7 +53805,7 @@ const MainTable = (props2, {
     mainTableRef,
     ...rest
   } = props2;
-  return createVNode(Table$1, mergeProps({
+  return createVNode(Table2, mergeProps({
     "ref": mainTableRef
   }, rest), _isSlot$5(slots) ? slots : {
     default: () => [slots]
@@ -53101,7 +53824,7 @@ const LeftTable$1 = (props2, {
     leftTableRef,
     ...rest
   } = props2;
-  return createVNode(Table$1, mergeProps({
+  return createVNode(Table2, mergeProps({
     "ref": leftTableRef
   }, rest), _isSlot$4(slots) ? slots : {
     default: () => [slots]
@@ -53120,7 +53843,7 @@ const LeftTable = (props2, {
     rightTableRef,
     ...rest
   } = props2;
-  return createVNode(Table$1, mergeProps({
+  return createVNode(Table2, mergeProps({
     "ref": rightTableRef
   }, rest), _isSlot$3(slots) ? slots : {
     default: () => [slots]
@@ -56969,7 +57692,7 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
       if (e.detail === 0)
         onClose();
     });
-    const events = {
+    const events2 = {
       blur: onBlur,
       click: onClick,
       focus: onFocus,
@@ -56977,22 +57700,22 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
       mouseenter: onMouseenter,
       mouseleave: onMouseleave
     };
-    const setEvents = (el, events2, type4) => {
+    const setEvents = (el, events22, type4) => {
       if (el) {
-        Object.entries(events2).forEach(([name, handler]) => {
+        Object.entries(events22).forEach(([name, handler]) => {
           el[type4](name, handler);
         });
       }
     };
     watch(triggerRef, (triggerEl, previousTriggerEl) => {
-      setEvents(triggerEl, events, "addEventListener");
-      setEvents(previousTriggerEl, events, "removeEventListener");
+      setEvents(triggerEl, events2, "addEventListener");
+      setEvents(previousTriggerEl, events2, "removeEventListener");
       if (triggerEl) {
         triggerEl.setAttribute("aria-describedby", contentId.value);
       }
     });
     onBeforeUnmount(() => {
-      setEvents(triggerRef.value, events, "removeEventListener");
+      setEvents(triggerRef.value, events2, "removeEventListener");
       document.removeEventListener("mouseup", onMouseup);
     });
     return (_ctx, _cache) => {
@@ -67551,677 +68274,21 @@ const router = createRouter({
   // ← заменили здесь
   routes
 });
-class WebStorage {
-  constructor(dbName = "WebStorageDB", storeName = "keyval") {
-    this.dbName = dbName;
-    this.storeName = storeName;
-    this.metaStoreName = "meta";
-    this.version = window.version || "";
-    this.dbPromise = this.initDB();
-  }
-  async initDB() {
-    const versionCode = this.versionToNumber(this.version);
-    return new Promise((resolve2, reject) => {
-      const request = indexedDB.open(this.dbName, versionCode);
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        for (const storeName of db.objectStoreNames) {
-          db.deleteObjectStore(storeName);
-        }
-        db.createObjectStore(this.storeName);
-        db.createObjectStore(this.metaStoreName);
-      };
-      request.onsuccess = async () => {
-        const db = request.result;
-        try {
-          await this.setMeta("app_version", this.version, db);
-          resolve2(db);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
-  }
-  async clearAllStores(db) {
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction([this.storeName], "readwrite");
-      const store2 = tx.objectStore(this.storeName);
-      const request = store2.clear();
-      request.onsuccess = () => resolve2();
-      request.onerror = () => reject(request.error);
-    });
-  }
-  async getMeta(key, db) {
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction(this.metaStoreName, "readonly");
-      const store2 = tx.objectStore(this.metaStoreName);
-      const request = store2.get(key);
-      request.onsuccess = () => resolve2(request.result ?? null);
-      request.onerror = () => reject(request.error);
-    });
-  }
-  async setMeta(key, value, db) {
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction(this.metaStoreName, "readwrite");
-      const store2 = tx.objectStore(this.metaStoreName);
-      const request = store2.put(value, key);
-      request.onsuccess = () => resolve2();
-      request.onerror = () => reject(request.error);
-    });
-  }
-  // Остальные методы без изменений
-  async setItem(key, value) {
-    const db = await this.dbPromise;
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction(this.storeName, "readwrite");
-      const store2 = tx.objectStore(this.storeName);
-      const request = store2.put(value, key);
-      request.onsuccess = () => resolve2();
-      request.onerror = () => reject(request.error);
-    });
-  }
-  async getItem(key) {
-    const db = await this.dbPromise;
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction(this.storeName, "readonly");
-      const store2 = tx.objectStore(this.storeName);
-      const request = store2.get(key);
-      request.onsuccess = () => resolve2(request.result ?? null);
-      request.onerror = () => reject(request.error);
-    });
-  }
-  async removeItem(key) {
-    const db = await this.dbPromise;
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction(this.storeName, "readwrite");
-      const store2 = tx.objectStore(this.storeName);
-      const request = store2.delete(key);
-      request.onsuccess = () => resolve2();
-      request.onerror = () => reject(request.error);
-    });
-  }
-  async clear() {
-    const db = await this.dbPromise;
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction(this.storeName, "readwrite");
-      const store2 = tx.objectStore(this.storeName);
-      const request = store2.clear();
-      request.onsuccess = () => resolve2();
-      request.onerror = () => reject(request.error);
-    });
-  }
-  // Вспомогательный метод: получить все ключи (если нужно)
-  async keys() {
-    const db = await this.dbPromise;
-    return new Promise((resolve2, reject) => {
-      const tx = db.transaction(this.storeName, "readonly");
-      const store2 = tx.objectStore(this.storeName);
-      const keys2 = [];
-      const request = store2.openCursor();
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          keys2.push(cursor.key);
-          cursor.continue();
-        } else {
-          resolve2(keys2);
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
-  }
-  versionToNumber(versionStr) {
-    return versionStr.split(".").map((part) => part.padStart(2, "0")).join("").padEnd(7, "0").slice(0, 7) * 1;
-  }
-}
-const API_KEY = "AIzaSyBTTqB_rSfwzuTIdF1gcQ5-U__fGzrQ_zs";
-const spreadsheetId = "13zsZqGICZKQYMCcGkhgr7pzhH1z-LWFiH0LMrI6NGLM";
-const CLIENT_ID = "21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleusercontent.com";
-const DISCOVERY_DOC_CALENDAR = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
-const DISCOVERY_DOC_SHEETS = "https://sheets.googleapis.com/$discovery/rest?version=v4";
-const SCOPES = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets";
-class ORM {
-  constructor(columns2 = []) {
-    this.columns = columns2;
-  }
-  getRaw(data = {}) {
-    let result = [];
-    this.columns.forEach((value, index2) => {
-      console.log(index2, value, data[value]);
-      if (value === "value") {
-        const raw = typeof data[value] === "object" ? JSON.stringify(data[value]) : data[value];
-        const chunks = raw.toString().match(/.{1,49000}/g);
-        result[index2] = chunks[0];
-        result.push(...chunks.slice(1));
-      } else {
-        result[index2] = data[value];
-      }
-    });
-    return result;
-  }
-  getFormated(data = []) {
-    let result = {};
-    this.columns.forEach((value, index2) => {
-      result[value] = data[index2];
-    });
-    return result;
-  }
-}
-class Table {
-  constructor(options) {
-    this.list = options.list;
-    this.sheets = {};
-    this.spreadsheetId = options.spreadsheetId || spreadsheetId;
-    this.api = window.GoogleSheetDB || new GoogleSheetDB();
-    this.spreadsheets = gapi.client.sheets.spreadsheets;
-    this.columns = [];
-    try {
-      this.columns = JSON.parse(sessionStorage.getItem(options.spreadsheetId + "/" + options.list + "/columns")) || {};
-    } catch (e) {
-    }
-    this.codes = {};
-    this.sending = false;
-  }
-  async exist() {
-    return await this.getSheetIdByName(this.list) || false;
-  }
-  async getSheetIdByName(sheetName) {
-    if (this.sheets[sheetName])
-      return this.sheets[sheetName];
-    const response = await this.spreadsheets.get({
-      spreadsheetId: this.spreadsheetId
-    });
-    const sheet = response.result.sheets.find(
-      (s2) => s2.properties.title === sheetName
-    );
-    const sheetId = sheet ? sheet.properties.sheetId : null;
-    this.sheets[sheetName] = sheetId;
-    return sheetId;
-  }
-  async addRawValues(values = []) {
-    await this.waitSending();
-    try {
-      this.sending = true;
-      let res = await this.spreadsheets.values.append({
-        spreadsheetId: this.spreadsheetId,
-        range: this.list + "!A1:Z1",
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        resource: {
-          majorDimension: "ROWS",
-          values
-          //values: [["Engine", "$100", "1", "3/20/2016"]],
-        }
-      });
-      console.log(res);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      this.sending = false;
-    }
-  }
-  async addRow(values = {}) {
-    if (!this.columns[this.list]) {
-      let columnsRaw = sessionStorage.getItem(spreadsheetId + "/" + this.list + "/columns");
-      if (columnsRaw) {
-        this.columns[this.list] = JSON.parse(columnsRaw);
-      } else {
-        await this.getAll();
-      }
-    }
-    let table = new ORM(this.columns[this.list]);
-    let rawValue = table.getRaw(values);
-    await this.waitSending();
-    await this.addRawValues([rawValue]);
-  }
-  async waitSending(timeout = 1e4) {
-    while (this.sending) {
-      await new Promise((resolve2) => setTimeout(resolve2, timeout));
-    }
-  }
-  async addColumns(values = []) {
-    try {
-      let res = await this.spreadsheets.values.append({
-        spreadsheetId: this.spreadsheetId,
-        range: this.list + "!A1:Z1",
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        resource: {
-          majorDimension: "ROWS",
-          values: [values]
-          //values: [["Engine", "$100", "1", "3/20/2016"]],
-        }
-      });
-      console.log(res);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  async deleteRow(rowIndex) {
-    const sheetId = await this.getSheetIdByName(this.list);
-    if (sheetId === null) {
-      throw new Error("Лист 'API' не найден");
-    }
-    await this.spreadsheets.batchUpdate({
-      spreadsheetId: this.spreadsheetId,
-      resource: {
-        requests: [
-          {
-            deleteDimension: {
-              range: {
-                sheetId,
-                dimension: "ROWS",
-                startIndex: rowIndex - 1,
-                endIndex: rowIndex
-              }
-            }
-          }
-        ]
-      }
-    });
-  }
-  async updateRow(row, values = {}) {
-    if (!this.columns[this.list]) {
-      await this.getColumns(this.list);
-    }
-    let table = new ORM(this.columns[this.list]);
-    let rawValue = table.getRaw(values);
-    console.debug("values.update", new Error().stack);
-    this.waitSending();
-    this.sending = true;
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: this.spreadsheetId,
-      range: this.list + "!A" + row,
-      valueInputOption: "RAW",
-      resource: {
-        values: [rawValue]
-      }
-    }).then((response) => {
-      console.log("Value updated successfully:", response);
-    }).catch((err) => {
-      console.log("Value update failed:", err);
-    });
-    this.sending = false;
-  }
-  async getLists() {
-    let response = await this.spreadsheets.get({
-      spreadsheetId: this.spreadsheetId,
-      fields: "sheets.properties.title"
-    });
-    return response.result.sheets;
-  }
-  async createList(columns2 = ["code", "value"]) {
-    let title = this.list;
-    await this.spreadsheets.get({
-      spreadsheetId: this.spreadsheetId,
-      fields: "sheets.properties.title"
-    }).then((response) => {
-      const sheets = response.result.sheets;
-      const sheetExists = sheets.some((sheet) => sheet.properties.title === title);
-      if (sheetExists) {
-        console.debug(`Лист с названием "${title}" уже существует.`);
-        return;
-      }
-      this.spreadsheets.batchUpdate({
-        spreadsheetId: this.spreadsheetId,
-        requests: [
-          {
-            addSheet: {
-              properties: {
-                title
-              }
-            }
-          }
-        ]
-      }).then((response2) => {
-        console.log("Лист добавлен:", response2.result.replies[0].addSheet.properties.sheetId);
-        this.addColumns(columns2);
-      }).catch((error) => {
-        console.error("Ошибка при добавлении листа:", error);
-      });
-    }).catch((error) => {
-      console.error("Ошибка при получении информации о таблице:", error);
-    });
-  }
-  createSpreadSheet(title, callback = null) {
-    try {
-      this.spreadsheets.create({
-        properties: {
-          title
-        }
-      }).then((response) => {
-        if (callback)
-          callback(response);
-        console.log("Spreadsheet ID: " + response.result.spreadsheetId);
-      });
-    } catch (err) {
-      console.error(err.message);
-    }
-  }
-  async clearList() {
-    await this.spreadsheets.values.clear({
-      spreadsheetId: this.spreadsheetId,
-      range: this.list + "!A2:Z1000"
-    });
-  }
-  async getRow(row) {
-    let range3 = this.list + "!A" + row + ":Z" + row;
-    let spreadsheetId2 = this.spreadsheetId;
-    return await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2 });
-  }
-  async getAll(options = {}) {
-    let { caching, formated } = options;
-    const range3 = this.list + "!A1:Z5000";
-    let spreadsheetId2 = this.spreadsheetId;
-    let response = await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2, caching });
-    if (response) {
-      this.columns[this.list] = response[0];
-      sessionStorage.setItem(spreadsheetId2 + "/" + this.list + "/columns", JSON.stringify(response[0]));
-      this.setCodes(response);
-      if (formated) {
-        return this.formatData(response);
-      }
-    }
-    return response;
-  }
-  async getColumns(list) {
-    if (!this.columns[list]) {
-      const range3 = (list ? list + "!" : "") + "A1:Z1";
-      let spreadsheetId2 = this.spreadsheetId;
-      const values = await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2 });
-      if (values.length > 0) {
-        this.columns[list] = values[0];
-      }
-    }
-  }
-  setCodes(response) {
-    response.forEach((e, i) => {
-      this.codes[e[0]] = i;
-    });
-    let storageKey = this.spreadsheetId + "/" + this.list + "/codes";
-    sessionStorage.setItem(storageKey, JSON.stringify(this.codes));
-  }
-  formatData(response) {
-    let result = {};
-    response.forEach((e) => {
-      if ("{[".includes(e[1][0])) {
-        result[e[0]] = JSON.parse(e.slice(1).join(""));
-      } else {
-        result[e[0]] = e[1];
-      }
-    });
-    return result;
-  }
-  async updateRowByCode(code, values = {}) {
-    let storageKey = this.spreadsheetId + "/" + this.list + "/codes";
-    let stored_codes = sessionStorage.getItem(storageKey);
-    if (!this.codes.length) {
-      if (stored_codes) {
-        this.codes = JSON.parse(stored_codes);
-      } else {
-        await this.getAll();
-      }
-    } else {
-      console.log("все норм");
-    }
-    if (!values.code) {
-      values.code = code;
-    }
-    let id = this.codes[code] + 1;
-    if (id) {
-      await this.updateRow(id, values);
-      return true;
-    } else {
-      await this.addRow(values);
-      return false;
-    }
-  }
-  async addRows(values = []) {
-    if (!this.columns[this.list]) {
-      let columnsRaw = sessionStorage.getItem(spreadsheetId + "/" + this.list + "/columns");
-      if (columnsRaw) {
-        this.columns[this.list] = JSON.parse(columnsRaw);
-      } else {
-        await this.getAll();
-      }
-    }
-    let table = new ORM(this.columns[this.list]);
-    let rawValues = [];
-    values.forEach((e) => {
-      rawValues.push(table.getRaw(e));
-    });
-    await this.waitSending();
-    try {
-      this.sending = true;
-      let res = await this.spreadsheets.values.append({
-        spreadsheetId: this.spreadsheetId,
-        range: this.list + "!A1:Z1",
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        resource: {
-          majorDimension: "ROWS",
-          values: rawValues
-          //values: [["Engine", "$100", "1", "3/20/2016"]],
-        }
-      });
-      console.log(res);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      this.sending = false;
-    }
-  }
-}
-class GoogleSheetDB {
-  constructor(options = {}) {
-    this.DISCOVERY_DOC = "https://sheets.googleapis.com/$discovery/rest?version=v4";
-    this.apiKey = API_KEY;
-    this.tokenClient = {};
-    this.gapiInited = false;
-    this.gisInited = false;
-    this.authorize_button = document.getElementById("authorize_button");
-    this.headers = [];
-    this.columns = {};
-    if (this.expired()) {
-      localStorage.setItem("gapi_token", "");
-    }
-    this.storedToken = localStorage.getItem("gapi_token");
-    this.callback = options.callback;
-    loadScriptOnce({
-      src: "https://apis.google.com/js/api.js",
-      onload: this.gapiLoaded.bind(this)
-    });
-    loadScriptOnce({
-      src: "https://accounts.google.com/gsi/client",
-      onload: this.gisLoaded.bind(this)
-    });
-    let timer = setInterval(async () => {
-      if (document.getElementById("signout_button")) {
-        document.getElementById("signout_button").textContent = localStorage.getItem("gapi_token_expires") - this.getTime();
-      }
-      if (this.expired()) {
-        console.log("нужно авторизоваться");
-        document.body.dispatchEvent(new Event("doAuth"));
-        clearInterval(timer);
-      }
-    });
-    window.GoogleSheetDB = this;
-  }
-  async waitGoogle(timeout = 1e4) {
-    console.trace("ждем гугла");
-    const startTime = Date.now();
-    while (!(this.gapiInited && this.gisInited)) {
-      if (Date.now() - startTime > timeout) {
-        throw new Error("Инициализация Google API не завершена в течение отведенного времени." + this.gapiInited + " " + this.gisInited);
-      }
-      await new Promise((resolve2) => setTimeout(resolve2, 100));
-    }
-  }
-  async waitRead(timeout = 1e4) {
-    const startTime = Date.now();
-    while (!this.gapiInited) {
-      if (Date.now() - startTime > timeout) {
-        throw new Error("Инициализация Google API не завершена в течение отведенного времени." + this.gapiInited + " " + this.gisInited);
-      }
-      await new Promise((resolve2) => setTimeout(resolve2, 100));
-    }
-  }
-  async waitWrite(timeout = 1e4) {
-    const startTime = Date.now();
-    while (!this.gisInited) {
-      if (Date.now() - startTime > timeout) {
-        throw new Error("Инициализация Google API не завершена в течение отведенного времени." + this.gapiInited + " " + this.gisInited);
-      }
-      await new Promise((resolve2) => setTimeout(resolve2, 100));
-    }
-  }
-  expired() {
-    return localStorage.getItem("gapi_token_expires") - this.getTime() < 10;
-  }
-  getTime() {
-    return Math.floor(Date.now() / 1e3);
-  }
-  async gapiLoaded() {
-    gapi.load("client", this.initializeGapiClient.bind(this));
-  }
-  maybeEnableButtons() {
-    if (this.gapiInited && this.gisInited) {
-      if (this.authorize_button) {
-        this.authorize_button.style.visibility = "visible";
-      }
-    }
-  }
-  async initializeGapiClient() {
-    await gapi.client.init({
-      apiKey: this.apiKey,
-      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS]
-    });
-    if (this.storedToken) {
-      try {
-        const parsedToken = JSON.parse(this.storedToken);
-        gapi.client.setToken(parsedToken);
-      } catch (e) {
-        console.warn("Failed to parse stored token:", e);
-      }
-    }
-    this.gapiInited = true;
-    if (this.callback)
-      this.callback();
-    this.maybeEnableButtons();
-  }
-  gisLoaded() {
-    this.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS],
-      callback: () => {
-      }
-      // пустой, определим в handleAuthClick
-    });
-    this.gisInited = true;
-    this.maybeEnableButtons();
-    this.eventHandler();
-  }
-  eventHandler() {
-    if (this.authorize_button) {
-      this.authorize_button.onclick = this.handleAuthClick.bind(this, () => {
-        location.reload();
-      });
-    }
-    if (document.getElementById("signout_button")) {
-      document.getElementById("signout_button").onclick = this.handleSignoutClick.bind(this);
-    }
-  }
-  handleAuthClick(callback) {
-    this.tokenClient.callback = async (resp) => {
-      if (resp.error !== void 0) {
-        throw resp;
-      }
-      document.getElementById("signout_button").style.visibility = "visible";
-      this.authorize_button.innerText = "Refresh";
-      const token = gapi.client.getToken();
-      localStorage.setItem("gapi_token", JSON.stringify(token));
-      localStorage.setItem("gapi_token_expires", JSON.stringify(this.getTime() + resp.expires_in));
-      callback();
-    };
-    if (gapi.client.getToken() === null) {
-      this.tokenClient.requestAccessToken({ prompt: "consent" });
-    } else {
-      this.tokenClient.requestAccessToken({ prompt: "" });
-    }
-  }
-  handleSignoutClick() {
-    const token = gapi.client.getToken();
-    if (token !== null) {
-      google.accounts.oauth2.revoke(token.access_token);
-      gapi.client.setToken("");
-      localStorage.removeItem("gapi_token");
-      document.getElementById("content").innerText = "";
-      this.authorize_button.innerText = "Authorize";
-    }
-  }
-  async fetchSheetValues(options) {
-    const webStorage = new WebStorage();
-    let { range: range3, spreadsheetId: spreadsheetId2, caching } = options;
-    let response;
-    let data = [];
-    let storageKey = range3 + spreadsheetId2;
-    let storageData = await webStorage.getItem(storageKey);
-    if (caching && storageData) {
-      return JSON.parse(storageData);
-    }
-    try {
-      response = await gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: spreadsheetId2,
-        range: range3
-      });
-      console.debug("values.get", new Error().stack);
-    } catch (err) {
-      console.error(err);
-      return data;
-    }
-    const result = response.result;
-    if (!result || !result.values || result.values.length === 0) {
-      console.error("No values found.");
-      return data;
-    }
-    data = result.values;
-    await webStorage.setItem(storageKey, JSON.stringify(data));
-    return data;
-  }
-}
-function loadScriptOnce({ src, onload, async = true, defer = true }) {
-  const existingScript = Array.from(document.getElementsByTagName("script")).find((script2) => script2.src === src);
-  if (existingScript) {
-    console.log(`Скрипт уже загружен: ${src}`);
-    onload();
-    return;
-  }
-  const script = document.createElement("script");
-  script.src = src;
-  script.async = async;
-  script.defer = defer;
-  if (onload && typeof onload === "function") {
-    script.onload = onload;
-  }
-  document.head.appendChild(script);
-}
-const LOCAL_STORAGE_KEY$1 = "todo-list";
+const LOCAL_STORAGE_KEY$3 = "todo-list";
 const saveTodos = (todos2) => {
-  localStorage.setItem(LOCAL_STORAGE_KEY$1, JSON.stringify(todos2));
+  localStorage.setItem(LOCAL_STORAGE_KEY$3, JSON.stringify(todos2));
 };
 const loadTodos = () => {
-  const data = localStorage.getItem(LOCAL_STORAGE_KEY$1);
+  const data = localStorage.getItem(LOCAL_STORAGE_KEY$3);
   return data ? JSON.parse(data) : [];
 };
-const state$1 = {
+const state$3 = {
   todos: loadTodos()
 };
-const getters$1 = {
+const getters$3 = {
   getTodos: (state2) => state2.todos
 };
-const mutations$1 = {
+const mutations$3 = {
   UPDATE_TODO(state2, updatedTask) {
     const index2 = state2.todos.findIndex((t) => t.task_uuid === updatedTask.task_uuid);
     if (index2 !== -1) {
@@ -68261,7 +68328,7 @@ const mutations$1 = {
     }
   }
 };
-async function getGoogleSheetTable(rootGetters) {
+async function getGoogleSheetTable$2(rootGetters) {
   const settings2 = rootGetters["settings/allSettings"];
   const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
   if (!spreadsheetSetting) {
@@ -68270,14 +68337,14 @@ async function getGoogleSheetTable(rootGetters) {
   }
   const api = window.GoogleSheetDB || new GoogleSheetDB();
   await api.waitGoogle();
-  return new Table({
+  return new Table$2({
     spreadsheetId: spreadsheetSetting.value,
     list: "real_life_tasks"
   });
 }
-const actions$1 = {
+const actions$3 = {
   async initTodos({ commit: commit2, rootGetters }) {
-    const table = await getGoogleSheetTable(rootGetters);
+    const table = await getGoogleSheetTable$2(rootGetters);
     if (!table) {
       commit2("SET_TODOS", loadTodos());
       return;
@@ -68298,13 +68365,143 @@ const actions$1 = {
   },
   async updateTodo({ commit: commit2, rootGetters }, updatedTask) {
     commit2("UPDATE_TODO", updatedTask);
-    const table = await getGoogleSheetTable(rootGetters);
+    const table = await getGoogleSheetTable$2(rootGetters);
     if (!table)
       return;
     await table.updateRowByCode(updatedTask.task_title, updatedTask);
   }
 };
 const todos = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  actions: actions$3,
+  getters: getters$3,
+  mutations: mutations$3,
+  state: state$3
+}, Symbol.toStringTag, { value: "Module" }));
+const LOCAL_STORAGE_KEY$2 = "hero-list";
+const saveHero = (hero2) => {
+  localStorage.setItem(LOCAL_STORAGE_KEY$2, JSON.stringify(hero2));
+};
+const loadHero$1 = () => {
+  const data = localStorage.getItem(LOCAL_STORAGE_KEY$2);
+  return data ? JSON.parse(data) : [];
+};
+const state$2 = {
+  hero: loadHero$1()
+};
+const getters$2 = {
+  getHero: (state2) => state2.hero
+};
+const mutations$2 = {
+  UPDATE_HERO(state2, hero2) {
+    state2.hero = hero2;
+    saveHero(state2.hero);
+  },
+  SET_HERO(state2, hero2) {
+    state2.hero = hero2;
+    saveHero(state2.hero);
+  }
+};
+async function getGoogleSheetTable$1(rootGetters) {
+  const settings2 = rootGetters["settings/allSettings"];
+  const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
+  if (!spreadsheetSetting) {
+    console.warn("spreadsheetId not found in settings");
+    return null;
+  }
+  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  await api.waitGoogle();
+  return new Table$2({
+    spreadsheetId: spreadsheetSetting.value,
+    list: "real_life_hero"
+  });
+}
+const actions$2 = {
+  async initHero({ commit: commit2, rootGetters }) {
+    const table = await getGoogleSheetTable$1(rootGetters);
+    if (!table) {
+      commit2("SET_HERO", loadHero$1());
+      return;
+    }
+    const list = await table.getAll();
+    const orm = new ORM(table.columns[table.list]);
+    let hero2 = {};
+    list.map((e) => {
+      let formated = orm.getFormated(e);
+      hero2[formated.code] = formated.value;
+    });
+    commit2("SET_HERO", hero2);
+  },
+  async updateHero({ commit: commit2, rootGetters }, hero2) {
+    commit2("UPDATE_HERO", hero2);
+    const table = await getGoogleSheetTable$1(rootGetters);
+    if (!table)
+      return console.log("нет таблицы героя");
+    await table.updateRowByCode("hero_money", { value: hero2.hero_money });
+  }
+};
+const hero = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  actions: actions$2,
+  getters: getters$2,
+  mutations: mutations$2,
+  state: state$2
+}, Symbol.toStringTag, { value: "Module" }));
+const LOCAL_STORAGE_KEY$1 = "events-list";
+const saveEvents = (hero2) => {
+  localStorage.setItem(LOCAL_STORAGE_KEY$1, JSON.stringify(hero2));
+};
+const loadEvents = () => {
+  const data = localStorage.getItem(LOCAL_STORAGE_KEY$1);
+  return data ? JSON.parse(data) : [];
+};
+const state$1 = {
+  events: loadEvents()
+};
+const getters$1 = {
+  getEvents: (state2) => state2.events
+};
+const mutations$1 = {
+  SET_EVENTS(state2, events2) {
+    state2.events = events2;
+    saveEvents(state2.events);
+  }
+};
+async function getGoogleSheetTable(rootGetters) {
+  const settings2 = rootGetters["settings/allSettings"];
+  const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
+  if (!spreadsheetSetting) {
+    console.warn("spreadsheetId not found in settings");
+    return null;
+  }
+  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  await api.waitGoogle();
+  return new Table$2({
+    spreadsheetId: spreadsheetSetting.value,
+    list: "real_life_hero"
+  });
+}
+const actions$1 = {
+  async initHero({ commit: commit2, rootGetters }) {
+    const table = await getGoogleSheetTable(rootGetters);
+    if (!table) {
+      commit2("SET_HERO", loadHero());
+      return;
+    }
+    const list = await table.getAll();
+    const orm = new ORM(table.columns[table.list]);
+    let hero2 = {};
+    list.map((e) => {
+      let formated = orm.getFormated(e);
+      hero2[formated.code] = formated.value;
+    });
+    commit2("SET_HERO", hero2);
+  },
+  async setEvents({ commit: commit2, rootGetters }, events2) {
+    commit2("SET_EVENTS", events2);
+  }
+};
+const events = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   actions: actions$1,
   getters: getters$1,
@@ -68355,6 +68552,8 @@ const settings = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProp
 const store = createStore$1({
   modules: {
     todos: { ...todos, namespaced: true },
+    hero: { ...hero, namespaced: true },
+    events: { ...events, namespaced: true },
     settings: { ...settings, namespaced: true }
   }
 });

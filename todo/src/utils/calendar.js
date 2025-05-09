@@ -1,4 +1,8 @@
-export async function listEvents() {
+import {GoogleSheetDB} from "../../../dnd/static/js/db/google.js";
+
+export async function listEvents(store=false) {
+    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
     const today = new Date();
     const start = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const end = new Date(today.setHours(23, 59, 59, 999)).toISOString();
@@ -22,7 +26,11 @@ export async function listEvents() {
     } else {
         console.log('Событий на сегодня нет.');
     }
+    if (store){
+        store.dispatch("events/setEvents", events);
+    }
     return events;
+
 }
 
 export async function addEvent(event) {
@@ -35,7 +43,6 @@ export async function addEvent(event) {
 }
 
 export async function updateEvent(event) {
-    console.log(event);
     await gapi.client.calendar.events.update({
         calendarId: 'primary',
         eventId: event.id,

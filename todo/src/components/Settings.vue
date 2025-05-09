@@ -94,8 +94,7 @@ export default {
                 const task = todos.filter(todo => todo.task_uuid === task_uuid);
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , now.getHours(), now.getMinutes(), 0, 0).getTime();
 
-                if (task.length && task[0].start_date < today && (new Date(event)).getTime() < today){
-                    console.log(task);
+                if (task.length && (task[0].start_date < today) && (new Date(event.start.dateTime)).getTime() < today){
                     makeTaskDone(task, this.$store);
                 }
             });

@@ -66,32 +66,32 @@
     height: 1.25rem;
     text-align: center;
 }
-.settings[data-v-588a2434] {
+.settings[data-v-7409fe87] {
     margin-top: 1rem;
 }
-.form[data-v-588a2434] {
+.form[data-v-7409fe87] {
     margin-top: 1rem;
 }
-input[data-v-588a2434] {
+input[data-v-7409fe87] {
     display: inline-block;
     margin-right: 0.5rem;
     padding: 0.5rem;
     width: 150px;
 }
-button[data-v-588a2434] {
+button[data-v-7409fe87] {
     padding: 0.5rem 1rem;
     margin-left: 1rem;
 }
-ul[data-v-588a2434] {
+ul[data-v-7409fe87] {
     list-style-type: none;
     padding: 0;
 }
-li[data-v-588a2434] {
+li[data-v-7409fe87] {
     display: flex;
     align-items: center;
     margin-bottom: 0.5rem;
 }
-li button[data-v-588a2434] {
+li button[data-v-7409fe87] {
     margin-left: 10px;
     padding: 0.2rem 0.5rem;
 }

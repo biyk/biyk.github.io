@@ -19,8 +19,8 @@ export async function listEvents(store=false) {
     const events = response.result.items;
     if (events.length > 0) {
         events.forEach(event => {
-            const start = event.start.dateTime || event.start.date;
-            const end = event.start.dateTime || event.start.date;
+            //const start = event.start.dateTime || event.start.date;
+            //const end = event.start.dateTime || event.start.date;
             //console.log(event.summary);
         });
     } else {
@@ -52,9 +52,15 @@ export async function updateEvent(event) {
 
 }
 
-export function getFreeSlots(events, workStart = '00:00', workEnd = '23:00', minSlotMinutes = 15) {
+export function getFreeSlots(events, options={}) {
     if (!Array.isArray(events)) return [];
+    let workStart = '00:00', workEnd = '23:00', minSlotMinutes = 15;
+    let now = new Date();
 
+    let hours = String(now.getHours()).padStart(2, '0');
+    let minutes = String(now.getMinutes()).padStart(2, '0');
+
+    workStart = `${hours}:${minutes}`;
     const day = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
     const toDateTime = (timeStr) => new Date(`${day}T${timeStr}:00`);
 

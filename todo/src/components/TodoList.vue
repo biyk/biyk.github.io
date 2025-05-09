@@ -1,5 +1,6 @@
 <template>
     <ul class="tasks">
+        <li>{{getSortedTodos().length}}</li>
         <li
             v-for="todo in getSortedTodos()"
             :key="todo.id"
@@ -16,7 +17,7 @@
 import '../assets/styles/components/TodoList.css';
 import {makeTaskDone} from "@/utils/tasks.js";
 import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
-import {Cache} from "@/utils/cache.js"
+
 export default {
     computed: {
         todos() {
@@ -89,6 +90,30 @@ export default {
             this.$store.dispatch("todos/deleteTodo", id);
         },
         getSortedTodos(){
+
+
+
+            switch (this.filter) {
+                case 'calendar':
+                    const calendarOrder = this.events
+                        .map(event => event.description)
+                        .filter(uuid => uuid); // удалим undefined/null
+
+                    // Создаём карту соответствия UUID → порядок
+                    const uuidOrderMap = new Map();
+                    calendarOrder.forEach((uuid, index) => {
+                        uuidOrderMap.set(uuid, index);
+                    });
+
+                    // Оставляем только задачи с UUID, которые есть в событиях, и сортируем по их порядку в events
+                    return this.getFilteredTodos()
+                        .filter(todo => uuidOrderMap.has(todo.task_uuid))
+                        .sort((a, b) => uuidOrderMap.get(a.task_uuid) - uuidOrderMap.get(b.task_uuid));
+                case 'today':
+                case 'tomorrow':
+                default:
+                    return this.getFilteredTodos().sort((a, b) => a.task_sort - b.task_sort);
+            }
             return this.getFilteredTodos().sort((a, b) => a.task_sort - b.task_sort);
         }
     },

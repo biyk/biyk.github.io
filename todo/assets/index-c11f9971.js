@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.50";
+window.version = "0.2.51";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7889,10 +7889,6 @@ function makeTaskDone(task, store2) {
   repeat_index = parseInt(repeat_index);
   const now2 = new Date();
   switch (repeat_mode) {
-    case "1":
-      start_date = new Date().getTime() + 1e3 * 30 * 24 * 60 * 60;
-      task_finish_date = new Date().getTime() + 1e3 * 31 * 24 * 60 * 60;
-      break;
     case "0":
       start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
@@ -8627,8 +8623,6 @@ async function listEvents(store2 = false) {
   const events2 = response.result.items;
   if (events2.length > 0) {
     events2.forEach((event) => {
-      event.start.dateTime || event.start.date;
-      event.start.dateTime || event.start.date;
     });
   } else {
     console.log("Событий на сегодня нет.");
@@ -8653,9 +8647,14 @@ async function updateEvent(event) {
   });
   console.log("Событие обновлено:", event.summary);
 }
-function getFreeSlots(events2, workStart = "00:00", workEnd = "23:00", minSlotMinutes = 15) {
+function getFreeSlots(events2, options = {}) {
   if (!Array.isArray(events2))
     return [];
+  let workStart = "00:00", workEnd = "23:00", minSlotMinutes = 15;
+  let now2 = new Date();
+  let hours = String(now2.getHours()).padStart(2, "0");
+  let minutes = String(now2.getMinutes()).padStart(2, "0");
+  workStart = `${hours}:${minutes}`;
   const day = new Date().toISOString().slice(0, 10);
   const toDateTime = (timeStr) => new Date(`${day}T${timeStr}:00`);
   const startOfDay = toDateTime(workStart);
@@ -8771,6 +8770,19 @@ const _sfc_main$2A = {
       this.$store.dispatch("todos/deleteTodo", id);
     },
     getSortedTodos() {
+      switch (this.filter) {
+        case "calendar":
+          const calendarOrder = this.events.map((event) => event.description).filter((uuid) => uuid);
+          const uuidOrderMap = /* @__PURE__ */ new Map();
+          calendarOrder.forEach((uuid, index2) => {
+            uuidOrderMap.set(uuid, index2);
+          });
+          return this.getFilteredTodos().filter((todo) => uuidOrderMap.has(todo.task_uuid)).sort((a2, b2) => uuidOrderMap.get(a2.task_uuid) - uuidOrderMap.get(b2.task_uuid));
+        case "today":
+        case "tomorrow":
+        default:
+          return this.getFilteredTodos().sort((a2, b2) => a2.task_sort - b2.task_sort);
+      }
       return this.getFilteredTodos().sort((a2, b2) => a2.task_sort - b2.task_sort);
     }
   },
@@ -8785,6 +8797,7 @@ const _hoisted_3$1 = ["title"];
 const _hoisted_4$1 = ["onClick"];
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock("ul", _hoisted_1$2, [
+    createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length), 1),
     (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
       return openBlock(), createElementBlock("li", {
         key: todo.id,
@@ -9925,9 +9938,10 @@ let intervalId = null;
 function startTaskAgent(store2) {
   if (intervalId)
     return;
-  intervalId = setInterval(() => {
+  intervalId = setInterval(async () => {
     store2.dispatch("todos/initTodos");
     const todos2 = store2.getters["todos/getTodos"];
+    await listEvents(store2);
     const now2 = new Date();
     todos2.forEach((todo) => {
       if (todo.task_finish_date) {
@@ -9962,7 +9976,6 @@ const _sfc_main$2y = {
         return window.location.hash.replace("#/", "") || "new";
       },
       set(val) {
-        console.log(val);
         window.location.hash = val;
       }
     });

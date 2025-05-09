@@ -18,7 +18,7 @@ export class Cache {
         return null
     }
     setTTL(time=60){
-        this.ttl = (new Date()).getTime() + 60*1000;
+        this.ttl = (new Date()).getTime() + time*1000;
         sessionStorage.setItem(this.id+'_ttl', this.ttl);
     }
     set(value){

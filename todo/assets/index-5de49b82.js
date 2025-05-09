@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.51";
+window.version = "0.2.52";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8650,11 +8650,11 @@ async function updateEvent(event) {
 function getFreeSlots(events2, options = {}) {
   if (!Array.isArray(events2))
     return [];
-  let workStart = "00:00", workEnd = "23:00", minSlotMinutes = 15;
+  let workEnd = "23:00", minSlotMinutes = 15;
   let now2 = new Date();
   let hours = String(now2.getHours()).padStart(2, "0");
   let minutes = String(now2.getMinutes()).padStart(2, "0");
-  workStart = `${hours}:${minutes}`;
+  let workStart = `${hours}:${minutes}`;
   const day = new Date().toISOString().slice(0, 10);
   const toDateTime = (timeStr) => new Date(`${day}T${timeStr}:00`);
   const startOfDay = toDateTime(workStart);
@@ -8783,7 +8783,6 @@ const _sfc_main$2A = {
         default:
           return this.getFilteredTodos().sort((a2, b2) => a2.task_sort - b2.task_sort);
       }
-      return this.getFilteredTodos().sort((a2, b2) => a2.task_sort - b2.task_sort);
     }
   },
   mounted() {
@@ -9973,7 +9972,7 @@ const _sfc_main$2y = {
   setup() {
     const activeTab = computed({
       get() {
-        return window.location.hash.replace("#/", "") || "new";
+        return window.location.hash.replace("#/", "") || "calendar";
       },
       set(val) {
         window.location.hash = val;
@@ -9994,9 +9993,9 @@ const _sfc_main$2y = {
 };
 const _hoisted_1 = { class: "container" };
 function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
-  const _component_TodoNew = resolveComponent("TodoNew");
-  const _component_el_tab_pane = resolveComponent("el-tab-pane");
   const _component_TodoList = resolveComponent("TodoList");
+  const _component_el_tab_pane = resolveComponent("el-tab-pane");
+  const _component_TodoNew = resolveComponent("TodoNew");
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
@@ -10007,24 +10006,6 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
     }, {
       default: withCtx(() => [
         createVNode(_component_el_tab_pane, {
-          label: "Добавить",
-          name: "new"
-        }, {
-          default: withCtx(() => [
-            createVNode(_component_TodoNew)
-          ]),
-          _: 1
-        }),
-        createVNode(_component_el_tab_pane, {
-          label: "Сегодня",
-          name: "today"
-        }, {
-          default: withCtx(() => [
-            createVNode(_component_TodoList, { filter: "today" })
-          ]),
-          _: 1
-        }),
-        createVNode(_component_el_tab_pane, {
           label: "Календарь",
           name: "calendar"
         }, {
@@ -10034,11 +10015,29 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1
         }),
         createVNode(_component_el_tab_pane, {
+          label: "Активные задачи",
+          name: "today"
+        }, {
+          default: withCtx(() => [
+            createVNode(_component_TodoList, { filter: "today" })
+          ]),
+          _: 1
+        }),
+        createVNode(_component_el_tab_pane, {
           label: "Список",
           name: "list"
         }, {
           default: withCtx(() => [
             createVNode(_component_TodoList, { filter: "all" })
+          ]),
+          _: 1
+        }),
+        createVNode(_component_el_tab_pane, {
+          label: "Добавить",
+          name: "new"
+        }, {
+          default: withCtx(() => [
+            createVNode(_component_TodoNew)
           ]),
           _: 1
         }),

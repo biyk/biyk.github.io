@@ -5,7 +5,6 @@
             :key="todo.id"
             :class="['task', todo.task_color, { completed: todo.completed }]"
             @click="toggleTodo(todo.task_uuid)"
-
         >
             <span :title="todo.task_description">({{ todo.money_reward }}) {{ todo.task_title }}</span>
             <span class="delete" @click="deleteTodo(todo.id)">ⓧ</span>
@@ -17,10 +16,14 @@
 import '../assets/styles/components/TodoList.css';
 import {makeTaskDone} from "@/utils/tasks.js";
 import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
+import {Cache} from "@/utils/cache.js"
 export default {
     computed: {
         todos() {
             return this.$store.getters["todos/getTodos"];
+        },
+        events() {
+            return this.$store.getters["events/getEvents"];
         },
     },
     props: {
@@ -36,12 +39,17 @@ export default {
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
 
             return this.todos.filter(todo => {
-                if (todo.task_title === 'task_title') return false;
-
+                if (todo.task_title.includes('task_title')) return false;
                 const start = todo.start_date;
                 switch (this.filter) {
                     case 'today':
                         return start < today;
+                    case 'calendar':
+                        const calendarEvents = this.events;
+                        const hasMatchingEvent = calendarEvents?.some(
+                            event => event.description?.includes(todo.task_uuid)
+                        );
+                        return start < today && hasMatchingEvent;
                     case 'tomorrow':
                         return start > today && start < tomorrow;
                     default:
@@ -52,7 +60,7 @@ export default {
         async toggleTodo(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
             const endDate = new Date();
-            const startDate = new Date(endDate.getTime() - 15 * 60 * 1000);
+            const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1000);
             const event = {
                 summary: task[0].task_title,
                 description: task[0].task_uuid,
@@ -66,7 +74,7 @@ export default {
                     timeZone: 'Europe/Samara',
                 },
             };
-            let list = await listEvents();
+            let list = await listEvents(this.$store);
 
             let exist = list.filter(event => event.description?.includes(task_uuid));
             if(exist.length){
@@ -86,6 +94,7 @@ export default {
     },
     mounted() {
         this.$store.dispatch("todos/initTodos");
+        listEvents(this.$store);
     }
 };
 </script>

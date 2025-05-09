@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <h1>To-Do List</h1>
+        <h1>{{hero.hero_name}} {{hero.hero_money}}</h1>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="Добавить" name="new">
                 <TodoNew />
@@ -8,8 +8,8 @@
             <el-tab-pane label="Сегодня" name="today">
                 <TodoList filter="today"  />
             </el-tab-pane>
-            <el-tab-pane label="Завтра" name="tomorrow">
-                <TodoList filter="tomorrow"  />
+            <el-tab-pane label="Календарь" name="calendar">
+                <TodoList filter="calendar"  />
             </el-tab-pane>
             <el-tab-pane label="Список" name="list">
                 <TodoList filter="all" />
@@ -45,6 +45,11 @@ export default {
         TodoNew,
         TodoList
     },
+    computed: {
+        hero() {
+            return this.$store.getters["hero/getHero"];
+        },
+    },
     setup() {
         const activeTab = computed({
             get() {
@@ -67,6 +72,9 @@ export default {
         });
 
         return { activeTab };
+    },
+    mounted() {
+        this.$store.dispatch("hero/initHero");
     }
 
 }

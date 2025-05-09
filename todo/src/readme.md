@@ -5,5 +5,5 @@
 отладка
 `npm run dev`
 
-для бота
+для GPT-бота
 `node dump-vue-project.js`

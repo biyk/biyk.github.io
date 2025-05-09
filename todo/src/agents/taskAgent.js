@@ -8,7 +8,7 @@ export function startTaskAgent(store) {
     intervalId = setInterval(async () => {
         store.dispatch("todos/initTodos");
         const todos = store.getters['todos/getTodos'];
-        let list = await listEvents(store);
+        await listEvents(store);
         const now = new Date();
 
         todos.forEach(todo => {

@@ -2,17 +2,17 @@
     <div class="container">
         <h1>{{hero.hero_name}} {{hero.hero_money}}</h1>
         <el-tabs v-model="activeTab">
-            <el-tab-pane label="Добавить" name="new">
-                <TodoNew />
-            </el-tab-pane>
-            <el-tab-pane label="Сегодня" name="today">
-                <TodoList filter="today"  />
-            </el-tab-pane>
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />
             </el-tab-pane>
+            <el-tab-pane label="Активные задачи" name="today">
+                <TodoList filter="today"  />
+            </el-tab-pane>
             <el-tab-pane label="Список" name="list">
                 <TodoList filter="all" />
+            </el-tab-pane>
+            <el-tab-pane label="Добавить" name="new">
+                <TodoNew />
             </el-tab-pane>
             <el-tab-pane label="Магазин" name="shop">
                 <div>Тут будут покупки</div>
@@ -53,7 +53,7 @@ export default {
     setup() {
         const activeTab = computed({
             get() {
-                return window.location.hash.replace('#/', '') || 'new';
+                return window.location.hash.replace('#/', '') || 'calendar';
             },
             set(val) {
                 window.location.hash = val;

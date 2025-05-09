@@ -114,7 +114,6 @@ export default {
                 default:
                     return this.getFilteredTodos().sort((a, b) => a.task_sort - b.task_sort);
             }
-            return this.getFilteredTodos().sort((a, b) => a.task_sort - b.task_sort);
         }
     },
     mounted() {

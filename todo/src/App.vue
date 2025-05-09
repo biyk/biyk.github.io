@@ -56,7 +56,6 @@ export default {
                 return window.location.hash.replace('#/', '') || 'new';
             },
             set(val) {
-                console.log(val)
                 window.location.hash = val;
             }
         });

@@ -1,12 +1,14 @@
+import {listEvents} from "@/utils/calendar.js";
+
 let intervalId = null;
 
 export function startTaskAgent(store) {
     if (intervalId) return; // агент уже работает
 
-    intervalId = setInterval(() => {
+    intervalId = setInterval(async () => {
         store.dispatch("todos/initTodos");
         const todos = store.getters['todos/getTodos'];
-
+        let list = await listEvents(store);
         const now = new Date();
 
         todos.forEach(todo => {

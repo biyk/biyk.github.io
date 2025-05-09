@@ -11,10 +11,6 @@ export function makeTaskDone(task, store){
     const now = new Date();
 
     switch(repeat_mode) {
-        case '1':
-            start_date = (new Date()).getTime() + 1000*30*24*60*60;
-            task_finish_date = (new Date()).getTime() + 1000*31*24*60*60;
-            break;
         case '0':
             start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();

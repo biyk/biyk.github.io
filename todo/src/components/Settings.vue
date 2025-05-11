@@ -125,7 +125,6 @@ export default {
 
                 let slot = freeSlots[slotIndex];
                 let exist = today_events.filter((e)=>{
-                    console.log(e)
                     return e.description?.includes(task.task_uuid)
                 });
                 if (exist?.length) continue;

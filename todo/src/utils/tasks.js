@@ -1,4 +1,4 @@
-export function makeTaskDone(task, store){
+export function makeTaskDone(task, store, options={}){
 
     let {
         repeat_days_of_week,
@@ -7,6 +7,7 @@ export function makeTaskDone(task, store){
         start_date,
         task_finish_date
     } = task[0];
+    let {deleted} = options;
     repeat_index = parseInt(repeat_index);
     const now = new Date();
 
@@ -62,7 +63,7 @@ export function makeTaskDone(task, store){
             break;
         default:
             //console.log(task[0])
-            break;
+            return;;
     }
 
     const updatedTask = {
@@ -70,9 +71,25 @@ export function makeTaskDone(task, store){
         start_date: start_date,
         task_finish_date: task_finish_date
     };
+    store.dispatch("todos/updateTodo", updatedTask);
+
+    if (deleted || repeat_mode=='5') return;
     let hero = { ...store.getters["hero/getHero"] }; // создаем копию объекта
     hero.hero_money = parseInt(hero.hero_money) + parseInt(task[0].money_reward);
 
-    store.dispatch("todos/updateTodo", updatedTask);
     store.dispatch("hero/updateHero", hero);
+}
+
+export function taskSort(task){
+    const now = new Date();
+    const daysDiff = (timestamp) => {
+        const diff = now - new Date(timestamp);
+        return Math.floor(diff / (1000 * 60 * 60 * 24));
+    };
+    return task.task_sort - daysDiff(parseInt(task.start_date))
+}
+
+export function taskDate(date){
+    date = parseInt(date)
+    return (new Date(date)).toLocaleString()
 }

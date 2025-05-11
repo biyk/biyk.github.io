@@ -7,15 +7,15 @@
             :class="['task', todo.task_color, { completed: todo.completed }]"
             @click="toggleTodo(todo.task_uuid)"
         >
-            <span :title="todo.task_description">({{ todo.money_reward }}) {{ todo.task_title }}</span>
-            <span class="delete" @click="deleteTodo(todo.id)">ⓧ</span>
+            <span :title="taskDate(todo.start_date)">({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.start_date)}})</span>
+            <span class="delete" @click="deleteTodo(todo.task_uuid)">ⓧ</span>
         </li>
     </ul>
 </template>
 
 <script>
 import '../assets/styles/components/TodoList.css';
-import {makeTaskDone} from "@/utils/tasks.js";
+import {makeTaskDone, taskDate, taskSort} from "@/utils/tasks.js";
 import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 
 export default {
@@ -34,6 +34,8 @@ export default {
         }
     },
     methods: {
+        taskDate,
+        taskSort,
         getFilteredTodos() {
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , 23, 59, 0, 0).getTime();
@@ -79,19 +81,20 @@ export default {
 
             let exist = list.filter(event => event.description?.includes(task_uuid));
             if(exist.length){
+                event.summary = exist[0].summary;
                 event.id = exist[0].id
                 await updateEvent(event)
             } else {
+
                 await addEvent(event);
             }
             makeTaskDone(task, this.$store);
         },
-        deleteTodo(id) {
-            this.$store.dispatch("todos/deleteTodo", id);
+        deleteTodo(task_uuid) {
+            const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
+            makeTaskDone(task, this.$store, {deleted:1});
         },
         getSortedTodos(){
-
-
 
             switch (this.filter) {
                 case 'calendar':
@@ -112,7 +115,9 @@ export default {
                 case 'today':
                 case 'tomorrow':
                 default:
-                    return this.getFilteredTodos().sort((a, b) => a.task_sort - b.task_sort);
+                    return this.getFilteredTodos().sort((a, b) => {
+                        return taskSort(a) - taskSort(b)
+                    });
             }
         }
     },

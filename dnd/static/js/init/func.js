@@ -138,7 +138,7 @@ export function createEditableSpan(content, property, index, callback, after='')
 
     // Создаем span для значения, которое будет редактируемым
     const valueSpan = document.createElement('span');
-    valueSpan.textContent = value;
+    valueSpan.textContent = value || '0'
     valueSpan.classList.add('editable-value');
     valueSpan.classList.add(property);
     valueSpan.onclick = () => {

@@ -30,6 +30,8 @@ async function checkData(data) {
 }
 
 export async function getInit() {
+    logger.start('getInit')
+
     let api = window.GoogleSheetDB || new GoogleSheetDB();
     await api.waitRead();
     let configTable = new Table({
@@ -44,6 +46,7 @@ export async function getInit() {
     if (window.admin_mode){
         await checkData(mapData);
     }
+    logger.stop('getInit')
     return data;
 }
 

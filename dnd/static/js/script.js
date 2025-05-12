@@ -23,6 +23,7 @@ import {Spells} from './spells.js'
 import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
 import {loadAmbienceRadios} from "./ambience.js";
 import {loadMaps} from "./map.js";
+import {EventDisplay, MyEvents} from "./events.js";
 
 class MapManager {
     constructor() {
@@ -40,13 +41,16 @@ class MapManager {
         this.SlideMenu = {};
         this.selectedIcon = null;
         this.points = new Map();
+        this.events = new EventDisplay();
         this.measure = {};
         this.settings = null;
         this.Listner = document.body;
+        this.logger = new MyEvents();
     }
 
     async initMap() {
         await this.doAuth();
+
         const init = await getInit();
         if (!init) return console.error('no init');
 
@@ -76,6 +80,8 @@ class MapManager {
     }
 
     async doAuth() {
+        this.logger.start('Авторизация')
+
         let api = window.GoogleSheetDB || new GoogleSheetDB();
         await api.waitGoogle();
         let callbackLoadData = () => {
@@ -106,12 +112,15 @@ class MapManager {
                 loadSettingsToLocalStorage.call(this);
             });
         }
+        this.logger.stop('Авторизация')
     }
     checkConfig() {
         setTimeout(async () => {
+            this.logger.start('checkConfig')
             await this.checkForConfigUpdates();
             this.checkConfig();
-        }, 5000);
+            this.logger.stop('checkConfig')
+        }, 7000);
     }
 
     initializeMap(config) {

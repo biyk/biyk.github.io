@@ -17,15 +17,6 @@ export async function listEvents(store=false) {
     });
 
     const events = response.result.items;
-    if (events.length > 0) {
-        events.forEach(event => {
-            //const start = event.start.dateTime || event.start.date;
-            //const end = event.start.dateTime || event.start.date;
-            //console.log(event.summary);
-        });
-    } else {
-        console.log('Событий на сегодня нет.');
-    }
     if (store){
         store.dispatch("events/setEvents", events);
     }

@@ -40,7 +40,6 @@ export default {
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , 23, 59, 0, 0).getTime();
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
-
             return this.todos.filter(todo => {
                 if (todo.task_title.includes('task_title')) return false;
                 const start = todo.start_date;
@@ -95,7 +94,6 @@ export default {
             makeTaskDone(task, this.$store, {deleted:1});
         },
         getSortedTodos(){
-
             switch (this.filter) {
                 case 'calendar':
                     const calendarOrder = this.events
@@ -108,9 +106,8 @@ export default {
                         uuidOrderMap.set(uuid, index);
                     });
 
-                    // Оставляем только задачи с UUID, которые есть в событиях, и сортируем по их порядку в events
+                    // сортируем по их порядку в events
                     return this.getFilteredTodos()
-                        .filter(todo => uuidOrderMap.has(todo.task_uuid))
                         .sort((a, b) => uuidOrderMap.get(a.task_uuid) - uuidOrderMap.get(b.task_uuid));
                 case 'today':
                 case 'tomorrow':

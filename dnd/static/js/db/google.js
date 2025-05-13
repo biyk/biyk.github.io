@@ -432,7 +432,7 @@ export class GoogleSheetDB {
     }
 
     async waitGoogle(timeout = 10000) {
-        console.trace('ждем гугла');
+        //console.trace('ждем гугла');
         const startTime = Date.now();
         while (!(this.gapiInited && this.gisInited)) {
             if (Date.now() - startTime > timeout) {

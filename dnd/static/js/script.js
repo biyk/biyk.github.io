@@ -1,4 +1,4 @@
-import {checkForConfigUpdates, getConfig, getInit, sendData} from './script/api.js';
+import {checkForConfigUpdates, checkVersion, getConfig, getInit, sendData} from './script/api.js';
 import {
     createNumberedIcon,
     exportImportStorageHandler,
@@ -118,6 +118,7 @@ class MapManager {
         setTimeout(async () => {
             this.logger.start('checkConfig')
             await this.checkForConfigUpdates();
+            checkVersion();
             this.checkConfig();
             this.logger.stop('checkConfig')
         }, 7000);

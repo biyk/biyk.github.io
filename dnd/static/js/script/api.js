@@ -105,12 +105,32 @@ export async function sendData(type = 'polygons') {
 
 }
 
+export function checkVersion() {
+    fetch('static/js/version.js')
+        .then(response => response.text())
+        .then(scriptText => {
+            const match = scriptText.match(/window\.version\s*=\s*['"]([^'"]+)['"]/);
+            if (match) {
+                const remoteVersion = match[1];
+                if (window.version !== remoteVersion) {
+                    console.log(`Версия изменилась: ${window.version} → ${remoteVersion}, перезагрузка страницы...`);
+                    location.reload(true); // true — перезагрузка с сервера, не из кэша
+                } else {
+                    console.log(`Версия актуальна: ${window.version}`);
+                }
+            } else {
+                console.error('Не удалось извлечь версию из файла.');
+            }
+        })
+        .catch(error => console.error('Ошибка при загрузке version.js:', error));
+}
+
 export async function checkForConfigUpdates() {
     if (window.admin_mode) return;
     let mapTable = await getMapTable();
     const config = await mapTable.getAll({formated: true});
 
-    if (config.active=='0') return location.reload(true)
+    if (config.active==='0') return location.reload(true)
     if (config) {
         console.debug(config);
         this.lastUpdated = config.lastUpdated;

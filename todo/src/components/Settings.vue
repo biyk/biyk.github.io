@@ -40,7 +40,7 @@
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
 import {addEvent, getFreeSlots, listEvents} from "@/utils/calendar.js";
-import {makeTaskDone} from "@/utils/tasks.js";
+import {makeTaskDone, taskSort} from "@/utils/tasks.js";
 
 export default {
     name: 'Settings',
@@ -113,6 +113,9 @@ export default {
 
             //получаем список дел на сегодня
             let today_events = await listEvents();
+            today_tasks = today_tasks.sort((a, b) => {
+                return taskSort(a) - taskSort(b)
+            });
 
             //записываем в свободные места календаря события
             let freeSlots = getFreeSlots(today_events);
@@ -125,6 +128,7 @@ export default {
 
                 let slot = freeSlots[slotIndex];
                 let exist = today_events.filter((e)=>{
+                    console.log(e)
                     return e.description?.includes(task.task_uuid)
                 });
                 if (exist?.length) continue;

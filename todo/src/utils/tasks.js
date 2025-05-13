@@ -63,7 +63,7 @@ export function makeTaskDone(task, store, options={}){
             break;
         default:
             //console.log(task[0])
-            return;;
+            return;
     }
 
     const updatedTask = {
@@ -73,7 +73,7 @@ export function makeTaskDone(task, store, options={}){
     };
     store.dispatch("todos/updateTodo", updatedTask);
 
-    if (deleted || repeat_mode=='5') return;
+    if (deleted || repeat_mode==='5') return;
     let hero = { ...store.getters["hero/getHero"] }; // создаем копию объекта
     hero.hero_money = parseInt(hero.hero_money) + parseInt(task[0].money_reward);
 

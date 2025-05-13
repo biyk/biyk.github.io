@@ -21,7 +21,6 @@
                 <div>Тут будут данные игрока</div>
             </el-tab-pane>
             <el-tab-pane label="Настройки" name="settings">
-
                 <Settings/>
             </el-tab-pane>
         </el-tabs>

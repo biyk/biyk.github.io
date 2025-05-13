@@ -42,6 +42,22 @@ export async function addEvent(event) {
 
 }
 
+export function makeEvent(task, slot,endDate) {
+    return {
+        summary: task.task_title,
+        description: task.task_uuid,
+        colorId:7,
+        start: {
+            dateTime: slot.start,
+            timeZone: 'Europe/Samara',
+        },
+        end: {
+            dateTime: endDate.toISOString(),
+            timeZone: 'Europe/Samara',
+        },
+    }
+}
+
 export async function updateEvent(event) {
     await gapi.client.calendar.events.update({
         calendarId: 'primary',

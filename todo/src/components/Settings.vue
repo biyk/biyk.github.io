@@ -39,7 +39,7 @@
 
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
-import {addEvent, getFreeSlots, listEvents} from "@/utils/calendar.js";
+import {addEvent, getFreeSlots, listEvents, makeEvent} from "@/utils/calendar.js";
 import {makeTaskDone, taskSort} from "@/utils/tasks.js";
 
 export default {
@@ -102,23 +102,29 @@ export default {
         async setTaskToCalendar() {
             //получаем список задач на сегодня
             this.$store.dispatch("todos/initTodos");
+
+            //список всех задач
             let all = this.$store.getters["todos/getTodos"].sort((a, b) => a.task_sort - b.task_sort);
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
+
+            //список задач которые можно было бы сделать сегодня
             let today_tasks = all.filter(todo => {
                 if (todo.task_title === 'task_title') return false;
                 const start = todo.start_date;
                 return start < today;
             });
 
-            //получаем список дел на сегодня
+            //получаем список дел на сегодня из календаря
             let today_events = await listEvents();
             today_tasks = today_tasks.sort((a, b) => {
                 return taskSort(a) - taskSort(b)
             });
+            console.log(today_tasks);
 
             //записываем в свободные места календаря события
             let freeSlots = getFreeSlots(today_events);
+
             for (const task of today_tasks) {
                 let duration = task.task_time;
                 if (!duration || duration==='0') continue;
@@ -128,29 +134,24 @@ export default {
 
                 let slot = freeSlots[slotIndex];
                 let exist = today_events.filter((e)=>{
-                    console.log(e)
                     return e.description?.includes(task.task_uuid)
                 });
+
                 if (exist?.length) continue;
 
+                let excluded = today_events.filter((e)=>{
+                    return task.excludes?.includes(e.description)
+                });
+                if (excluded?.length) {
+                    console.log('Не сегодня:' , task);
+                    continue;
+                }
                 //добавление события в календарь
                 const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
-                const event = {
-                    summary: task.task_title,
-                    description: task.task_uuid,
-                    colorId:7,
-                    start: {
-                        dateTime: slot.start,
-                        timeZone: 'Europe/Samara',
-                    },
-                    end: {
-                        dateTime: endDate.toISOString(),
-                        timeZone: 'Europe/Samara',
-                    },
-                };
+                const event = makeEvent(task, slot,endDate);
 
-                //
                 await addEvent(event);
+                //добавляем задачу в список today_tasks
 
                 // обновление или удаление слота
                 const updatedDuration = slot.duration - duration;

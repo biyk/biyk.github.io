@@ -6,7 +6,8 @@ export function makeTaskDone(task, store, options={}){
         repeat_mode,
         start_date,
         task_finish_date,
-        break_multiplier
+        break_multiplier,
+        number_of_executions
     } = task[0];
     let {deleted} = options;
     repeat_index = parseInt(repeat_index);
@@ -66,12 +67,13 @@ export function makeTaskDone(task, store, options={}){
             //console.log(task[0])
             return;
     }
-
+    number_of_executions++;
     const updatedTask = {
         ...task[0],
         start_date: start_date,
         break_multiplier: break_multiplier,
-        task_finish_date: task_finish_date
+        task_finish_date: task_finish_date,
+        number_of_executions:number_of_executions
     };
     store.dispatch("todos/updateTodo", updatedTask);
 

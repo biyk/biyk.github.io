@@ -84,8 +84,9 @@ export default {
                 event.id = exist[0].id
                 await updateEvent(event)
             } else {
-
                 await addEvent(event);
+                //т.к. задача была не на сегодня
+                task[0].break_multiplier = parseInt(task[0].break_multiplier) + 1;
             }
             makeTaskDone(task, this.$store);
         },

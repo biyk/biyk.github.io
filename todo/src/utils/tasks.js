@@ -5,7 +5,8 @@ export function makeTaskDone(task, store, options={}){
         repeat_index,
         repeat_mode,
         start_date,
-        task_finish_date
+        task_finish_date,
+        break_multiplier
     } = task[0];
     let {deleted} = options;
     repeat_index = parseInt(repeat_index);
@@ -69,6 +70,7 @@ export function makeTaskDone(task, store, options={}){
     const updatedTask = {
         ...task[0],
         start_date: start_date,
+        break_multiplier: break_multiplier,
         task_finish_date: task_finish_date
     };
     store.dispatch("todos/updateTodo", updatedTask);
@@ -86,7 +88,7 @@ export function taskSort(task){
         const diff = now - new Date(timestamp);
         return Math.floor(diff / (1000 * 60 * 60 * 24));
     };
-    return task.task_sort - daysDiff(parseInt(task.start_date))
+    return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier
 }
 
 export function taskDate(date){

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.58";
+window.version = "0.2.59";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7884,7 +7884,8 @@ function makeTaskDone(task, store2, options = {}) {
     repeat_index,
     repeat_mode,
     start_date,
-    task_finish_date
+    task_finish_date,
+    break_multiplier
   } = task[0];
   let { deleted } = options;
   repeat_index = parseInt(repeat_index);
@@ -7946,6 +7947,7 @@ function makeTaskDone(task, store2, options = {}) {
   const updatedTask = {
     ...task[0],
     start_date,
+    break_multiplier,
     task_finish_date
   };
   store2.dispatch("todos/updateTodo", updatedTask);
@@ -7961,7 +7963,7 @@ function taskSort(task) {
     const diff = now2 - new Date(timestamp);
     return Math.floor(diff / (1e3 * 60 * 60 * 24));
   };
-  return task.task_sort - daysDiff(parseInt(task.start_date));
+  return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier;
 }
 function taskDate(date4) {
   date4 = parseInt(date4);
@@ -8791,6 +8793,7 @@ const _sfc_main$2A = {
         await updateEvent(event);
       } else {
         await addEvent(event);
+        task[0].break_multiplier = parseInt(task[0].break_multiplier) + 1;
       }
       makeTaskDone(task, this.$store);
     },

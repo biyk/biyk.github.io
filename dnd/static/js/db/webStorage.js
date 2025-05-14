@@ -8,29 +8,29 @@ export class WebStorage {
     }
 
     async initDB() {
-    const versionCode = this.versionToNumber(this.version); // Например, '1.2.3' -> 1002003
+        const versionCode = this.versionToNumber(this.version); // Например, '1.2.3' -> 1002003
 
         return new Promise((resolve, reject) => {
-        const request = indexedDB.open(this.dbName, versionCode);
+            const request = indexedDB.open(this.dbName, versionCode);
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
 
-            // Удаляем все старые stores, если они есть
-            for (const storeName of db.objectStoreNames) {
-                db.deleteObjectStore(storeName);
-            }
+                // Удаляем все старые stores, если они есть
+                for (const storeName of db.objectStoreNames) {
+                    db.deleteObjectStore(storeName);
+                }
 
-            // Создаём заново нужные хранилища
-                    db.createObjectStore(this.storeName);
-                    db.createObjectStore(this.metaStoreName);
+                // Создаём заново нужные хранилища
+                db.createObjectStore(this.storeName);
+                db.createObjectStore(this.metaStoreName);
             };
 
             request.onsuccess = async () => {
                 const db = request.result;
 
                 try {
-                        await this.setMeta('app_version', this.version, db);
+                    await this.setMeta('app_version', this.version, db);
                     resolve(db);
                 } catch (error) {
                     reject(error);

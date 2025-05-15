@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.64";
+window.version = "0.2.65";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7878,100 +7878,6 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
 }
 const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v]]);
 const TodoList$1 = "";
-function makeTaskDone(task, store2, options = {}) {
-  let {
-    repeat_days_of_week,
-    repeat_index,
-    repeat_mode,
-    start_date,
-    task_finish_date,
-    break_multiplier,
-    number_of_executions
-  } = task[0];
-  let { deleted } = options;
-  repeat_index = parseInt(repeat_index);
-  const now2 = new Date();
-  switch (repeat_mode) {
-    case "0":
-      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
-      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
-      break;
-    case "1":
-      start_date = new Date(now2.getFullYear(), now2.getMonth() + 1, now2.getDate(), 0, 0, 1, 0).getTime();
-      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
-      break;
-    case "2":
-      start_date = new Date(now2.getFullYear() + 1, now2.getMonth(), now2.getDate(), 0, 0, 1, 0).getTime();
-      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
-      break;
-    case "6":
-      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
-      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
-      break;
-    case "3":
-      let getNextWorkingDayOffset = function(repeatDays, currentDay2) {
-        for (let offset2 = 1; offset2 <= 7; offset2++) {
-          let dayIndex = (currentDay2 + offset2) % 7;
-          if (repeatDays[dayIndex] === "1") {
-            return offset2;
-          }
-        }
-        return null;
-      };
-      const currentDay = now2.getDay();
-      const repeat_index3 = getNextWorkingDayOffset(repeat_days_of_week, currentDay);
-      if (repeat_index3 === null) {
-        throw new Error("Нет рабочих дней в расписании");
-      }
-      start_date = new Date(
-        now2.getFullYear(),
-        now2.getMonth(),
-        now2.getDate() + repeat_index3,
-        0,
-        0,
-        1,
-        0
-      ).getTime();
-      task_finish_date = new Date(
-        now2.getFullYear(),
-        now2.getMonth(),
-        now2.getDate() + repeat_index3,
-        23,
-        59,
-        0,
-        0
-      ).getTime();
-      break;
-    default:
-      return;
-  }
-  number_of_executions++;
-  const updatedTask = {
-    ...task[0],
-    start_date,
-    break_multiplier,
-    task_finish_date,
-    number_of_executions
-  };
-  store2.dispatch("todos/updateTodo", updatedTask);
-  if (deleted || repeat_mode === "5")
-    return;
-  let hero2 = { ...store2.getters["hero/getHero"] };
-  hero2.hero_money = parseInt(hero2.hero_money) + parseInt(task[0].money_reward);
-  store2.dispatch("hero/updateHero", hero2);
-}
-function taskSort(task) {
-  const now2 = new Date();
-  const daysDiff = (timestamp) => {
-    const diff = now2 - new Date(timestamp);
-    return Math.floor(diff / (1e3 * 60 * 60 * 24));
-  };
-  return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier;
-}
-function taskDate(date4) {
-  date4 = parseInt(date4);
-  return new Date(date4).toLocaleString();
-}
 class WebStorage {
   constructor(dbName = "WebStorageDB", storeName = "keyval") {
     this.dbName = dbName;
@@ -8723,6 +8629,151 @@ function getFreeSlots(events2, options = {}) {
   }
   return freeSlots;
 }
+function makeTaskDone(task, store2, options = {}) {
+  let {
+    repeat_days_of_week,
+    repeat_index,
+    repeat_mode,
+    start_date,
+    task_finish_date,
+    break_multiplier,
+    number_of_executions
+  } = task[0];
+  let { deleted } = options;
+  repeat_index = parseInt(repeat_index);
+  const now2 = new Date();
+  switch (repeat_mode) {
+    case "0":
+      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+      break;
+    case "1":
+      start_date = new Date(now2.getFullYear(), now2.getMonth() + 1, now2.getDate(), 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+      break;
+    case "2":
+      start_date = new Date(now2.getFullYear() + 1, now2.getMonth(), now2.getDate(), 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
+      break;
+    case "6":
+      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
+      break;
+    case "3":
+      let getNextWorkingDayOffset = function(repeatDays, currentDay2) {
+        for (let offset2 = 1; offset2 <= 7; offset2++) {
+          let dayIndex = (currentDay2 + offset2) % 7;
+          if (repeatDays[dayIndex] === "1") {
+            return offset2;
+          }
+        }
+        return null;
+      };
+      const currentDay = now2.getDay();
+      const repeat_index3 = getNextWorkingDayOffset(repeat_days_of_week, currentDay);
+      if (repeat_index3 === null) {
+        throw new Error("Нет рабочих дней в расписании");
+      }
+      start_date = new Date(
+        now2.getFullYear(),
+        now2.getMonth(),
+        now2.getDate() + repeat_index3,
+        0,
+        0,
+        1,
+        0
+      ).getTime();
+      task_finish_date = new Date(
+        now2.getFullYear(),
+        now2.getMonth(),
+        now2.getDate() + repeat_index3,
+        23,
+        59,
+        0,
+        0
+      ).getTime();
+      break;
+    default:
+      return;
+  }
+  number_of_executions++;
+  const updatedTask = {
+    ...task[0],
+    start_date,
+    break_multiplier,
+    task_finish_date,
+    number_of_executions
+  };
+  store2.dispatch("todos/updateTodo", updatedTask);
+  if (deleted || repeat_mode === "5")
+    return;
+  let hero2 = { ...store2.getters["hero/getHero"] };
+  hero2.hero_money = parseInt(hero2.hero_money) + parseInt(task[0].money_reward);
+  store2.dispatch("hero/updateHero", hero2);
+}
+function taskSort(task) {
+  const now2 = new Date();
+  const daysDiff = (timestamp) => {
+    const diff = now2 - new Date(timestamp);
+    return Math.floor(diff / (1e3 * 60 * 60 * 24));
+  };
+  return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier;
+}
+async function setTaskToCalendar() {
+  this.$store.dispatch("todos/initTodos");
+  let all = this.$store.getters["todos/getTodos"].sort((a2, b2) => a2.task_sort - b2.task_sort);
+  const now2 = new Date();
+  const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
+  let today_tasks = all.filter((todo) => {
+    if (todo.task_title === "task_title")
+      return false;
+    const start = todo.start_date;
+    return start < today;
+  });
+  let today_events = await listEvents();
+  today_tasks = today_tasks.sort((a2, b2) => {
+    return taskSort(a2) - taskSort(b2);
+  });
+  console.log(today_tasks);
+  let freeSlots = getFreeSlots(today_events);
+  for (const task of today_tasks) {
+    let duration = task.task_time;
+    if (!duration || duration === "0")
+      continue;
+    let slotIndex = freeSlots.findIndex((slot2) => slot2.duration >= duration);
+    if (slotIndex === -1)
+      continue;
+    let slot = freeSlots[slotIndex];
+    let exist = today_events.filter((e) => {
+      var _a2;
+      return (_a2 = e.description) == null ? void 0 : _a2.includes(task.task_uuid);
+    });
+    if (exist == null ? void 0 : exist.length)
+      continue;
+    let excluded = today_events.filter((e) => {
+      var _a2;
+      return (_a2 = task.excludes) == null ? void 0 : _a2.includes(e.description);
+    });
+    if (excluded == null ? void 0 : excluded.length) {
+      console.log("Не сегодня:", task);
+      continue;
+    }
+    const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
+    const event = makeEvent(task, slot, endDate);
+    await addEvent(event);
+    const updatedDuration = slot.duration - duration;
+    if (updatedDuration < 15) {
+      freeSlots.splice(slotIndex, 1);
+    } else {
+      freeSlots[slotIndex].start = endDate.toISOString();
+      freeSlots[slotIndex].duration = updatedDuration;
+    }
+  }
+}
+function taskDate(date4) {
+  date4 = parseInt(date4);
+  return new Date(date4).toLocaleString();
+}
 const _sfc_main$2A = {
   computed: {
     todos() {
@@ -8739,6 +8790,7 @@ const _sfc_main$2A = {
     }
   },
   methods: {
+    setTaskToCalendar,
     taskDate,
     taskSort,
     getFilteredTodos() {
@@ -8832,27 +8884,33 @@ const _hoisted_2$1 = ["onClick"];
 const _hoisted_3$1 = ["title"];
 const _hoisted_4$1 = ["onClick"];
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
-  return openBlock(), createElementBlock("ul", _hoisted_1$2, [
-    createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length), 1),
-    (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
-      return openBlock(), createElementBlock("li", {
-        key: todo.id,
-        class: normalizeClass(["task", todo.task_color, { completed: todo.completed }]),
-        onClick: ($event) => $options.toggleTodo(todo.task_uuid)
-      }, [
-        createBaseVNode("span", {
-          title: $options.taskDate(todo.start_date)
-        }, "(" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ")", 9, _hoisted_3$1),
-        createBaseVNode("span", {
-          class: "delete",
-          onClick: ($event) => $options.deleteTodo(todo.task_uuid)
-        }, "ⓧ", 8, _hoisted_4$1)
-      ], 10, _hoisted_2$1);
-    }), 128))
-  ]);
+  return openBlock(), createElementBlock(Fragment, null, [
+    $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
+      key: 0,
+      onClick: _cache[0] || (_cache[0] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
+    }, "Заполнить календарь")) : createCommentVNode("", true),
+    createBaseVNode("ul", _hoisted_1$2, [
+      createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length), 1),
+      (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
+        return openBlock(), createElementBlock("li", {
+          key: todo.id,
+          class: normalizeClass(["task", todo.task_color, { completed: todo.completed }]),
+          onClick: ($event) => $options.toggleTodo(todo.task_uuid)
+        }, [
+          createBaseVNode("span", {
+            title: $options.taskDate(todo.start_date)
+          }, "(" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ")", 9, _hoisted_3$1),
+          createBaseVNode("span", {
+            class: "delete",
+            onClick: ($event) => $options.deleteTodo(todo.task_uuid)
+          }, "ⓧ", 8, _hoisted_4$1)
+        ], 10, _hoisted_2$1);
+      }), 128))
+    ])
+  ], 64);
 }
 const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u]]);
-const Settings_vue_vue_type_style_index_0_scoped_18862b4a_lang = "";
+const Settings_vue_vue_type_style_index_0_scoped_5f5f78a2_lang = "";
 const _sfc_main$2z = {
   name: "Settings",
   data() {
@@ -8902,57 +8960,6 @@ const _sfc_main$2z = {
           makeTaskDone(task, this.$store);
         }
       });
-    },
-    async setTaskToCalendar() {
-      this.$store.dispatch("todos/initTodos");
-      let all = this.$store.getters["todos/getTodos"].sort((a2, b2) => a2.task_sort - b2.task_sort);
-      const now2 = new Date();
-      const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
-      let today_tasks = all.filter((todo) => {
-        if (todo.task_title === "task_title")
-          return false;
-        const start = todo.start_date;
-        return start < today;
-      });
-      let today_events = await listEvents();
-      today_tasks = today_tasks.sort((a2, b2) => {
-        return taskSort(a2) - taskSort(b2);
-      });
-      console.log(today_tasks);
-      let freeSlots = getFreeSlots(today_events);
-      for (const task of today_tasks) {
-        let duration = task.task_time;
-        if (!duration || duration === "0")
-          continue;
-        let slotIndex = freeSlots.findIndex((slot2) => slot2.duration >= duration);
-        if (slotIndex === -1)
-          continue;
-        let slot = freeSlots[slotIndex];
-        let exist = today_events.filter((e) => {
-          var _a2;
-          return (_a2 = e.description) == null ? void 0 : _a2.includes(task.task_uuid);
-        });
-        if (exist == null ? void 0 : exist.length)
-          continue;
-        let excluded = today_events.filter((e) => {
-          var _a2;
-          return (_a2 = task.excludes) == null ? void 0 : _a2.includes(e.description);
-        });
-        if (excluded == null ? void 0 : excluded.length) {
-          console.log("Не сегодня:", task);
-          continue;
-        }
-        const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
-        const event = makeEvent(task, slot, endDate);
-        await addEvent(event);
-        const updatedDuration = slot.duration - duration;
-        if (updatedDuration < 15) {
-          freeSlots.splice(slotIndex, 1);
-        } else {
-          freeSlots[slotIndex].start = endDate.toISOString();
-          freeSlots[slotIndex].duration = updatedDuration;
-        }
-      }
     }
   }
 };
@@ -9002,14 +9009,14 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
       ])
     ])) : createCommentVNode("", true),
     createBaseVNode("button", {
-      onClick: _cache[4] || (_cache[4] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
+      onClick: _cache[4] || (_cache[4] = (...args) => _ctx.setTaskToCalendar && _ctx.setTaskToCalendar(...args))
     }, "Заполнить календарь"),
     createBaseVNode("button", {
       onClick: _cache[5] || (_cache[5] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
     }, "Отметить завершенные")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-18862b4a"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-5f5f78a2"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }

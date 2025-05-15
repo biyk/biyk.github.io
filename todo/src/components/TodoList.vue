@@ -1,4 +1,6 @@
 <template>
+    <button v-if="filter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
+
     <ul class="tasks">
         <li>{{getSortedTodos().length}}</li>
         <li
@@ -15,8 +17,8 @@
 
 <script>
 import '../assets/styles/components/TodoList.css';
-import {makeTaskDone, taskDate, taskSort} from "@/utils/tasks.js";
-import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
+import {makeTaskDone, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
+import {addEvent, getFreeSlots, listEvents, makeEvent, updateEvent} from "@/utils/calendar.js";
 
 export default {
     computed: {
@@ -34,6 +36,7 @@ export default {
         }
     },
     methods: {
+        setTaskToCalendar,
         taskDate,
         taskSort,
         getFilteredTodos() {
@@ -59,6 +62,7 @@ export default {
                 }
             });
         },
+
         async toggleTodo(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
             const endDate = new Date();

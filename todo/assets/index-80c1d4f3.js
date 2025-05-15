@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.65";
+window.version = "0.2.66";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8659,6 +8659,10 @@ function makeTaskDone(task, store2, options = {}) {
       start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
       break;
+    case "5":
+      start_date = new Date().getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
+      break;
     case "3":
       let getNextWorkingDayOffset = function(repeatDays, currentDay2) {
         for (let offset2 = 1; offset2 <= 7; offset2++) {
@@ -8775,6 +8779,11 @@ function taskDate(date4) {
   return new Date(date4).toLocaleString();
 }
 const _sfc_main$2A = {
+  data() {
+    return {
+      lastDeleteTime: 0
+    };
+  },
   computed: {
     todos() {
       return this.$store.getters["todos/getTodos"];
@@ -8853,6 +8862,10 @@ const _sfc_main$2A = {
       makeTaskDone(task, this.$store);
     },
     deleteTodo(task_uuid) {
+      const now2 = Date.now();
+      if (now2 - this.lastDeleteTime < 1e3)
+        return;
+      this.lastDeleteTime = now2;
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       makeTaskDone(task, this.$store, { deleted: 1 });
     },

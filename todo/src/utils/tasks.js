@@ -32,6 +32,10 @@ export function makeTaskDone(task, store, options={}){
             start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 0, 0, 1, 0).getTime();
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 23, 59, 0, 0).getTime();
             break;
+        case '5':
+            start_date = new Date().getTime();
+            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
+            break;
         case '3':
             // Функция для поиска следующего рабочего дня
             function getNextWorkingDayOffset(repeatDays, currentDay) {

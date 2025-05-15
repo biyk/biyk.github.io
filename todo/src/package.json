@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "element-plus": "^2.9.9",
+    "lodash": "^4.17.21",
     "uuid": "^11.1.0",
     "vue": "^3.2.45",
     "vue-router": "^4.5.1",

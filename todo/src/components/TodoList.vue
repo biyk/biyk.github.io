@@ -21,6 +21,11 @@ import {makeTaskDone, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks
 import {addEvent, getFreeSlots, listEvents, makeEvent, updateEvent} from "@/utils/calendar.js";
 
 export default {
+    data() {
+        return {
+            lastDeleteTime: 0
+        };
+    },
     computed: {
         todos() {
             return this.$store.getters["todos/getTodos"];
@@ -95,6 +100,10 @@ export default {
             makeTaskDone(task, this.$store);
         },
         deleteTodo(task_uuid) {
+            const now = Date.now();
+            if (now - this.lastDeleteTime < 1000) return;
+
+            this.lastDeleteTime = now;
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
             makeTaskDone(task, this.$store, {deleted:1});
         },

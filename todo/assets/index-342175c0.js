@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.67";
+window.version = "0.2.68";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -67,21 +67,21 @@ const remove = (arr, el) => {
     arr.splice(i, 1);
   }
 };
-const hasOwnProperty$e = Object.prototype.hasOwnProperty;
-const hasOwn = (val, key) => hasOwnProperty$e.call(val, key);
+const hasOwnProperty$f = Object.prototype.hasOwnProperty;
+const hasOwn = (val, key) => hasOwnProperty$f.call(val, key);
 const isArray$3 = Array.isArray;
 const isMap$2 = (val) => toTypeString(val) === "[object Map]";
 const isSet$2 = (val) => toTypeString(val) === "[object Set]";
 const isDate = (val) => toTypeString(val) === "[object Date]";
 const isFunction$2 = (val) => typeof val === "function";
 const isString$1 = (val) => typeof val === "string";
-const isSymbol$1 = (val) => typeof val === "symbol";
-const isObject$2 = (val) => val !== null && typeof val === "object";
+const isSymbol$3 = (val) => typeof val === "symbol";
+const isObject$6 = (val) => val !== null && typeof val === "object";
 const isPromise$1 = (val) => {
-  return (isObject$2(val) || isFunction$2(val)) && isFunction$2(val.then) && isFunction$2(val.catch);
+  return (isObject$6(val) || isFunction$2(val)) && isFunction$2(val.then) && isFunction$2(val.catch);
 };
-const objectToString$1 = Object.prototype.toString;
-const toTypeString = (value) => objectToString$1.call(value);
+const objectToString$3 = Object.prototype.toString;
+const toTypeString = (value) => objectToString$3.call(value);
 const toRawType = (value) => {
   return toTypeString(value).slice(8, -1);
 };
@@ -135,7 +135,7 @@ const looseToNumber = (val) => {
   const n = parseFloat(val);
   return isNaN(n) ? val : n;
 };
-const toNumber$1 = (val) => {
+const toNumber$3 = (val) => {
   const n = isString$1(val) ? Number(val) : NaN;
   return isNaN(n) ? val : n;
 };
@@ -156,7 +156,7 @@ function normalizeStyle(value) {
       }
     }
     return res;
-  } else if (isString$1(value) || isObject$2(value)) {
+  } else if (isString$1(value) || isObject$6(value)) {
     return value;
   }
 }
@@ -184,7 +184,7 @@ function normalizeClass(value) {
         res += normalized + " ";
       }
     }
-  } else if (isObject$2(value)) {
+  } else if (isObject$6(value)) {
     for (const name in value) {
       if (value[name]) {
         res += name + " ";
@@ -227,8 +227,8 @@ function looseEqual(a2, b2) {
   if (aValidType || bValidType) {
     return aValidType && bValidType ? a2.getTime() === b2.getTime() : false;
   }
-  aValidType = isSymbol$1(a2);
-  bValidType = isSymbol$1(b2);
+  aValidType = isSymbol$3(a2);
+  bValidType = isSymbol$3(b2);
   if (aValidType || bValidType) {
     return a2 === b2;
   }
@@ -237,8 +237,8 @@ function looseEqual(a2, b2) {
   if (aValidType || bValidType) {
     return aValidType && bValidType ? looseCompareArrays(a2, b2) : false;
   }
-  aValidType = isObject$2(a2);
-  bValidType = isObject$2(b2);
+  aValidType = isObject$6(a2);
+  bValidType = isObject$6(b2);
   if (aValidType || bValidType) {
     if (!aValidType || !bValidType) {
       return false;
@@ -265,7 +265,7 @@ const isRef$1 = (val) => {
   return !!(val && val["__v_isRef"] === true);
 };
 const toDisplayString = (val) => {
-  return isString$1(val) ? val : val == null ? "" : isArray$3(val) || isObject$2(val) && (val.toString === objectToString$1 || !isFunction$2(val.toString)) ? isRef$1(val) ? toDisplayString(val.value) : JSON.stringify(val, replacer, 2) : String(val);
+  return isString$1(val) ? val : val == null ? "" : isArray$3(val) || isObject$6(val) && (val.toString === objectToString$3 || !isFunction$2(val.toString)) ? isRef$1(val) ? toDisplayString(val.value) : JSON.stringify(val, replacer, 2) : String(val);
 };
 const replacer = (_key, val) => {
   if (isRef$1(val)) {
@@ -284,9 +284,9 @@ const replacer = (_key, val) => {
     return {
       [`Set(${val.size})`]: [...val.values()].map((v2) => stringifySymbol(v2))
     };
-  } else if (isSymbol$1(val)) {
+  } else if (isSymbol$3(val)) {
     return stringifySymbol(val);
-  } else if (isObject$2(val) && !isArray$3(val) && !isPlainObject$1(val)) {
+  } else if (isObject$6(val) && !isArray$3(val) && !isPlainObject$1(val)) {
     return String(val);
   }
   return val;
@@ -296,7 +296,7 @@ const stringifySymbol = (v2, i = "") => {
   return (
     // Symbol.description in es2019+ so we need to cast here to pass
     // the lib: es2016 check
-    isSymbol$1(v2) ? `Symbol(${(_a2 = v2.description) != null ? _a2 : i})` : v2
+    isSymbol$3(v2) ? `Symbol(${(_a2 = v2.description) != null ? _a2 : i})` : v2
   );
 };
 /**
@@ -837,7 +837,7 @@ function trigger(target, type4, key, newValue, oldValue, oldTarget) {
     if (targetIsArray && key === "length") {
       const newLength = Number(newValue);
       depsMap.forEach((dep, key2) => {
-        if (key2 === "length" || key2 === ARRAY_ITERATE_KEY || !isSymbol$1(key2) && key2 >= newLength) {
+        if (key2 === "length" || key2 === ARRAY_ITERATE_KEY || !isSymbol$3(key2) && key2 >= newLength) {
           run(dep);
         }
       });
@@ -1059,10 +1059,10 @@ function noTracking(self2, method4, args = []) {
 }
 const isNonTrackableKeys = /* @__PURE__ */ makeMap(`__proto__,__v_isRef,__isVue`);
 const builtInSymbols = new Set(
-  /* @__PURE__ */ Object.getOwnPropertyNames(Symbol).filter((key) => key !== "arguments" && key !== "caller").map((key) => Symbol[key]).filter(isSymbol$1)
+  /* @__PURE__ */ Object.getOwnPropertyNames(Symbol).filter((key) => key !== "arguments" && key !== "caller").map((key) => Symbol[key]).filter(isSymbol$3)
 );
-function hasOwnProperty$d(key) {
-  if (!isSymbol$1(key))
+function hasOwnProperty$e(key) {
+  if (!isSymbol$3(key))
     key = String(key);
   const obj = toRaw(this);
   track(obj, "has", key);
@@ -1098,7 +1098,7 @@ class BaseReactiveHandler {
         return fn2;
       }
       if (key === "hasOwnProperty") {
-        return hasOwnProperty$d;
+        return hasOwnProperty$e;
       }
     }
     const res = Reflect.get(
@@ -1109,7 +1109,7 @@ class BaseReactiveHandler {
       // its class methods
       isRef(target) ? target : receiver
     );
-    if (isSymbol$1(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
+    if (isSymbol$3(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res;
     }
     if (!isReadonly2) {
@@ -1121,7 +1121,7 @@ class BaseReactiveHandler {
     if (isRef(res)) {
       return targetIsArray && isIntegerKey(key) ? res : res.value;
     }
-    if (isObject$2(res)) {
+    if (isObject$6(res)) {
       return isReadonly2 ? readonly(res) : reactive(res);
     }
     return res;
@@ -1175,7 +1175,7 @@ class MutableReactiveHandler extends BaseReactiveHandler {
   }
   has(target, key) {
     const result = Reflect.has(target, key);
-    if (!isSymbol$1(key) || !builtInSymbols.has(key)) {
+    if (!isSymbol$3(key) || !builtInSymbols.has(key)) {
       track(target, "has", key);
     }
     return result;
@@ -1464,7 +1464,7 @@ function shallowReadonly(target) {
   );
 }
 function createReactiveObject(target, isReadonly2, baseHandlers, collectionHandlers, proxyMap) {
-  if (!isObject$2(target)) {
+  if (!isObject$6(target)) {
     return target;
   }
   if (target["__v_raw"] && !(isReadonly2 && target["__v_isReactive"])) {
@@ -1510,8 +1510,8 @@ function markRaw(value) {
   }
   return value;
 }
-const toReactive = (value) => isObject$2(value) ? reactive(value) : value;
-const toReadonly = (value) => isObject$2(value) ? readonly(value) : value;
+const toReactive = (value) => isObject$6(value) ? reactive(value) : value;
+const toReadonly = (value) => isObject$6(value) ? readonly(value) : value;
 function isRef(r) {
   return r ? r["__v_isRef"] === true : false;
 }
@@ -1634,7 +1634,7 @@ function toRef(source, key, defaultValue) {
     return source;
   } else if (isFunction$2(source)) {
     return new GetterRefImpl(source);
-  } else if (isObject$2(source) && arguments.length > 1) {
+  } else if (isObject$6(source) && arguments.length > 1) {
     return propertyToRef(source, key, defaultValue);
   } else {
     return ref(source);
@@ -1854,7 +1854,7 @@ function watch$1(source, cb, options = EMPTY_OBJ) {
   return watchHandle;
 }
 function traverse(value, depth = Infinity, seen) {
-  if (depth <= 0 || !isObject$2(value) || value["__v_skip"]) {
+  if (depth <= 0 || !isObject$6(value) || value["__v_skip"]) {
     return value;
   }
   seen = seen || /* @__PURE__ */ new Set();
@@ -3208,7 +3208,7 @@ function renderList(source, renderItem, cache2, index2) {
     for (let i = 0; i < source; i++) {
       ret[i] = renderItem(i + 1, i, void 0, cached && cached[i]);
     }
-  } else if (isObject$2(source)) {
+  } else if (isObject$6(source)) {
     if (source[Symbol.iterator]) {
       ret = Array.from(
         source,
@@ -3271,7 +3271,7 @@ function renderSlot(slots, name, props2 = {}, fallback, noSlotted) {
   const rendered = createBlock(
     Fragment,
     {
-      key: (slotKey && !isSymbol$1(slotKey) ? slotKey : `_${name}`) + // #7256 force differentiate fallback content from actual content
+      key: (slotKey && !isSymbol$3(slotKey) ? slotKey : `_${name}`) + // #7256 force differentiate fallback content from actual content
       (!validSlotContent && fallback ? "_fb" : "")
     },
     validSlotContent || (fallback ? fallback() : []),
@@ -3508,7 +3508,7 @@ function applyOptions(instance) {
   }
   if (dataOptions) {
     const data = dataOptions.call(publicThis, publicThis);
-    if (!isObject$2(data))
+    if (!isObject$6(data))
       ;
     else {
       instance.data = reactive(data);
@@ -3599,7 +3599,7 @@ function resolveInjections(injectOptions, ctx, checkDuplicateProperties = NOOP) 
   for (const key in injectOptions) {
     const opt = injectOptions[key];
     let injected;
-    if (isObject$2(opt)) {
+    if (isObject$6(opt)) {
       if ("default" in opt) {
         injected = inject(
           opt.from || key,
@@ -3644,7 +3644,7 @@ function createWatcher(raw, ctx, publicThis, key) {
     {
       watch(getter, raw.bind(publicThis));
     }
-  } else if (isObject$2(raw)) {
+  } else if (isObject$6(raw)) {
     if (isArray$3(raw)) {
       raw.forEach((r) => createWatcher(r, ctx, publicThis, key));
     } else {
@@ -3681,7 +3681,7 @@ function resolveMergedOptions(instance) {
     }
     mergeOptions$2(resolved, base, optionMergeStrategies);
   }
-  if (isObject$2(base)) {
+  if (isObject$6(base)) {
     cache2.set(base, resolved);
   }
   return resolved;
@@ -3822,7 +3822,7 @@ function createAppAPI(render2, hydrate) {
     if (!isFunction$2(rootComponent)) {
       rootComponent = extend({}, rootComponent);
     }
-    if (rootProps != null && !isObject$2(rootProps)) {
+    if (rootProps != null && !isObject$6(rootProps)) {
       rootProps = null;
     }
     const context = createAppContext();
@@ -4179,7 +4179,7 @@ function normalizePropsOptions(comp, appContext, asMixin = false) {
     }
   }
   if (!raw && !hasExtends) {
-    if (isObject$2(comp)) {
+    if (isObject$6(comp)) {
       cache2.set(comp, EMPTY_ARR);
     }
     return EMPTY_ARR;
@@ -4229,7 +4229,7 @@ function normalizePropsOptions(comp, appContext, asMixin = false) {
     }
   }
   const res = [normalized, needCastKeys];
-  if (isObject$2(comp)) {
+  if (isObject$6(comp)) {
     cache2.set(comp, res);
   }
   return res;
@@ -5854,7 +5854,7 @@ function normalizeEmitsOptions(comp, appContext, asMixin = false) {
     }
   }
   if (!raw && !hasExtends) {
-    if (isObject$2(comp)) {
+    if (isObject$6(comp)) {
       cache2.set(comp, null);
     }
     return null;
@@ -5864,7 +5864,7 @@ function normalizeEmitsOptions(comp, appContext, asMixin = false) {
   } else {
     extend(normalized, raw);
   }
-  if (isObject$2(comp)) {
+  if (isObject$6(comp)) {
     cache2.set(comp, normalized);
   }
   return normalized;
@@ -6236,14 +6236,14 @@ function _createVNode(type4, props2 = null, children = null, patchFlag = 0, dyna
     if (klass && !isString$1(klass)) {
       props2.class = normalizeClass(klass);
     }
-    if (isObject$2(style)) {
+    if (isObject$6(style)) {
       if (isProxy(style) && !isArray$3(style)) {
         style = extend({}, style);
       }
       props2.style = normalizeStyle(style);
     }
   }
-  const shapeFlag = isString$1(type4) ? 1 : isSuspense(type4) ? 128 : isTeleport(type4) ? 64 : isObject$2(type4) ? 4 : isFunction$2(type4) ? 2 : 0;
+  const shapeFlag = isString$1(type4) ? 1 : isSuspense(type4) ? 128 : isTeleport(type4) ? 64 : isObject$6(type4) ? 4 : isFunction$2(type4) ? 2 : 0;
   return createBaseVNode(
     type4,
     props2,
@@ -6608,7 +6608,7 @@ function handleSetupResult(instance, setupResult, isSSR) {
     } else {
       instance.render = setupResult;
     }
-  } else if (isObject$2(setupResult)) {
+  } else if (isObject$6(setupResult)) {
     instance.setupState = proxyRefs(setupResult);
   } else
     ;
@@ -6723,7 +6723,7 @@ const computed = (getterOrOptions, debugOptions) => {
 function h$1(type4, propsOrChildren, children) {
   const l2 = arguments.length;
   if (l2 === 2) {
-    if (isObject$2(propsOrChildren) && !isArray$3(propsOrChildren)) {
+    if (isObject$6(propsOrChildren) && !isArray$3(propsOrChildren)) {
       if (isVNode(propsOrChildren)) {
         return createVNode(type4, null, [propsOrChildren]);
       }
@@ -6988,7 +6988,7 @@ function resolveTransitionProps(rawProps) {
 function normalizeDuration(duration) {
   if (duration == null) {
     return null;
-  } else if (isObject$2(duration)) {
+  } else if (isObject$6(duration)) {
     return [NumberOf(duration.enter), NumberOf(duration.leave)];
   } else {
     const n = NumberOf(duration);
@@ -6996,7 +6996,7 @@ function normalizeDuration(duration) {
   }
 }
 function NumberOf(val) {
-  const res = toNumber$1(val);
+  const res = toNumber$3(val);
   return res;
 }
 function addTransitionClass(el, cls) {
@@ -7265,7 +7265,7 @@ function patchAttr(el, key, value, isSVG, instance, isBoolean2 = isSpecialBoolea
     } else {
       el.setAttribute(
         key,
-        isBoolean2 ? "" : isSymbol$1(value) ? String(value) : value
+        isBoolean2 ? "" : isSymbol$3(value) ? String(value) : value
       );
     }
   }
@@ -8778,12 +8778,218 @@ function taskDate(date4) {
   date4 = parseInt(date4);
   return new Date(date4).toLocaleString();
 }
+var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
+function isObject$5(value) {
+  var type4 = typeof value;
+  return value != null && (type4 == "object" || type4 == "function");
+}
+var isObject_1 = isObject$5;
+var freeGlobal$3 = typeof commonjsGlobal == "object" && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
+var _freeGlobal = freeGlobal$3;
+var freeGlobal$2 = _freeGlobal;
+var freeSelf$1 = typeof self == "object" && self && self.Object === Object && self;
+var root$4 = freeGlobal$2 || freeSelf$1 || Function("return this")();
+var _root = root$4;
+var root$3 = _root;
+var now$4 = function() {
+  return root$3.Date.now();
+};
+var now_1 = now$4;
+var reWhitespace$1 = /\s/;
+function trimmedEndIndex$2(string3) {
+  var index2 = string3.length;
+  while (index2-- && reWhitespace$1.test(string3.charAt(index2))) {
+  }
+  return index2;
+}
+var _trimmedEndIndex = trimmedEndIndex$2;
+var trimmedEndIndex$1 = _trimmedEndIndex;
+var reTrimStart$1 = /^\s+/;
+function baseTrim$2(string3) {
+  return string3 ? string3.slice(0, trimmedEndIndex$1(string3) + 1).replace(reTrimStart$1, "") : string3;
+}
+var _baseTrim = baseTrim$2;
+var root$2 = _root;
+var Symbol$5 = root$2.Symbol;
+var _Symbol = Symbol$5;
+var Symbol$4 = _Symbol;
+var objectProto$h = Object.prototype;
+var hasOwnProperty$d = objectProto$h.hasOwnProperty;
+var nativeObjectToString$3 = objectProto$h.toString;
+var symToStringTag$3 = Symbol$4 ? Symbol$4.toStringTag : void 0;
+function getRawTag$2(value) {
+  var isOwn = hasOwnProperty$d.call(value, symToStringTag$3), tag = value[symToStringTag$3];
+  try {
+    value[symToStringTag$3] = void 0;
+    var unmasked = true;
+  } catch (e) {
+  }
+  var result = nativeObjectToString$3.call(value);
+  if (unmasked) {
+    if (isOwn) {
+      value[symToStringTag$3] = tag;
+    } else {
+      delete value[symToStringTag$3];
+    }
+  }
+  return result;
+}
+var _getRawTag = getRawTag$2;
+var objectProto$g = Object.prototype;
+var nativeObjectToString$2 = objectProto$g.toString;
+function objectToString$2(value) {
+  return nativeObjectToString$2.call(value);
+}
+var _objectToString = objectToString$2;
+var Symbol$3 = _Symbol, getRawTag$1 = _getRawTag, objectToString$1 = _objectToString;
+var nullTag$1 = "[object Null]", undefinedTag$1 = "[object Undefined]";
+var symToStringTag$2 = Symbol$3 ? Symbol$3.toStringTag : void 0;
+function baseGetTag$2(value) {
+  if (value == null) {
+    return value === void 0 ? undefinedTag$1 : nullTag$1;
+  }
+  return symToStringTag$2 && symToStringTag$2 in Object(value) ? getRawTag$1(value) : objectToString$1(value);
+}
+var _baseGetTag = baseGetTag$2;
+function isObjectLike$2(value) {
+  return value != null && typeof value == "object";
+}
+var isObjectLike_1 = isObjectLike$2;
+var baseGetTag$1 = _baseGetTag, isObjectLike$1 = isObjectLike_1;
+var symbolTag$4 = "[object Symbol]";
+function isSymbol$2(value) {
+  return typeof value == "symbol" || isObjectLike$1(value) && baseGetTag$1(value) == symbolTag$4;
+}
+var isSymbol_1 = isSymbol$2;
+var baseTrim$1 = _baseTrim, isObject$4 = isObject_1, isSymbol$1 = isSymbol_1;
+var NAN$1 = 0 / 0;
+var reIsBadHex$1 = /^[-+]0x[0-9a-f]+$/i;
+var reIsBinary$1 = /^0b[01]+$/i;
+var reIsOctal$1 = /^0o[0-7]+$/i;
+var freeParseInt$1 = parseInt;
+function toNumber$2(value) {
+  if (typeof value == "number") {
+    return value;
+  }
+  if (isSymbol$1(value)) {
+    return NAN$1;
+  }
+  if (isObject$4(value)) {
+    var other = typeof value.valueOf == "function" ? value.valueOf() : value;
+    value = isObject$4(other) ? other + "" : other;
+  }
+  if (typeof value != "string") {
+    return value === 0 ? value : +value;
+  }
+  value = baseTrim$1(value);
+  var isBinary = reIsBinary$1.test(value);
+  return isBinary || reIsOctal$1.test(value) ? freeParseInt$1(value.slice(2), isBinary ? 2 : 8) : reIsBadHex$1.test(value) ? NAN$1 : +value;
+}
+var toNumber_1 = toNumber$2;
+var isObject$3 = isObject_1, now$3 = now_1, toNumber$1 = toNumber_1;
+var FUNC_ERROR_TEXT$4 = "Expected a function";
+var nativeMax$3 = Math.max, nativeMin$2 = Math.min;
+function debounce$2(func, wait, options) {
+  var lastArgs, lastThis, maxWait, result, timerId, lastCallTime, lastInvokeTime = 0, leading = false, maxing = false, trailing = true;
+  if (typeof func != "function") {
+    throw new TypeError(FUNC_ERROR_TEXT$4);
+  }
+  wait = toNumber$1(wait) || 0;
+  if (isObject$3(options)) {
+    leading = !!options.leading;
+    maxing = "maxWait" in options;
+    maxWait = maxing ? nativeMax$3(toNumber$1(options.maxWait) || 0, wait) : maxWait;
+    trailing = "trailing" in options ? !!options.trailing : trailing;
+  }
+  function invokeFunc(time) {
+    var args = lastArgs, thisArg = lastThis;
+    lastArgs = lastThis = void 0;
+    lastInvokeTime = time;
+    result = func.apply(thisArg, args);
+    return result;
+  }
+  function leadingEdge(time) {
+    lastInvokeTime = time;
+    timerId = setTimeout(timerExpired, wait);
+    return leading ? invokeFunc(time) : result;
+  }
+  function remainingWait(time) {
+    var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime, timeWaiting = wait - timeSinceLastCall;
+    return maxing ? nativeMin$2(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting;
+  }
+  function shouldInvoke(time) {
+    var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime;
+    return lastCallTime === void 0 || timeSinceLastCall >= wait || timeSinceLastCall < 0 || maxing && timeSinceLastInvoke >= maxWait;
+  }
+  function timerExpired() {
+    var time = now$3();
+    if (shouldInvoke(time)) {
+      return trailingEdge(time);
+    }
+    timerId = setTimeout(timerExpired, remainingWait(time));
+  }
+  function trailingEdge(time) {
+    timerId = void 0;
+    if (trailing && lastArgs) {
+      return invokeFunc(time);
+    }
+    lastArgs = lastThis = void 0;
+    return result;
+  }
+  function cancel() {
+    if (timerId !== void 0) {
+      clearTimeout(timerId);
+    }
+    lastInvokeTime = 0;
+    lastArgs = lastCallTime = lastThis = timerId = void 0;
+  }
+  function flush() {
+    return timerId === void 0 ? result : trailingEdge(now$3());
+  }
+  function debounced() {
+    var time = now$3(), isInvoking = shouldInvoke(time);
+    lastArgs = arguments;
+    lastThis = this;
+    lastCallTime = time;
+    if (isInvoking) {
+      if (timerId === void 0) {
+        return leadingEdge(lastCallTime);
+      }
+      if (maxing) {
+        clearTimeout(timerId);
+        timerId = setTimeout(timerExpired, wait);
+        return invokeFunc(lastCallTime);
+      }
+    }
+    if (timerId === void 0) {
+      timerId = setTimeout(timerExpired, wait);
+    }
+    return result;
+  }
+  debounced.cancel = cancel;
+  debounced.flush = flush;
+  return debounced;
+}
+var debounce_1 = debounce$2;
+var debounce$1 = debounce_1, isObject$2 = isObject_1;
+var FUNC_ERROR_TEXT$3 = "Expected a function";
+function throttle$1(func, wait, options) {
+  var leading = true, trailing = true;
+  if (typeof func != "function") {
+    throw new TypeError(FUNC_ERROR_TEXT$3);
+  }
+  if (isObject$2(options)) {
+    leading = "leading" in options ? !!options.leading : leading;
+    trailing = "trailing" in options ? !!options.trailing : trailing;
+  }
+  return debounce$1(func, wait, {
+    "leading": leading,
+    "maxWait": wait,
+    "trailing": trailing
+  });
+}
+var throttle_1 = throttle$1;
 const _sfc_main$2A = {
-  data() {
-    return {
-      lastDeleteTime: 0
-    };
-  },
   computed: {
     todos() {
       return this.$store.getters["todos/getTodos"];
@@ -8861,14 +9067,10 @@ const _sfc_main$2A = {
       }
       makeTaskDone(task, this.$store);
     },
-    deleteTodo(task_uuid) {
-      const now2 = Date.now();
-      if (now2 - this.lastDeleteTime < 1e3)
-        return;
-      this.lastDeleteTime = now2;
+    deleteTodo: throttle_1(function(task_uuid) {
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       makeTaskDone(task, this.$store, { deleted: 1 });
-    },
+    }, 1e3),
     getSortedTodos() {
       switch (this.filter) {
         case "calendar":
@@ -8915,7 +9117,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
           }, "(" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ")", 9, _hoisted_3$1),
           createBaseVNode("span", {
             class: "delete",
-            onClick: ($event) => $options.deleteTodo(todo.task_uuid)
+            onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
           }, "ⓧ", 8, _hoisted_4$1)
         ], 10, _hoisted_2$1);
       }), 128))
@@ -12129,7 +12331,7 @@ const union$1 = union;
 const isUndefined = (val) => val === void 0;
 const isBoolean = (val) => typeof val === "boolean";
 const isNumber = (val) => typeof val === "number";
-const isEmpty = (val) => !val && val !== 0 || isArray$3(val) && val.length === 0 || isObject$2(val) && !Object.keys(val).length;
+const isEmpty = (val) => !val && val !== 0 || isArray$3(val) && val.length === 0 || isObject$6(val) && !Object.keys(val).length;
 const isElement$1 = (e) => {
   if (typeof Element === "undefined")
     return false;
@@ -13052,9 +13254,9 @@ const useLocale = (localeOverrides) => {
 };
 const epPropKey = "__epPropKey";
 const definePropType = (val) => val;
-const isEpProp = (val) => isObject$2(val) && !!val[epPropKey];
+const isEpProp = (val) => isObject$6(val) && !!val[epPropKey];
 const buildProp = (prop, key) => {
-  if (!isObject$2(prop) || isEpProp(prop))
+  if (!isObject$6(prop) || isEpProp(prop))
     return prop;
   const { values, required: required4, default: defaultValue, type: type4, validator } = prop;
   const _validator = values || validator ? (val) => {
@@ -13322,7 +13524,7 @@ const getStyle = (element, styleName) => {
 const setStyle = (element, styleName, value) => {
   if (!element || !styleName)
     return;
-  if (isObject$2(styleName)) {
+  if (isObject$6(styleName)) {
     entriesOf(styleName).forEach(([prop, value2]) => setStyle(element, prop, value2));
   } else {
     const key = camelize(styleName);
@@ -14983,8 +15185,8 @@ const _sfc_main$2u = /* @__PURE__ */ defineComponent({
       if (!isClient || type4 !== "textarea" || !textarea.value)
         return;
       if (autosize) {
-        const minRows = isObject$2(autosize) ? autosize.minRows : void 0;
-        const maxRows = isObject$2(autosize) ? autosize.maxRows : void 0;
+        const minRows = isObject$6(autosize) ? autosize.minRows : void 0;
+        const maxRows = isObject$6(autosize) ? autosize.maxRows : void 0;
         const textareaStyle2 = calcTextareaHeight(textarea.value, minRows, maxRows);
         textareaCalcStyle.value = {
           overflowY: "hidden",
@@ -15642,7 +15844,7 @@ const _sfc_main$2r = /* @__PURE__ */ defineComponent({
       }
     };
     function scrollTo(arg1, arg2) {
-      if (isObject$2(arg1)) {
+      if (isObject$6(arg1)) {
         wrapRef.value.scrollTo(arg1);
       } else if (isNumber(arg1) && isNumber(arg2)) {
         wrapRef.value.scrollTo(arg1, arg2);
@@ -15980,7 +16182,7 @@ function findFirstLegitChild(node) {
     return null;
   const children = node;
   for (const child of children) {
-    if (isObject$2(child)) {
+    if (isObject$6(child)) {
       switch (child.type) {
         case Comment:
           continue;
@@ -18401,7 +18603,7 @@ const autocompleteEmits = {
   focus: (evt) => evt instanceof FocusEvent,
   blur: (evt) => evt instanceof FocusEvent,
   clear: () => true,
-  select: (item) => isObject$2(item)
+  select: (item) => isObject$6(item)
 };
 const COMPONENT_NAME$l = "ElAutocomplete";
 const __default__$1I = defineComponent({
@@ -20313,7 +20515,6 @@ const ElButton = withInstall(Button, {
   ButtonGroup
 });
 const ElButtonGroup$1 = withNoopInstall(ButtonGroup);
-var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 var dayjs_minExports = {};
 var dayjs_min = {
   get exports() {
@@ -20703,7 +20904,7 @@ const dateTableProps = buildProps({
   }
 });
 const dateTableEmits = {
-  pick: (value) => isObject$2(value)
+  pick: (value) => isObject$6(value)
 };
 var localeDataExports = {};
 var localeData$1 = {
@@ -22265,7 +22466,7 @@ const useCheckboxStatus = (props2, slots, { model }) => {
     if (isBoolean(value)) {
       return value;
     } else if (isArray$3(value)) {
-      if (isObject$2(actualValue.value)) {
+      if (isObject$6(actualValue.value)) {
         return value.map(toRaw).some((o2) => isEqual$1(o2, actualValue.value));
       } else {
         return value.map(toRaw).includes(actualValue.value);
@@ -24835,7 +25036,7 @@ const _sfc_main$1U = /* @__PURE__ */ defineComponent({
       sizes.forEach((size) => {
         if (isNumber(props2[size])) {
           classes.push(ns.b(`${size}-${props2[size]}`));
-        } else if (isObject$2(props2[size])) {
+        } else if (isObject$6(props2[size])) {
           Object.entries(props2[size]).forEach(([prop, sizeProp]) => {
             classes.push(prop !== "span" ? ns.b(`${size}-${prop}-${sizeProp}`) : ns.b(`${size}-${sizeProp}`));
           });
@@ -38639,7 +38840,7 @@ const checkIndexPath = (indexPath) => isArray$3(indexPath) && indexPath.every((p
 const menuEmits = {
   close: (index2, indexPath) => isString$1(index2) && checkIndexPath(indexPath),
   open: (index2, indexPath) => isString$1(index2) && checkIndexPath(indexPath),
-  select: (index2, indexPath, item, routerResult) => isString$1(index2) && checkIndexPath(indexPath) && isObject$2(item) && (isUndefined(routerResult) || routerResult instanceof Promise)
+  select: (index2, indexPath, item, routerResult) => isString$1(index2) && checkIndexPath(indexPath) && isObject$6(item) && (isUndefined(routerResult) || routerResult instanceof Promise)
 };
 var Menu2 = defineComponent({
   name: "ElMenu",
@@ -39274,7 +39475,7 @@ function useOption$1(props2, states) {
     }
   });
   const currentLabel = computed(() => {
-    return props2.label || (isObject$2(props2.value) ? "" : props2.value);
+    return props2.label || (isObject$6(props2.value) ? "" : props2.value);
   });
   const currentValue = computed(() => {
     return props2.value || props2.label || "";
@@ -39284,7 +39485,7 @@ function useOption$1(props2, states) {
   });
   const instance = getCurrentInstance();
   const contains = (arr = [], target) => {
-    if (!isObject$2(props2.value)) {
+    if (!isObject$6(props2.value)) {
       return arr && arr.includes(target);
     } else {
       const valueKey = select.props.valueKey;
@@ -39314,7 +39515,7 @@ function useOption$1(props2, states) {
       select.onOptionCreate(instance.proxy);
     }
     if (!props2.created && !remote) {
-      if (valueKey && isObject$2(val) && isObject$2(oldVal) && val[valueKey] === oldVal[valueKey]) {
+      if (valueKey && isObject$6(val) && isObject$6(oldVal) && val[valueKey] === oldVal[valueKey]) {
         return;
       }
       select.setSelected();
@@ -39548,7 +39749,7 @@ const useSelect$2 = (props2, emit2) => {
   const iconReverse = computed(() => nsSelect.is("reverse", !!(iconComponent.value && expanded.value)));
   const validateState = computed(() => (formItem == null ? void 0 : formItem.validateState) || "");
   const validateIcon = computed(() => validateState.value && ValidateComponentsMap[validateState.value]);
-  const debounce$1 = computed(() => props2.remote ? 300 : 0);
+  const debounce$12 = computed(() => props2.remote ? 300 : 0);
   const isRemoteSearchEmpty = computed(() => props2.remote && !states.inputValue && states.options.size === 0);
   const emptyText = computed(() => {
     if (props2.loading) {
@@ -39767,7 +39968,7 @@ const useSelect$2 = (props2, emit2) => {
   };
   const debouncedOnInputChange = debounce(() => {
     onInputChange();
-  }, debounce$1.value);
+  }, debounce$12.value);
   const emitChange = (val) => {
     if (!isEqual$1(props2.modelValue, val)) {
       emit2(CHANGE_EVENT, val);
@@ -39855,7 +40056,7 @@ const useSelect$2 = (props2, emit2) => {
   const getValueIndex = (arr, option) => {
     if (isUndefined(option))
       return -1;
-    if (!isObject$2(option.value))
+    if (!isObject$6(option.value))
       return arr.indexOf(option.value);
     return arr.findIndex((item) => {
       return isEqual$1(get2(item, props2.valueKey), getValueKey(option));
@@ -39955,7 +40156,7 @@ const useSelect$2 = (props2, emit2) => {
     }
   };
   const getValueKey = (item) => {
-    return isObject$2(item.value) ? get2(item.value, props2.valueKey) : item.value;
+    return isObject$6(item.value) ? get2(item.value, props2.valueKey) : item.value;
   };
   const optionsAllDisabled = computed(() => optionsArray.value.filter((option) => option.visible).every((option) => option.isDisabled));
   const showTagList = computed(() => {
@@ -42084,7 +42285,7 @@ const _sfc_main$R = /* @__PURE__ */ defineComponent({
   setup(__props, { expose, emit: emit2 }) {
     const props2 = __props;
     function getValueFromMap(value, map2) {
-      const isExcludedObject = (val) => isObject$2(val);
+      const isExcludedObject = (val) => isObject$6(val);
       const matchedKeys = Object.keys(map2).map((key) => +key).filter((key) => {
         const val = map2[key];
         const excluded = isExcludedObject(val) ? val.excluded : false;
@@ -42129,7 +42330,7 @@ const _sfc_main$R = /* @__PURE__ */ defineComponent({
     } : props2.colors);
     const activeColor = computed(() => {
       const color = getValueFromMap(currentValue.value, colorMap.value);
-      return isObject$2(color) ? "" : color;
+      return isObject$6(color) ? "" : color;
     });
     const decimalStyle = computed(() => {
       let width = "";
@@ -43761,7 +43962,7 @@ var ElSelectMenu = defineComponent({
           valueKey
         }
       } = select;
-      if (!isObject$2(target)) {
+      if (!isObject$6(target)) {
         return arr.includes(target);
       }
       return arr && arr.some((item) => {
@@ -43769,7 +43970,7 @@ var ElSelectMenu = defineComponent({
       });
     };
     const isEqual2 = (selected, target) => {
-      if (!isObject$2(target)) {
+      if (!isObject$6(target)) {
         return selected === target;
       } else {
         const {
@@ -44108,7 +44309,7 @@ const useSelect$1 = (props2, emit2) => {
       return;
     return ValidateComponentsMap[validateState.value];
   });
-  const debounce$1 = computed(() => props2.remote ? 300 : 0);
+  const debounce$12 = computed(() => props2.remote ? 300 : 0);
   const emptyText = computed(() => {
     if (props2.loading) {
       return props2.loadingText || t("el.select.loading");
@@ -44291,7 +44492,7 @@ const useSelect$1 = (props2, emit2) => {
     createNewOption(states.inputValue);
     handleQueryChange(states.inputValue);
   };
-  const debouncedOnInputChange = debounce(onInputChange, debounce$1.value);
+  const debouncedOnInputChange = debounce(onInputChange, debounce$12.value);
   const handleQueryChange = (val) => {
     if (states.previousQuery === val || isComposing.value) {
       return;
@@ -44335,7 +44536,7 @@ const useSelect$1 = (props2, emit2) => {
     });
   };
   const getValueIndex = (arr = [], value) => {
-    if (!isObject$2(value)) {
+    if (!isObject$6(value)) {
       return arr.indexOf(value);
     }
     const valueKey = props2.valueKey;
@@ -44350,7 +44551,7 @@ const useSelect$1 = (props2, emit2) => {
     return index2;
   };
   const getValueKey = (item) => {
-    return isObject$2(item) ? get2(item, props2.valueKey) : item;
+    return isObject$6(item) ? get2(item, props2.valueKey) : item;
   };
   const handleResize = () => {
     calculatePopperSize();
@@ -44657,7 +44858,7 @@ const useSelect$1 = (props2, emit2) => {
     for (const item of options) {
       const optionValue = getValue2(item);
       let v2 = optionValue;
-      if (isObject$2(v2)) {
+      if (isObject$6(v2)) {
         v2 = get2(optionValue, valueKey);
       }
       if (duplicateValue.get(v2)) {
@@ -44683,7 +44884,7 @@ const useSelect$1 = (props2, emit2) => {
     expanded,
     emptyText,
     popupHeight,
-    debounce: debounce$1,
+    debounce: debounce$12,
     allOptions,
     filteredOptions,
     iconComponent,
@@ -45196,7 +45397,7 @@ var SkeletonItem = /* @__PURE__ */ _export_sfc(_sfc_main$L, [["__file", "skeleto
 const useThrottleRender = (loading, throttle2 = 0) => {
   if (throttle2 === 0)
     return loading;
-  const initVal = isObject$2(throttle2) && Boolean(throttle2.initVal);
+  const initVal = isObject$6(throttle2) && Boolean(throttle2.initVal);
   const throttled = ref(initVal);
   let timeoutHandle = null;
   const dispatchThrottling = (timer) => {
@@ -45219,7 +45420,7 @@ const useThrottleRender = (loading, throttle2 = 0) => {
         dispatchThrottling(throttle2.leading);
       }
     } else {
-      if (isObject$2(throttle2)) {
+      if (isObject$6(throttle2)) {
         dispatchThrottling(throttle2.trailing);
       } else {
         throttled.value = false;
@@ -47207,10 +47408,10 @@ const orderBy = function(array4, sortKey, reverse, sortMethod, sortBy) {
       });
     }
     if (sortKey !== "$key") {
-      if (isObject$2(value) && "$value" in value)
+      if (isObject$6(value) && "$value" in value)
         value = value.$value;
     }
-    return [isObject$2(value) ? get2(value, sortKey) : value];
+    return [isObject$6(value) ? get2(value, sortKey) : value];
   };
   const compare = function(a2, b2) {
     if (sortMethod) {
@@ -48597,7 +48798,7 @@ function proxyTableProps(store2, props2) {
 function handleValue(value, propsKey, store2) {
   let newVal = value;
   let storeKey2 = InitialStateMap[propsKey];
-  if (isObject$2(InitialStateMap[propsKey])) {
+  if (isObject$6(InitialStateMap[propsKey])) {
     storeKey2 = storeKey2.key;
     newVal = newVal || InitialStateMap[propsKey].default;
   }
@@ -49860,7 +50061,7 @@ function useStyles$1(props2) {
       if (isArray$3(result)) {
         rowspan = result[0];
         colspan = result[1];
-      } else if (isObject$2(result)) {
+      } else if (isObject$6(result)) {
         rowspan = result.rowspan;
         colspan = result.colspan;
       }
@@ -52040,7 +52241,7 @@ function useColumns(props2, columns2, fixed) {
       return;
     const { sortState, sortBy } = props2;
     let order = SortOrder.ASC;
-    if (isObject$2(sortState)) {
+    if (isObject$6(sortState)) {
       order = oppositeOrderMap[sortState[key]];
     } else {
       order = oppositeOrderMap[sortBy.order];
@@ -53696,7 +53897,7 @@ const useTableGrid = (props2) => {
   function scrollTo(leftOrOptions, top) {
     const header$ = unref(headerRef);
     const body$ = unref(bodyRef);
-    if (isObject$2(leftOrOptions)) {
+    if (isObject$6(leftOrOptions)) {
       header$ == null ? void 0 : header$.scrollToLeft(leftOrOptions.scrollLeft);
       scrollLeft.value = leftOrOptions.scrollLeft;
       body$ == null ? void 0 : body$.scrollTo(leftOrOptions);
@@ -54310,7 +54511,7 @@ const CellRenderer = ({
   let IconOrPlaceholder;
   const iconStyle = `margin-inline-start: ${depth * indentSize}px;`;
   if (expandable) {
-    if (isObject$2(expandIconProps)) {
+    if (isObject$6(expandIconProps)) {
       IconOrPlaceholder = createVNode(ExpandIcon$1, mergeProps(expandIconProps, {
         "class": [ns.e("expand-icon"), ns.is("expanded", expanded)],
         "size": iconSize,
@@ -58918,7 +59119,7 @@ class TreeStore {
   getNode(data) {
     if (data instanceof Node$1)
       return data;
-    const key = isObject$2(data) ? getNodeKey(this.key, data) : data;
+    const key = isObject$6(data) ? getNodeKey(this.key, data) : data;
     return this.nodesMap[key] || null;
   }
   insertBefore(data, refData) {
@@ -61041,7 +61242,7 @@ function useTree(props2, emit2) {
   }
   function getNode(data) {
     var _a2;
-    const key = isObject$2(data) ? getKey(data) : data;
+    const key = isObject$6(data) ? getKey(data) : data;
     return (_a2 = tree.value) == null ? void 0 : _a2.treeNodeMap.get(key);
   }
   function scrollToNode(key, strategy = "auto") {
@@ -63846,13 +64047,13 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
     };
     const aliasProps = computed(() => ({ ...defaultProps, ...props2.props }));
     const getValue2 = (item) => {
-      return isObject$2(item) ? item[aliasProps.value.value] : item;
+      return isObject$6(item) ? item[aliasProps.value.value] : item;
     };
     const getLabel = (item) => {
-      return isObject$2(item) ? item[aliasProps.value.label] : item;
+      return isObject$6(item) ? item[aliasProps.value.label] : item;
     };
     const getDisabled = (item) => {
-      return !!(_disabled.value || (isObject$2(item) ? item[aliasProps.value.disabled] : false));
+      return !!(_disabled.value || (isObject$6(item) ? item[aliasProps.value.disabled] : false));
     };
     const getSelected = (item) => {
       return props2.modelValue === getValue2(item);
@@ -65066,7 +65267,7 @@ const INSTANCE_KEY = Symbol("ElLoading");
 const createInstance = (el, binding) => {
   var _a2, _b, _c, _d;
   const vm = binding.instance;
-  const getBindingProp = (key) => isObject$2(binding.value) ? binding.value[key] : void 0;
+  const getBindingProp = (key) => isObject$6(binding.value) ? binding.value[key] : void 0;
   const resolveExpression = (key) => {
     const data = isString$1(key) && (vm == null ? void 0 : vm[key]) || key;
     if (data)
@@ -65111,7 +65312,7 @@ const vLoading = {
       if (binding.value && !binding.oldValue) {
         createInstance(el, binding);
       } else if (binding.value && binding.oldValue) {
-        if (isObject$2(binding.value))
+        if (isObject$6(binding.value))
           updateOptions(binding.value, instance.options);
       } else {
         instance == null ? void 0 : instance.instance.close();
@@ -66079,7 +66280,7 @@ const showMessage = (options, appContext) => {
   const vm = instance.proxy;
   for (const prop in options) {
     if (hasOwn(options, prop) && !hasOwn(vm.$props, prop)) {
-      if (prop === "closeIcon" && isObject$2(options[prop])) {
+      if (prop === "closeIcon" && isObject$6(options[prop])) {
         vm[prop] = markRaw(options[prop]);
       } else {
         vm[prop] = options[prop];
@@ -66122,7 +66323,7 @@ MESSAGE_BOX_VARIANTS.forEach((boxType) => {
 function messageBoxFactory(boxType) {
   return (message2, title, options, appContext) => {
     let titleOrOpts = "";
-    if (isObject$2(title)) {
+    if (isObject$6(title)) {
       options = title;
       titleOrOpts = "";
     } else if (isUndefined(title)) {

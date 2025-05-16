@@ -12,7 +12,7 @@ export function makeTaskDone(task, store, options={}){
         number_of_executions
     } = task[0];
     let {deleted} = options;
-    repeat_index = parseInt(repeat_index);
+    repeat_index = parseFloat(repeat_index);
     const now = new Date();
 
     switch(repeat_mode) {

@@ -10,7 +10,7 @@
             @click="toggleTodo(todo.task_uuid)"
         >
             <span :title="taskDate(todo.start_date)">({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.start_date)}})</span>
-            <span class="delete" @click="deleteTodo(todo.task_uuid)">ⓧ</span>
+            <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
         </li>
     </ul>
 </template>
@@ -18,14 +18,9 @@
 <script>
 import '../assets/styles/components/TodoList.css';
 import {makeTaskDone, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
-import {addEvent, getFreeSlots, listEvents, makeEvent, updateEvent} from "@/utils/calendar.js";
-
+import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
+import throttle from 'lodash/throttle';
 export default {
-    data() {
-        return {
-            lastDeleteTime: 0
-        };
-    },
     computed: {
         todos() {
             return this.$store.getters["todos/getTodos"];
@@ -99,14 +94,10 @@ export default {
             }
             makeTaskDone(task, this.$store);
         },
-        deleteTodo(task_uuid) {
-            const now = Date.now();
-            if (now - this.lastDeleteTime < 1000) return;
-
-            this.lastDeleteTime = now;
+        deleteTodo: throttle(function(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
-            makeTaskDone(task, this.$store, {deleted:1});
-        },
+            makeTaskDone(task, this.$store, { deleted: 1 });
+        }, 1000),
         getSortedTodos(){
             switch (this.filter) {
                 case 'calendar':

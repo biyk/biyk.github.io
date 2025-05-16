@@ -7,11 +7,33 @@
             v-for="todo in getSortedTodos()"
             :key="todo.id"
             :class="['task', todo.task_color, { completed: todo.completed }]"
-            @click="toggleTodo(todo.task_uuid)"
         >
-            <span :title="taskDate(todo.start_date)">({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.start_date)}})</span>
-            <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
+            <el-popover
+                placement="top"
+                width="200"
+                trigger="click"
+                :visible="visiblePopover === todo.task_uuid"
+                @show="visiblePopover = todo.task_uuid"
+                @hide="visiblePopover = null"
+            >
+                <template #reference>
+                    <span
+                        :title="taskDate(todo.start_date)"
+                        @click="togglePopover(todo.task_uuid)"
+                        style="cursor: pointer;"
+                    >
+                        ({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.start_date)}})
+                    </span>
+                </template>
+                <div>{{ todo.task_description }}</div>
+            </el-popover>
+
+            <div class="buttons">
+                <span class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
+                <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
+            </div>
         </li>
+
     </ul>
 </template>
 
@@ -21,6 +43,11 @@ import {makeTaskDone, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks
 import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 import throttle from 'lodash/throttle';
 export default {
+    data() {
+        return {
+            visiblePopover: null,
+        };
+    },
     computed: {
         todos() {
             return this.$store.getters["todos/getTodos"];
@@ -121,7 +148,10 @@ export default {
                         return taskSort(a) - taskSort(b)
                     });
             }
-        }
+        },
+        togglePopover(uuid) {
+            this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
+        },
     },
     mounted() {
         this.$store.dispatch("todos/initTodos");

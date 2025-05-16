@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.66";
+window.version = "0.2.67";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8640,7 +8640,7 @@ function makeTaskDone(task, store2, options = {}) {
     number_of_executions
   } = task[0];
   let { deleted } = options;
-  repeat_index = parseInt(repeat_index);
+  repeat_index = parseFloat(repeat_index);
   const now2 = new Date();
   switch (repeat_mode) {
     case "0":

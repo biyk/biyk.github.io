@@ -33,7 +33,7 @@ export function makeTaskDone(task, store, options={}){
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 23, 59, 0, 0).getTime();
             break;
         case '5':
-            start_date = new Date().getTime();
+            start_date = new Date().getTime()+60*1000;
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
             break;
         case '3':
@@ -163,6 +163,7 @@ export async function setTaskToCalendar() {
             freeSlots[slotIndex].start = endDate.toISOString();
             freeSlots[slotIndex].duration = updatedDuration;
         }
+        this.$store.dispatch("todos/initTodos");
     }
 }
 

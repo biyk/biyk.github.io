@@ -46,7 +46,6 @@
 }
 
 .task:hover {
-    cursor: pointer;
 }
 
 .completed {
@@ -58,14 +57,31 @@
     content: "\2714";
 }
 
-.delete {
-    display: block;
+.tasks .buttons{
     float: right;
+
+}
+
+.done {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    text-align: center;
+    cursor: pointer;
+
+}
+
+.delete {
+    margin-left: 20px;
+    display: inline;
     color: #d22;
     width: 1.25rem;
     height: 1.25rem;
     text-align: center;
+    cursor: pointer;
+
 }
+
 .settings[data-v-5f5f78a2] {
     margin-top: 1rem;
 }

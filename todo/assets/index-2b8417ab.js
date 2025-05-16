@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.68";
+window.version = "0.2.69";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8660,7 +8660,7 @@ function makeTaskDone(task, store2, options = {}) {
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
       break;
     case "5":
-      start_date = new Date().getTime();
+      start_date = new Date().getTime() + 60 * 1e3;
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
       break;
     case "3":
@@ -8772,6 +8772,7 @@ async function setTaskToCalendar() {
       freeSlots[slotIndex].start = endDate.toISOString();
       freeSlots[slotIndex].duration = updatedDuration;
     }
+    this.$store.dispatch("todos/initTodos");
   }
 }
 function taskDate(date4) {
@@ -8990,6 +8991,11 @@ function throttle$1(func, wait, options) {
 }
 var throttle_1 = throttle$1;
 const _sfc_main$2A = {
+  data() {
+    return {
+      visiblePopover: null
+    };
+  },
   computed: {
     todos() {
       return this.$store.getters["todos/getTodos"];
@@ -9087,6 +9093,9 @@ const _sfc_main$2A = {
             return taskSort(a2) - taskSort(b2);
           });
       }
+    },
+    togglePopover(uuid) {
+      this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
     }
   },
   mounted() {
@@ -9095,10 +9104,12 @@ const _sfc_main$2A = {
   }
 };
 const _hoisted_1$2 = { class: "tasks" };
-const _hoisted_2$1 = ["onClick"];
-const _hoisted_3$1 = ["title"];
+const _hoisted_2$1 = ["title", "onClick"];
+const _hoisted_3$1 = { class: "buttons" };
 const _hoisted_4$1 = ["onClick"];
+const _hoisted_5 = ["onClick"];
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_el_popover = resolveComponent("el-popover");
   return openBlock(), createElementBlock(Fragment, null, [
     $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
       key: 0,
@@ -9109,17 +9120,39 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
       (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
         return openBlock(), createElementBlock("li", {
           key: todo.id,
-          class: normalizeClass(["task", todo.task_color, { completed: todo.completed }]),
-          onClick: ($event) => $options.toggleTodo(todo.task_uuid)
+          class: normalizeClass(["task", todo.task_color, { completed: todo.completed }])
         }, [
-          createBaseVNode("span", {
-            title: $options.taskDate(todo.start_date)
-          }, "(" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ")", 9, _hoisted_3$1),
-          createBaseVNode("span", {
-            class: "delete",
-            onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
-          }, "ⓧ", 8, _hoisted_4$1)
-        ], 10, _hoisted_2$1);
+          createVNode(_component_el_popover, {
+            placement: "top",
+            width: "200",
+            trigger: "click",
+            visible: $data.visiblePopover === todo.task_uuid,
+            onShow: ($event) => $data.visiblePopover = todo.task_uuid,
+            onHide: _cache[1] || (_cache[1] = ($event) => $data.visiblePopover = null)
+          }, {
+            reference: withCtx(() => [
+              createBaseVNode("span", {
+                title: $options.taskDate(todo.start_date),
+                onClick: ($event) => $options.togglePopover(todo.task_uuid),
+                style: { "cursor": "pointer" }
+              }, " (" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ") ", 9, _hoisted_2$1)
+            ]),
+            default: withCtx(() => [
+              createBaseVNode("div", null, toDisplayString(todo.task_description), 1)
+            ]),
+            _: 2
+          }, 1032, ["visible", "onShow"]),
+          createBaseVNode("div", _hoisted_3$1, [
+            createBaseVNode("span", {
+              class: "done",
+              onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
+            }, "✅", 8, _hoisted_4$1),
+            createBaseVNode("span", {
+              class: "delete",
+              onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
+            }, "ⓧ", 8, _hoisted_5)
+          ])
+        ], 2);
       }), 128))
     ])
   ], 64);

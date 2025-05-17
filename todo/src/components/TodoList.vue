@@ -2,7 +2,7 @@
     <button v-if="filter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
 
     <ul class="tasks">
-        <li>{{getSortedTodos().length}}</li>
+        <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.)</li>
         <li
             v-for="todo in getSortedTodos()"
             :key="todo.id"
@@ -46,6 +46,7 @@ export default {
     data() {
         return {
             visiblePopover: null,
+            total: 0
         };
     },
     computed: {
@@ -148,6 +149,13 @@ export default {
                         return taskSort(a) - taskSort(b)
                     });
             }
+        },
+        getTotalTime() {
+            let summ = 0;
+            this.getSortedTodos().forEach((task) => {
+                summ += Number(task.task_time) || 0;
+            });
+            return (summ / 60).toFixed(2);
         },
         togglePopover(uuid) {
             this.visiblePopover = this.visiblePopover === uuid ? null : uuid;

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.69";
+window.version = "0.2.70";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8993,7 +8993,8 @@ var throttle_1 = throttle$1;
 const _sfc_main$2A = {
   data() {
     return {
-      visiblePopover: null
+      visiblePopover: null,
+      total: 0
     };
   },
   computed: {
@@ -9094,6 +9095,13 @@ const _sfc_main$2A = {
           });
       }
     },
+    getTotalTime() {
+      let summ = 0;
+      this.getSortedTodos().forEach((task) => {
+        summ += Number(task.task_time) || 0;
+      });
+      return (summ / 60).toFixed(2);
+    },
     togglePopover(uuid) {
       this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
     }
@@ -9116,7 +9124,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
       onClick: _cache[0] || (_cache[0] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
     }, "Заполнить календарь")) : createCommentVNode("", true),
     createBaseVNode("ul", _hoisted_1$2, [
-      createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length), 1),
+      createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length) + " (" + toDisplayString($options.getTotalTime()) + " ч.)", 1),
       (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
         return openBlock(), createElementBlock("li", {
           key: todo.id,

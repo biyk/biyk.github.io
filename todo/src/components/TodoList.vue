@@ -67,15 +67,17 @@ export default {
         taskSort,
         getFilteredTodos() {
             const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , 23, 59, 0, 0).getTime();
+            const today = new Date().getTime();
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             return this.todos.filter(todo => {
                 if (todo.task_title.includes('task_title')) return false;
                 const start = todo.start_date;
                 switch (this.filter) {
                     case 'today':
+                        console.log(today, start, todo.task_title)
                         return start < today;
                     case 'calendar':
+                        console
                         const calendarEvents = this.events;
                         const hasMatchingEvent = calendarEvents?.some(
                             event => event.description?.includes(todo.task_uuid)

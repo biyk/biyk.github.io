@@ -9,11 +9,11 @@
             :class="['task', todo.task_color, { completed: todo.completed }]"
         >
                     <span
-                        :title="taskDate(todo.start_date)"
+                        :title="taskDate(todo.task_date)"
                         @click="togglePopover(todo.task_uuid)"
                         style="cursor: pointer;"
                     >
-                        ({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.start_date)}})
+                        ({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.task_date)}})
                     </span>
 
             <div v-if="visiblePopover === todo.task_uuid" class="editable-description">
@@ -27,6 +27,11 @@
 
 
             <div v-if="!visiblePopover !== todo.task_uuid" class="buttons">
+                <!-- Кнопки Старт / Стоп -->
+                <span style="margin-right: 8px;">
+                    <button v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
+                    <button v-else @click="stopTask(todo)">⏹ </button>
+                </span>
                 <span class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
                 <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
             </div>
@@ -72,7 +77,7 @@ export default {
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             return this.todos.filter(todo => {
                 if (todo.task_title.includes('task_title')) return false;
-                const start = parseInt(todo.start_date);
+                const start = parseInt(todo.task_date);
                 switch (this.filter) {
                     case 'today':
                         return start < today;
@@ -163,6 +168,25 @@ export default {
         },
         togglePopover(uuid) {
             this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
+        },
+        startTask(todo) {
+            todo.start_date = Date.now(); // текущее время в миллисекундах
+            this.$store.dispatch("todos/updateTodo", { ...todo });
+        },
+        stopTask(todo) {
+            const now = Date.now();
+            const durationMs = now - todo.start_date;
+            const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
+
+            const previous = Number(todo.task_time) || 0;
+            const newAverage = Math.ceil((previous + minutesSpent) / 2);
+
+            todo.task_time = newAverage;
+            todo.start_date = 0;
+            todo.completed = true;
+
+            this.$store.dispatch("todos/updateTodo", { ...todo });
+            this.toggleTodo(todo.task_uuid)
         },
     },
     mounted() {

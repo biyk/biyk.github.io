@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <h1>{{hero.hero_name}} {{hero.hero_money}}</h1>
+        <h1>{{hero.hero_name}} {{hero.hero_money}} ({{new  Date().toLocaleString()}})</h1>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />
@@ -73,6 +73,11 @@ export default {
     },
     mounted() {
         this.$store.dispatch("hero/initHero");
+    },
+    methods:{
+        time(){
+            return new  Date().toLocaleString()
+        }
     }
 
 }

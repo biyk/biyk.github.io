@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.76";
+window.version = "0.2.77";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8642,6 +8642,7 @@ function makeTaskDone(task, store2, options = {}) {
   let { deleted } = options;
   repeat_index = parseFloat(repeat_index);
   const now2 = new Date();
+  console.log(repeat_mode);
   switch (repeat_mode) {
     case "0":
       start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();

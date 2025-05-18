@@ -15,6 +15,7 @@ export function makeTaskDone(task, store, options={}){
     repeat_index = parseFloat(repeat_index);
     const now = new Date();
 
+    console.log(repeat_mode);
     switch(repeat_mode) {
         case '0':
             start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();

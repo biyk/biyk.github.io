@@ -13,7 +13,7 @@
                         @click="togglePopover(todo.task_uuid)"
                         style="cursor: pointer;"
                     >
-                        ({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.task_date)}})
+                        ({{ todo.task_time}}) {{ todo.task_title }} ({{taskDate(todo.task_date)}})
                     </span>
 
             <div v-if="visiblePopover === todo.task_uuid" class="editable-description">

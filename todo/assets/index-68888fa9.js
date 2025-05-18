@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.71";
+window.version = "0.2.72";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8656,11 +8656,11 @@ function makeTaskDone(task, store2, options = {}) {
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       break;
     case "6":
-      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 0, 0, 1, 0).getTime() + Math.round(repeat_index * 24 * 60 * 60 * 100);
-      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime() + Math.round(repeat_index * 24 * 60 * 60 * 100);
+      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
       break;
     case "5":
-      start_date = new Date().getTime() + 60 * 1e3;
+      start_date = new Date().getTime() + Math.round(repeat_index * 24 * 60 * 60 * 1e3);
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
       break;
     case "3":
@@ -8772,7 +8772,6 @@ async function setTaskToCalendar() {
       freeSlots[slotIndex].start = endDate.toISOString();
       freeSlots[slotIndex].duration = updatedDuration;
     }
-    this.$store.dispatch("todos/initTodos");
   }
 }
 function taskDate(date4) {

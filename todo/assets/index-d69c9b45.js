@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.74";
+window.version = "0.2.75";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9021,10 +9021,9 @@ const _sfc_main$2A = {
       return this.todos.filter((todo) => {
         if (todo.task_title.includes("task_title"))
           return false;
-        const start = todo.start_date;
+        const start = parseInt(todo.start_date);
         switch (this.filter) {
           case "today":
-            console.log(today, start, todo.task_title);
             return start < today;
           case "calendar":
             const calendarEvents = this.events;

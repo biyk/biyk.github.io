@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.77";
+window.version = "0.2.78";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8493,9 +8493,16 @@ class GoogleSheetDB {
     let response;
     let data = [];
     let storageKey = range3 + spreadsheetId2;
+    let storageTTLKey = range3 + spreadsheetId2 + "_ttl";
     let storageData = await webStorage.getItem(storageKey);
+    let storageTTL = await webStorage.getItem(storageTTLKey);
+    let now2 = new Date().getTime();
     if (caching && storageData) {
-      return JSON.parse(storageData);
+      console.log("нужно кэшировать и есть в кэше");
+      if (storageTTL > now2) {
+        console.log("кэш еще нормальный");
+        return JSON.parse(storageData);
+      }
     }
     try {
       response = await gapi.client.sheets.spreadsheets.values.get({
@@ -8514,6 +8521,7 @@ class GoogleSheetDB {
     }
     data = result.values;
     await webStorage.setItem(storageKey, JSON.stringify(data));
+    await webStorage.setItem(storageTTLKey, new Date().getTime() + parseInt(caching) * 1e3);
     return data;
   }
 }
@@ -8724,6 +8732,20 @@ function taskSort(task) {
   };
   return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier;
 }
+async function setTaskCompleted() {
+  this.$store.dispatch("todos/initTodos");
+  const now2 = new Date();
+  let today_events = await listEvents();
+  today_events.forEach((event) => {
+    let task_uuid = event.description;
+    let todos2 = this.$store.getters["todos/getTodos"];
+    const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
+    const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
+    if (task.length && task[0].start_date < today && new Date(event.start.dateTime).getTime() < today) {
+      makeTaskDone(task, this.$store);
+    }
+  });
+}
 async function setTaskToCalendar() {
   this.$store.dispatch("todos/initTodos");
   let all = this.$store.getters["todos/getTodos"].sort((a2, b2) => a2.task_sort - b2.task_sort);
@@ -8774,6 +8796,7 @@ async function setTaskToCalendar() {
       freeSlots[slotIndex].duration = updatedDuration;
     }
   }
+  this.$store.dispatch("todos/initTodos");
 }
 function taskDate(date4) {
   date4 = parseInt(date4);
@@ -9012,6 +9035,7 @@ const _sfc_main$2A = {
     }
   },
   methods: {
+    setTaskCompleted,
     setTaskToCalendar,
     taskDate,
     taskSort,
@@ -9135,6 +9159,10 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
       key: 0,
       onClick: _cache[0] || (_cache[0] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
     }, "Заполнить календарь")) : createCommentVNode("", true),
+    $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
+      key: 1,
+      onClick: _cache[1] || (_cache[1] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
+    }, "Отметить завершенные")) : createCommentVNode("", true),
     createBaseVNode("ul", _hoisted_1$2, [
       createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length) + " (" + toDisplayString($options.getTotalTime()) + " ч.)", 1),
       (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
@@ -9176,7 +9204,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
   ], 64);
 }
 const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u]]);
-const Settings_vue_vue_type_style_index_0_scoped_5f5f78a2_lang = "";
+const Settings_vue_vue_type_style_index_0_scoped_9ef4f987_lang = "";
 const _sfc_main$2z = {
   name: "Settings",
   data() {
@@ -9212,20 +9240,6 @@ const _sfc_main$2z = {
     // Удаляем настройку по индексу
     deleteSetting(index2) {
       this.$store.dispatch("settings/deleteSetting", index2);
-    },
-    async setTaskCompleted() {
-      this.$store.dispatch("todos/initTodos");
-      const now2 = new Date();
-      let today_events = await listEvents();
-      today_events.forEach((event) => {
-        let task_uuid = event.description;
-        let todos2 = this.$store.getters["todos/getTodos"];
-        const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
-        const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
-        if (task.length && task[0].start_date < today && new Date(event.start.dateTime).getTime() < today) {
-          makeTaskDone(task, this.$store);
-        }
-      });
     }
   }
 };
@@ -9238,7 +9252,7 @@ const _hoisted_3 = { key: 1 };
 const _hoisted_4 = ["onClick"];
 function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock("div", _hoisted_1$1, [
-    _cache[7] || (_cache[7] = createBaseVNode("h2", null, "Настройки", -1)),
+    _cache[5] || (_cache[5] = createBaseVNode("h2", null, "Настройки", -1)),
     createBaseVNode("button", {
       onClick: _cache[0] || (_cache[0] = ($event) => $data.showForm = !$data.showForm)
     }, toDisplayString($data.showForm ? "Отмена" : "Добавить"), 1),
@@ -9262,7 +9276,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
       }, "Сохранить")
     ])) : createCommentVNode("", true),
     $options.settings.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_3, [
-      _cache[6] || (_cache[6] = createBaseVNode("h3", null, "Сохранённые настройки:", -1)),
+      _cache[4] || (_cache[4] = createBaseVNode("h3", null, "Сохранённые настройки:", -1)),
       createBaseVNode("ul", null, [
         (openBlock(true), createElementBlock(Fragment, null, renderList($options.settings, (setting, index2) => {
           return openBlock(), createElementBlock("li", { key: index2 }, [
@@ -9273,16 +9287,10 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
           ]);
         }), 128))
       ])
-    ])) : createCommentVNode("", true),
-    createBaseVNode("button", {
-      onClick: _cache[4] || (_cache[4] = (...args) => _ctx.setTaskToCalendar && _ctx.setTaskToCalendar(...args))
-    }, "Заполнить календарь"),
-    createBaseVNode("button", {
-      onClick: _cache[5] || (_cache[5] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
-    }, "Отметить завершенные")
+    ])) : createCommentVNode("", true)
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-5f5f78a2"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-9ef4f987"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }
@@ -10268,6 +10276,11 @@ function stopTaskAgent() {
 }
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
+  data() {
+    return {
+      currentTime: new Date().toLocaleString()
+    };
+  },
   components: {
     Settings,
     TodoNew,
@@ -10298,11 +10311,9 @@ const _sfc_main$2y = {
   },
   mounted() {
     this.$store.dispatch("hero/initHero");
-  },
-  methods: {
-    time() {
-      return new Date().toLocaleString();
-    }
+    this.timer = setInterval(() => {
+      this.currentTime = new Date().toLocaleString();
+    }, 1e3);
   }
 };
 const _hoisted_1 = { class: "container" };
@@ -10313,7 +10324,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
-    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString($options.hero.hero_money) + " (" + toDisplayString(new Date().toLocaleString()) + ")", 1),
+    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString($options.hero.hero_money) + " (" + toDisplayString($data.currentTime) + ")", 1),
     createVNode(_component_el_tabs, {
       modelValue: $setup.activeTab,
       "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.activeTab = $event)
@@ -68674,9 +68685,10 @@ const actions$3 = {
       commit2("SET_TODOS", loadTodos());
       return;
     }
-    const list = await table.getAll();
+    const list = await table.getAll({ caching: 5 });
     const orm = new ORM(table.columns["real_life_tasks"]);
     const todos2 = list.map((e) => orm.getFormated(e));
+    console.log("Загрузили актуальные данне по задачам");
     commit2("SET_TODOS", todos2);
   },
   addTodo({ commit: commit2 }, payload) {
@@ -68748,7 +68760,7 @@ const actions$2 = {
       commit2("SET_HERO", loadHero$1());
       return;
     }
-    const list = await table.getAll();
+    const list = await table.getAll({ caching: 5 });
     const orm = new ORM(table.columns[table.list]);
     let hero2 = {};
     list.map((e) => {
@@ -68813,7 +68825,7 @@ const actions$1 = {
       commit2("SET_HERO", loadHero());
       return;
     }
-    const list = await table.getAll();
+    const list = await table.getAll({ caching: 5 });
     const orm = new ORM(table.columns[table.list]);
     let hero2 = {};
     list.map((e) => {

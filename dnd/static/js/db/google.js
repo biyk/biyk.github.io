@@ -574,9 +574,16 @@ export class GoogleSheetDB {
         let response;
         let data = [];
         let storageKey = range + spreadsheetId;
+        let storageTTLKey = range + spreadsheetId + '_ttl';
         let storageData = await webStorage.getItem(storageKey);
-        if (caching && storageData) {
-            return JSON.parse(storageData);
+        let storageTTL = await webStorage.getItem(storageTTLKey);
+        let now = new Date().getTime();
+        if (caching && storageData ) {
+            console.log('нужно кэшировать и есть в кэше')
+            if (storageTTL > now){
+                console.log('кэш еще нормальный')
+                return JSON.parse(storageData);
+            }
         }
         try {
             response = await gapi.client.sheets.spreadsheets.values.get({
@@ -595,6 +602,7 @@ export class GoogleSheetDB {
         }
         data = result.values;
         await webStorage.setItem(storageKey, JSON.stringify(data));
+        await webStorage.setItem(storageTTLKey, new Date().getTime() + parseInt(caching)*1000);
         return data;
     }
 }

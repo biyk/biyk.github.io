@@ -100,6 +100,24 @@ export function taskSort(task){
     return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier
 }
 
+export async function  setTaskCompleted(){
+    this.$store.dispatch("todos/initTodos");
+    const now = new Date();
+    //получаем список дел на сегодня
+    let today_events = await listEvents();
+    today_events.forEach((event)=>{
+        let task_uuid = event.description;
+        let todos = this.$store.getters["todos/getTodos"];
+        const task = todos.filter(todo => todo.task_uuid === task_uuid);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , now.getHours(), now.getMinutes(), 0, 0).getTime();
+
+        if (task.length && (task[0].start_date < today) && (new Date(event.start.dateTime)).getTime() < today){
+            makeTaskDone(task, this.$store);
+        }
+    });
+}
+
+
 export async function setTaskToCalendar() {
     //получаем список задач на сегодня
     this.$store.dispatch("todos/initTodos");
@@ -165,6 +183,7 @@ export async function setTaskToCalendar() {
             freeSlots[slotIndex].duration = updatedDuration;
         }
     }
+    this.$store.dispatch("todos/initTodos");
 }
 
 export function taskDate(date){

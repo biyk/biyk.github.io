@@ -32,15 +32,11 @@
                 </li>
             </ul>
         </div>
-        <button @click="setTaskToCalendar">Заполнить календарь</button>
-        <button @click="setTaskCompleted">Отметить завершенные</button>
     </div>
 </template>
 
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
-import {addEvent, getFreeSlots, listEvents, makeEvent} from "@/utils/calendar.js";
-import {makeTaskDone, taskSort} from "@/utils/tasks.js";
 
 export default {
     name: 'Settings',
@@ -82,22 +78,6 @@ export default {
         // Удаляем настройку по индексу
         deleteSetting(index) {
             this.$store.dispatch("settings/deleteSetting", index)
-        },
-        async setTaskCompleted(){
-            this.$store.dispatch("todos/initTodos");
-            const now = new Date();
-            //получаем список дел на сегодня
-            let today_events = await listEvents();
-            today_events.forEach((event)=>{
-                let task_uuid = event.description;
-                let todos = this.$store.getters["todos/getTodos"];
-                const task = todos.filter(todo => todo.task_uuid === task_uuid);
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , now.getHours(), now.getMinutes(), 0, 0).getTime();
-
-                if (task.length && (task[0].start_date < today) && (new Date(event.start.dateTime)).getTime() < today){
-                    makeTaskDone(task, this.$store);
-                }
-            });
         },
     },
 }

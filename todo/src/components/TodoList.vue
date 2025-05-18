@@ -1,6 +1,6 @@
 <template>
     <button v-if="filter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
-
+    <button  v-if="filter==='calendar'" @click="setTaskCompleted">Отметить завершенные</button>
     <ul class="tasks">
         <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.)</li>
         <li
@@ -37,7 +37,7 @@
 
 <script>
 import '../assets/styles/components/TodoList.css';
-import {makeTaskDone, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
+import {makeTaskDone, setTaskCompleted, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
 import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 import throttle from 'lodash/throttle';
 export default {
@@ -62,6 +62,7 @@ export default {
         }
     },
     methods: {
+        setTaskCompleted,
         setTaskToCalendar,
         taskDate,
         taskSort,

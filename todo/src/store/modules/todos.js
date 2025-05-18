@@ -62,20 +62,20 @@ export const mutations = {
 };
 
 async function getGoogleSheetTable(rootGetters) {
-        const settings = rootGetters["settings/allSettings"];
-        const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
-        if (!spreadsheetSetting) {
-            console.warn("spreadsheetId not found in settings");
+    const settings = rootGetters["settings/allSettings"];
+    const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+    if (!spreadsheetSetting) {
+        console.warn("spreadsheetId not found in settings");
         return null;
-        }
+    }
 
     const api = window.GoogleSheetDB || new GoogleSheetDB();
-        await api.waitGoogle();
+    await api.waitGoogle();
 
     return new Table({
-            spreadsheetId: spreadsheetSetting.value,
+        spreadsheetId: spreadsheetSetting.value,
         list: "real_life_tasks"
-        });
+    });
 }
 
 export const actions = {
@@ -86,10 +86,10 @@ export const actions = {
             return;
         }
 
-        const list = await table.getAll();
+        const list = await table.getAll({caching:5});
         const orm = new ORM(table.columns["real_life_tasks"]);
         const todos = list.map(e => orm.getFormated(e));
-
+        console.log('Загрузили актуальные данне по задачам')
         commit("SET_TODOS", todos);
     },
 

@@ -8,15 +8,6 @@
             :key="todo.id"
             :class="['task', todo.task_color, { completed: todo.completed }]"
         >
-            <el-popover
-                placement="top"
-                width="200"
-                trigger="click"
-                :visible="visiblePopover === todo.task_uuid"
-                @show="visiblePopover = todo.task_uuid"
-                @hide="visiblePopover = null"
-            >
-                <template #reference>
                     <span
                         :title="taskDate(todo.start_date)"
                         @click="togglePopover(todo.task_uuid)"
@@ -24,11 +15,18 @@
                     >
                         ({{ todo.task_sort }} / {{taskSort(todo)}}) {{ todo.task_title }} ({{taskDate(todo.start_date)}})
                     </span>
-                </template>
-                <div>{{ todo.task_description }}</div>
-            </el-popover>
 
-            <div class="buttons">
+            <div v-if="visiblePopover === todo.task_uuid" class="editable-description">
+                <textarea
+                    v-model="todo.task_description"
+                    rows="3"
+                    style="width: 100%; margin-top: 8px;"
+                ></textarea>
+                <button @click="closeEditor(todo)" style="margin-top: 4px;">✅ Сохранить</button>
+            </div>
+
+
+            <div v-if="!visiblePopover !== todo.task_uuid" class="buttons">
                 <span class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
                 <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
             </div>
@@ -89,6 +87,11 @@ export default {
                         return true;
                 }
             });
+        },
+
+        closeEditor(todo) {
+            this.visiblePopover = null;
+            this.$store.dispatch("todos/updateTodo", { ...todo }); // принудительное сохранение
         },
 
         async toggleTodo(task_uuid) {

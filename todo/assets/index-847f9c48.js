@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.70";
+window.version = "0.2.71";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8656,8 +8656,8 @@ function makeTaskDone(task, store2, options = {}) {
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       break;
     case "6":
-      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
-      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
+      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 0, 0, 1, 0).getTime() + Math.round(repeat_index * 24 * 60 * 60 * 100);
+      task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime() + Math.round(repeat_index * 24 * 60 * 60 * 100);
       break;
     case "5":
       start_date = new Date().getTime() + 60 * 1e3;
@@ -9042,6 +9042,10 @@ const _sfc_main$2A = {
         }
       });
     },
+    closeEditor(todo) {
+      this.visiblePopover = null;
+      this.$store.dispatch("todos/updateTodo", { ...todo });
+    },
     async toggleTodo(task_uuid) {
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       const endDate = new Date();
@@ -9113,11 +9117,19 @@ const _sfc_main$2A = {
 };
 const _hoisted_1$2 = { class: "tasks" };
 const _hoisted_2$1 = ["title", "onClick"];
-const _hoisted_3$1 = { class: "buttons" };
-const _hoisted_4$1 = ["onClick"];
+const _hoisted_3$1 = {
+  key: 0,
+  class: "editable-description"
+};
+const _hoisted_4$1 = ["onUpdate:modelValue"];
 const _hoisted_5 = ["onClick"];
+const _hoisted_6 = {
+  key: 1,
+  class: "buttons"
+};
+const _hoisted_7 = ["onClick"];
+const _hoisted_8 = ["onClick"];
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
-  const _component_el_popover = resolveComponent("el-popover");
   return openBlock(), createElementBlock(Fragment, null, [
     $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
       key: 0,
@@ -9130,36 +9142,34 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
           key: todo.id,
           class: normalizeClass(["task", todo.task_color, { completed: todo.completed }])
         }, [
-          createVNode(_component_el_popover, {
-            placement: "top",
-            width: "200",
-            trigger: "click",
-            visible: $data.visiblePopover === todo.task_uuid,
-            onShow: ($event) => $data.visiblePopover = todo.task_uuid,
-            onHide: _cache[1] || (_cache[1] = ($event) => $data.visiblePopover = null)
-          }, {
-            reference: withCtx(() => [
-              createBaseVNode("span", {
-                title: $options.taskDate(todo.start_date),
-                onClick: ($event) => $options.togglePopover(todo.task_uuid),
-                style: { "cursor": "pointer" }
-              }, " (" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ") ", 9, _hoisted_2$1)
+          createBaseVNode("span", {
+            title: $options.taskDate(todo.start_date),
+            onClick: ($event) => $options.togglePopover(todo.task_uuid),
+            style: { "cursor": "pointer" }
+          }, " (" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ") ", 9, _hoisted_2$1),
+          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_3$1, [
+            withDirectives(createBaseVNode("textarea", {
+              "onUpdate:modelValue": ($event) => todo.task_description = $event,
+              rows: "3",
+              style: { "width": "100%", "margin-top": "8px" }
+            }, null, 8, _hoisted_4$1), [
+              [vModelText, todo.task_description]
             ]),
-            default: withCtx(() => [
-              createBaseVNode("div", null, toDisplayString(todo.task_description), 1)
-            ]),
-            _: 2
-          }, 1032, ["visible", "onShow"]),
-          createBaseVNode("div", _hoisted_3$1, [
+            createBaseVNode("button", {
+              onClick: ($event) => $options.closeEditor(todo),
+              style: { "margin-top": "4px" }
+            }, "✅ Сохранить", 8, _hoisted_5)
+          ])) : createCommentVNode("", true),
+          !$data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_6, [
             createBaseVNode("span", {
               class: "done",
               onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-            }, "✅", 8, _hoisted_4$1),
+            }, "✅", 8, _hoisted_7),
             createBaseVNode("span", {
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
-            }, "ⓧ", 8, _hoisted_5)
-          ])
+            }, "ⓧ", 8, _hoisted_8)
+          ])) : createCommentVNode("", true)
         ], 2);
       }), 128))
     ])

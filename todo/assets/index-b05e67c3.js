@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.79";
+window.version = "0.2.80";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9193,7 +9193,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
             title: $options.taskDate(todo.task_date),
             onClick: ($event) => $options.togglePopover(todo.task_uuid),
             style: { "cursor": "pointer" }
-          }, " (" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.task_date)) + ") ", 9, _hoisted_2$1),
+          }, " (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.task_date)) + ") ", 9, _hoisted_2$1),
           $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_3$1, [
             withDirectives(createBaseVNode("textarea", {
               "onUpdate:modelValue": ($event) => todo.task_description = $event,

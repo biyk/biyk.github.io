@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.73";
+window.version = "0.2.74";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -10298,6 +10298,11 @@ const _sfc_main$2y = {
   },
   mounted() {
     this.$store.dispatch("hero/initHero");
+  },
+  methods: {
+    time() {
+      return new Date().toLocaleString();
+    }
   }
 };
 const _hoisted_1 = { class: "container" };
@@ -10308,7 +10313,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
-    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString($options.hero.hero_money), 1),
+    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString($options.hero.hero_money) + " (" + toDisplayString(new Date().toLocaleString()) + ")", 1),
     createVNode(_component_el_tabs, {
       modelValue: $setup.activeTab,
       "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.activeTab = $event)

@@ -1,5 +1,6 @@
 import {addEvent, getFreeSlots, listEvents, makeEvent} from "@/utils/calendar.js";
 
+
 export function makeTaskDone(task, store, options={}){
 
     let {
@@ -29,8 +30,8 @@ export function makeTaskDone(task, store, options={}){
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             break;
         case '6':
-            start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 0, 0, 1, 0).getTime();
-            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 23, 59, 0, 0).getTime();
+            start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 1, 0).getTime() + Math.round(repeat_index * 24*60*60*100);
+            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime() + Math.round(repeat_index * 24*60*60*100);
             break;
         case '5':
             start_date = new Date().getTime()+60*1000;

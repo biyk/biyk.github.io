@@ -76,7 +76,6 @@ export default {
                     case 'today':
                         return start < today;
                     case 'calendar':
-                        console
                         const calendarEvents = this.events;
                         const hasMatchingEvent = calendarEvents?.some(
                             event => event.description?.includes(todo.task_uuid)

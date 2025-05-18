@@ -6,7 +6,7 @@ export function makeTaskDone(task, store, options={}){
         repeat_days_of_week,
         repeat_index,
         repeat_mode,
-        start_date,
+        task_date,
         task_finish_date,
         break_multiplier,
         number_of_executions
@@ -18,23 +18,23 @@ export function makeTaskDone(task, store, options={}){
     console.log(repeat_mode);
     switch(repeat_mode) {
         case '0':
-            start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
+            task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             break;
         case '1':
-            start_date = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate() , 0, 0, 1, 0).getTime();
+            task_date = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate() , 0, 0, 1, 0).getTime();
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             break;
         case '2':
-            start_date = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate() , 0, 0, 1, 0).getTime();
+            task_date = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate() , 0, 0, 1, 0).getTime();
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             break;
         case '6':
-            start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 0, 0, 1, 0).getTime();
+            task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 0, 0, 1, 0).getTime();
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 23, 59, 0, 0).getTime();
             break;
         case '5':
-            start_date = new Date().getTime() + Math.round(repeat_index * 24*60*60*1000);
+            task_date = new Date().getTime() + Math.round(repeat_index * 24*60*60*1000);
             task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
             break;
         case '3':
@@ -56,7 +56,7 @@ export function makeTaskDone(task, store, options={}){
             }
 
             // Устанавливаем даты начала и конца задачи
-             start_date = new Date(
+            task_date = new Date(
                 now.getFullYear(),
                 now.getMonth(),
                 now.getDate() + repeat_index3,
@@ -77,7 +77,7 @@ export function makeTaskDone(task, store, options={}){
     number_of_executions++;
     const updatedTask = {
         ...task[0],
-        start_date: start_date,
+        task_date: task_date,
         break_multiplier: break_multiplier,
         task_finish_date: task_finish_date,
         number_of_executions:number_of_executions
@@ -97,7 +97,7 @@ export function taskSort(task){
         const diff = now - new Date(timestamp);
         return Math.floor(diff / (1000 * 60 * 60 * 24));
     };
-    return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier
+    return task.task_sort - daysDiff(parseInt(task.task_date)) * task.break_multiplier
 }
 
 export async function  setTaskCompleted(){
@@ -111,7 +111,7 @@ export async function  setTaskCompleted(){
         const task = todos.filter(todo => todo.task_uuid === task_uuid);
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() , now.getHours(), now.getMinutes(), 0, 0).getTime();
 
-        if (task.length && (task[0].start_date < today) && (new Date(event.start.dateTime)).getTime() < today){
+        if (task.length && (task[0].task_date < today) && (new Date(event.start.dateTime)).getTime() < today){
             makeTaskDone(task, this.$store);
         }
     });
@@ -130,7 +130,7 @@ export async function setTaskToCalendar() {
     //список задач которые можно было бы сделать сегодня
     let today_tasks = all.filter(todo => {
         if (todo.task_title === 'task_title') return false;
-        const start = todo.start_date;
+        const start = todo.task_date;
         return start < today;
     });
 

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.78";
+window.version = "0.2.79";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8642,7 +8642,7 @@ function makeTaskDone(task, store2, options = {}) {
     repeat_days_of_week,
     repeat_index,
     repeat_mode,
-    start_date,
+    task_date,
     task_finish_date,
     break_multiplier,
     number_of_executions
@@ -8653,23 +8653,23 @@ function makeTaskDone(task, store2, options = {}) {
   console.log(repeat_mode);
   switch (repeat_mode) {
     case "0":
-      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
+      task_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       break;
     case "1":
-      start_date = new Date(now2.getFullYear(), now2.getMonth() + 1, now2.getDate(), 0, 0, 1, 0).getTime();
+      task_date = new Date(now2.getFullYear(), now2.getMonth() + 1, now2.getDate(), 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       break;
     case "2":
-      start_date = new Date(now2.getFullYear() + 1, now2.getMonth(), now2.getDate(), 0, 0, 1, 0).getTime();
+      task_date = new Date(now2.getFullYear() + 1, now2.getMonth(), now2.getDate(), 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       break;
     case "6":
-      start_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
+      task_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 0, 0, 1, 0).getTime();
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + repeat_index, 23, 59, 0, 0).getTime();
       break;
     case "5":
-      start_date = new Date().getTime() + Math.round(repeat_index * 24 * 60 * 60 * 1e3);
+      task_date = new Date().getTime() + Math.round(repeat_index * 24 * 60 * 60 * 1e3);
       task_finish_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
       break;
     case "3":
@@ -8687,7 +8687,7 @@ function makeTaskDone(task, store2, options = {}) {
       if (repeat_index3 === null) {
         throw new Error("Нет рабочих дней в расписании");
       }
-      start_date = new Date(
+      task_date = new Date(
         now2.getFullYear(),
         now2.getMonth(),
         now2.getDate() + repeat_index3,
@@ -8712,7 +8712,7 @@ function makeTaskDone(task, store2, options = {}) {
   number_of_executions++;
   const updatedTask = {
     ...task[0],
-    start_date,
+    task_date,
     break_multiplier,
     task_finish_date,
     number_of_executions
@@ -8730,7 +8730,7 @@ function taskSort(task) {
     const diff = now2 - new Date(timestamp);
     return Math.floor(diff / (1e3 * 60 * 60 * 24));
   };
-  return task.task_sort - daysDiff(parseInt(task.start_date)) * task.break_multiplier;
+  return task.task_sort - daysDiff(parseInt(task.task_date)) * task.break_multiplier;
 }
 async function setTaskCompleted() {
   this.$store.dispatch("todos/initTodos");
@@ -8741,7 +8741,7 @@ async function setTaskCompleted() {
     let todos2 = this.$store.getters["todos/getTodos"];
     const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
     const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
-    if (task.length && task[0].start_date < today && new Date(event.start.dateTime).getTime() < today) {
+    if (task.length && task[0].task_date < today && new Date(event.start.dateTime).getTime() < today) {
       makeTaskDone(task, this.$store);
     }
   });
@@ -8754,7 +8754,7 @@ async function setTaskToCalendar() {
   let today_tasks = all.filter((todo) => {
     if (todo.task_title === "task_title")
       return false;
-    const start = todo.start_date;
+    const start = todo.task_date;
     return start < today;
   });
   let today_events = await listEvents();
@@ -9046,7 +9046,7 @@ const _sfc_main$2A = {
       return this.todos.filter((todo) => {
         if (todo.task_title.includes("task_title"))
           return false;
-        const start = parseInt(todo.start_date);
+        const start = parseInt(todo.task_date);
         switch (this.filter) {
           case "today":
             return start < today;
@@ -9132,6 +9132,22 @@ const _sfc_main$2A = {
     },
     togglePopover(uuid) {
       this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
+    },
+    startTask(todo) {
+      todo.start_date = Date.now();
+      this.$store.dispatch("todos/updateTodo", { ...todo });
+    },
+    stopTask(todo) {
+      const now2 = Date.now();
+      const durationMs = now2 - todo.start_date;
+      const minutesSpent = Math.ceil(durationMs / 6e4);
+      const previous = Number(todo.task_time) || 0;
+      const newAverage = Math.ceil((previous + minutesSpent) / 2);
+      todo.task_time = newAverage;
+      todo.start_date = 0;
+      todo.completed = true;
+      this.$store.dispatch("todos/updateTodo", { ...todo });
+      this.toggleTodo(todo.task_uuid);
     }
   },
   mounted() {
@@ -9151,8 +9167,11 @@ const _hoisted_6 = {
   key: 1,
   class: "buttons"
 };
-const _hoisted_7 = ["onClick"];
+const _hoisted_7 = { style: { "margin-right": "8px" } };
 const _hoisted_8 = ["onClick"];
+const _hoisted_9 = ["onClick"];
+const _hoisted_10 = ["onClick"];
+const _hoisted_11 = ["onClick"];
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock(Fragment, null, [
     $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
@@ -9171,10 +9190,10 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
           class: normalizeClass(["task", todo.task_color, { completed: todo.completed }])
         }, [
           createBaseVNode("span", {
-            title: $options.taskDate(todo.start_date),
+            title: $options.taskDate(todo.task_date),
             onClick: ($event) => $options.togglePopover(todo.task_uuid),
             style: { "cursor": "pointer" }
-          }, " (" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.start_date)) + ") ", 9, _hoisted_2$1),
+          }, " (" + toDisplayString(todo.task_sort) + " / " + toDisplayString($options.taskSort(todo)) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.task_date)) + ") ", 9, _hoisted_2$1),
           $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_3$1, [
             withDirectives(createBaseVNode("textarea", {
               "onUpdate:modelValue": ($event) => todo.task_description = $event,
@@ -9189,14 +9208,23 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
             }, "✅ Сохранить", 8, _hoisted_5)
           ])) : createCommentVNode("", true),
           !$data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_6, [
+            createBaseVNode("span", _hoisted_7, [
+              todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
+                key: 0,
+                onClick: ($event) => $options.startTask(todo)
+              }, "▶️", 8, _hoisted_8)) : (openBlock(), createElementBlock("button", {
+                key: 1,
+                onClick: ($event) => $options.stopTask(todo)
+              }, "⏹ ", 8, _hoisted_9))
+            ]),
             createBaseVNode("span", {
               class: "done",
               onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-            }, "✅", 8, _hoisted_7),
+            }, "✅", 8, _hoisted_10),
             createBaseVNode("span", {
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
-            }, "ⓧ", 8, _hoisted_8)
+            }, "ⓧ", 8, _hoisted_11)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))

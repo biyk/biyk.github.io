@@ -51,7 +51,7 @@ export const actions = {
             return;
         }
 
-        const list = await table.getAll();
+        const list = await table.getAll({caching:5});
         const orm = new ORM(table.columns[table.list]);
         let hero = {};
         list.map(e => {

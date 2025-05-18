@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <h1>{{hero.hero_name}} {{hero.hero_money}} ({{new  Date().toLocaleString()}})</h1>
+        <h1>{{hero.hero_name}} {{hero.hero_money}} ({{ currentTime }})</h1>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />
@@ -39,6 +39,11 @@ import './assets/styles/App.css'
 import { startTaskAgent, stopTaskAgent } from "@/agents/taskAgent.js"  // ← 🔥
 
 export default {
+    data() {
+        return {
+            currentTime: new Date().toLocaleString(),
+        };
+    },
     components: {
         Settings,
         TodoNew,
@@ -73,11 +78,9 @@ export default {
     },
     mounted() {
         this.$store.dispatch("hero/initHero");
-    },
-    methods:{
-        time(){
-            return new  Date().toLocaleString()
-        }
+        this.timer = setInterval(() => {
+            this.currentTime = new Date().toLocaleString();
+        }, 1000);
     }
 
 }

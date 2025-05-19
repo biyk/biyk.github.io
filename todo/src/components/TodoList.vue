@@ -26,7 +26,7 @@
             </div>
 
 
-            <div v-if="!visiblePopover !== todo.task_uuid" class="buttons">
+            <div v-if="visiblePopover !== todo.task_uuid" class="buttons">
                 <!-- Кнопки Старт / Стоп -->
                 <span style="margin-right: 8px;">
                     <button v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
@@ -34,6 +34,7 @@
                 </span>
                 <span class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
                 <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
+                <span v-if="filter==='all'" class="plus" >Добавить задачу в календарь</span>
             </div>
         </li>
 
@@ -147,6 +148,7 @@ export default {
                     calendarOrder.forEach((uuid, index) => {
                         uuidOrderMap.set(uuid, index);
                     });
+                    console.log(uuidOrderMap);
 
                     // сортируем по их порядку в events
                     return this.getFilteredTodos()

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.80";
+window.version = "0.2.81";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9114,6 +9114,7 @@ const _sfc_main$2A = {
           calendarOrder.forEach((uuid, index2) => {
             uuidOrderMap.set(uuid, index2);
           });
+          console.log(uuidOrderMap);
           return this.getFilteredTodos().sort((a2, b2) => uuidOrderMap.get(a2.task_uuid) - uuidOrderMap.get(b2.task_uuid));
         case "today":
         case "tomorrow":
@@ -9172,6 +9173,10 @@ const _hoisted_8 = ["onClick"];
 const _hoisted_9 = ["onClick"];
 const _hoisted_10 = ["onClick"];
 const _hoisted_11 = ["onClick"];
+const _hoisted_12 = {
+  key: 0,
+  class: "plus"
+};
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock(Fragment, null, [
     $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
@@ -9207,7 +9212,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
               style: { "margin-top": "4px" }
             }, "✅ Сохранить", 8, _hoisted_5)
           ])) : createCommentVNode("", true),
-          !$data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_6, [
+          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_6, [
             createBaseVNode("span", _hoisted_7, [
               todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
                 key: 0,
@@ -9224,7 +9229,8 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
             createBaseVNode("span", {
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
-            }, "ⓧ", 8, _hoisted_11)
+            }, "ⓧ", 8, _hoisted_11),
+            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_12, "Добавить задачу в календарь")) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))

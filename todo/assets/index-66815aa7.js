@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.83";
+window.version = "0.2.84";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8761,41 +8761,43 @@ async function setTaskToCalendar() {
   today_tasks = today_tasks.sort((a2, b2) => {
     return taskSort(a2) - taskSort(b2);
   });
-  console.log(today_tasks);
   let freeSlots = getFreeSlots(today_events);
-  for (const task of today_tasks) {
-    let duration = task.task_time;
-    if (!duration || duration === "0")
-      continue;
-    let slotIndex = freeSlots.findIndex((slot2) => slot2.duration >= duration);
-    if (slotIndex === -1)
-      continue;
-    let slot = freeSlots[slotIndex];
-    let exist = today_events.filter((e) => {
-      var _a2;
-      return (_a2 = e.description) == null ? void 0 : _a2.includes(task.task_uuid);
-    });
-    if (exist == null ? void 0 : exist.length)
-      continue;
-    let excluded = today_events.filter((e) => {
-      var _a2;
-      return (_a2 = task.excludes) == null ? void 0 : _a2.includes(e.description);
-    });
-    if (excluded == null ? void 0 : excluded.length) {
-      console.log("Не сегодня:", task);
-      continue;
-    }
-    const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
-    const event = makeEvent(task, slot, endDate);
-    await addEvent(event);
-    const updatedDuration = slot.duration - duration;
-    if (updatedDuration < 15) {
-      freeSlots.splice(slotIndex, 1);
-    } else {
-      freeSlots[slotIndex].start = endDate.toISOString();
-      freeSlots[slotIndex].duration = updatedDuration;
+  async function scheduleTasks() {
+    for (const task of today_tasks) {
+      let duration = task.task_time;
+      if (!duration || duration === "0")
+        continue;
+      let slotIndex = freeSlots.findIndex((slot2) => slot2.duration >= duration);
+      if (slotIndex === -1)
+        continue;
+      let slot = freeSlots[slotIndex];
+      let exist = today_events.filter((e) => {
+        var _a2;
+        return (_a2 = e.description) == null ? void 0 : _a2.includes(task.task_uuid);
+      });
+      if (exist == null ? void 0 : exist.length)
+        continue;
+      let excluded = today_events.filter((e) => {
+        var _a2;
+        return (_a2 = task.excludes) == null ? void 0 : _a2.includes(e.description);
+      });
+      if (excluded == null ? void 0 : excluded.length) {
+        console.log("Не сегодня:", task);
+        continue;
+      }
+      const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
+      const event = makeEvent(task, slot, endDate);
+      await addEvent(event);
+      const updatedDuration = slot.duration - duration;
+      if (updatedDuration < 15) {
+        freeSlots.splice(slotIndex, 1);
+      } else {
+        freeSlots[slotIndex].start = endDate.toISOString();
+        freeSlots[slotIndex].duration = updatedDuration;
+      }
     }
   }
+  await scheduleTasks();
   this.$store.dispatch("todos/initTodos");
 }
 function taskDate(date4) {
@@ -68726,7 +68728,7 @@ const actions$3 = {
       commit2("SET_TODOS", loadTodos());
       return;
     }
-    const list = await table.getAll({ caching: 5 });
+    const list = await table.getAll();
     const orm = new ORM(table.columns["real_life_tasks"]);
     const todos2 = list.map((e) => orm.getFormated(e));
     console.log("Загрузили актуальные данне по задачам");

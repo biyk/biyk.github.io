@@ -86,7 +86,7 @@ export const actions = {
             return;
         }
 
-        const list = await table.getAll({caching:5});
+        const list = await table.getAll();
         const orm = new ORM(table.columns["real_life_tasks"]);
         const todos = list.map(e => orm.getFormated(e));
         console.log('Загрузили актуальные данне по задачам')

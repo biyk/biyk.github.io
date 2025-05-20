@@ -139,50 +139,53 @@ export async function setTaskToCalendar() {
     today_tasks = today_tasks.sort((a, b) => {
         return taskSort(a) - taskSort(b)
     });
-    console.log(today_tasks);
 
     //записываем в свободные места календаря события
     let freeSlots = getFreeSlots(today_events);
 
-    for (const task of today_tasks) {
-        let duration = task.task_time;
-        if (!duration || duration === '0') continue;
-        //поиск свободного слота под задачу
-        let slotIndex = freeSlots.findIndex(slot => slot.duration >= duration);
-        if (slotIndex === -1) continue; // нет подходящего слота
+    async function scheduleTasks() {
+        for (const task of today_tasks) {
+            let duration = task.task_time;
+            if (!duration || duration === '0') continue;
+            //поиск свободного слота под задачу
+            let slotIndex = freeSlots.findIndex(slot => slot.duration >= duration);
+            if (slotIndex === -1) continue; // нет подходящего слота
 
-        let slot = freeSlots[slotIndex];
-        let exist = today_events.filter((e) => {
-            return e.description?.includes(task.task_uuid)
-        });
+            let slot = freeSlots[slotIndex];
+            let exist = today_events.filter((e) => {
+                return e.description?.includes(task.task_uuid)
+            });
 
-        if (exist?.length) continue;
+            if (exist?.length) continue;
 
-        let excluded = today_events.filter((e) => {
-            return task.excludes?.includes(e.description)
-        });
-        if (excluded?.length) {
-            console.log('Не сегодня:', task);
-            continue;
-        }
-        //добавление события в календарь
-        const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
-        const event = makeEvent(task, slot, endDate);
+            let excluded = today_events.filter((e) => {
+                return task.excludes?.includes(e.description)
+            });
+            if (excluded?.length) {
+                console.log('Не сегодня:', task);
+                continue;
+            }
+            //добавление события в календарь
+            const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
+            const event = makeEvent(task, slot, endDate);
 
-        await addEvent(event);
-        //добавляем задачу в список today_tasks
+            await addEvent(event);
+            //добавляем задачу в список today_tasks
 
-        // обновление или удаление слота
-        const updatedDuration = slot.duration - duration;
-        if (updatedDuration < 15) {
-            //удалить слот
-            freeSlots.splice(slotIndex, 1);
-        } else {
-            //обновить слот
-            freeSlots[slotIndex].start = endDate.toISOString();
-            freeSlots[slotIndex].duration = updatedDuration;
+            // обновление или удаление слота
+            const updatedDuration = slot.duration - duration;
+            if (updatedDuration < 15) {
+                //удалить слот
+                freeSlots.splice(slotIndex, 1);
+            } else {
+                //обновить слот
+                freeSlots[slotIndex].start = endDate.toISOString();
+                freeSlots[slotIndex].duration = updatedDuration;
+            }
         }
     }
+
+    await scheduleTasks();
     this.$store.dispatch("todos/initTodos");
 }
 

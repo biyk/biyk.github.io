@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.82";
+window.version = "0.2.83";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9116,7 +9116,6 @@ const _sfc_main$2A = {
           calendarOrder.forEach((uuid, index2) => {
             uuidOrderMap.set(uuid, index2);
           });
-          console.log(uuidOrderMap);
           return this.getFilteredTodos().sort((a2, b2) => uuidOrderMap.get(a2.task_uuid) - uuidOrderMap.get(b2.task_uuid));
         case "today":
         case "tomorrow":

@@ -8,13 +8,14 @@
             :key="todo.id"
             :class="['task', todo.task_color, { completed: todo.completed }]"
         >
-                    <span
-                        :title="taskDate(todo.task_date)"
-                        @click="togglePopover(todo.task_uuid)"
-                        style="cursor: pointer;"
-                    >
-                        ({{ todo.task_time}}) {{ todo.task_title }} ({{taskDate(todo.task_date)}})
-                    </span>
+            <span
+                :title="taskDate(todo.task_date)"
+                @click="togglePopover(todo.task_uuid)"
+                style="cursor: pointer;"
+            >
+                ({{ todo.task_time}}) {{ todo.task_title }} ({{taskDate(todo.task_date)}})
+                <span v-if="parseInt(todo.start_date)"> {{ ((currentTime - todo.start_date) / (60*1000)).toFixed(2)}}</span>
+            </span>
 
             <div v-if="visiblePopover === todo.task_uuid" class="editable-description">
                 <textarea
@@ -50,7 +51,9 @@ export default {
     data() {
         return {
             visiblePopover: null,
-            total: 0
+            total: 0,
+            timer: 0,
+            currentTime: 0,
         };
     },
     computed: {
@@ -186,14 +189,15 @@ export default {
             todo.task_time = newAverage;
             todo.start_date = 0;
             todo.completed = true;
-
-            this.$store.dispatch("todos/updateTodo", { ...todo });
             this.toggleTodo(todo.task_uuid)
         },
     },
     mounted() {
         this.$store.dispatch("todos/initTodos");
         listEvents(this.$store);
+        this.timer = setInterval(() => {
+            this.currentTime = new Date().getTime();
+        }, 1000);
     }
 };
 </script>

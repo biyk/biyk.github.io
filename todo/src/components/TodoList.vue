@@ -151,7 +151,6 @@ export default {
                     calendarOrder.forEach((uuid, index) => {
                         uuidOrderMap.set(uuid, index);
                     });
-                    console.log(uuidOrderMap);
 
                     // сортируем по их порядку в events
                     return this.getFilteredTodos()

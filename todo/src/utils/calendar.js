@@ -59,6 +59,19 @@ export async function updateEvent(event) {
 
 }
 
+export async function deleteEvent(eventId) {
+    try {
+        await gapi.client.calendar.events.delete({
+            calendarId: 'primary',
+            eventId: eventId
+        });
+        console.log('Событие удалено:', event.summary);
+    } catch (error) {
+        console.error('Ошибка при удалении события:', error);
+    }
+}
+
+
 export function getFreeSlots(events, options={}) {
     if (!Array.isArray(events)) return [];
     let workEnd = '23:00', minSlotMinutes = 15;

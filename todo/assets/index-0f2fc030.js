@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.2.84";
+window.version = "0.2.85";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -5781,13 +5781,13 @@ function createPathGetter(ctx, path) {
 const getModelModifiers = (props2, modelName) => {
   return modelName === "modelValue" || modelName === "model-value" ? props2.modelModifiers : props2[`${modelName}Modifiers`] || props2[`${camelize(modelName)}Modifiers`] || props2[`${hyphenate(modelName)}Modifiers`];
 };
-function emit(instance, event, ...rawArgs) {
+function emit(instance, event2, ...rawArgs) {
   if (instance.isUnmounted)
     return;
   const props2 = instance.vnode.props || EMPTY_OBJ;
   let args = rawArgs;
-  const isModelListener2 = event.startsWith("update:");
-  const modifiers = isModelListener2 && getModelModifiers(props2, event.slice(7));
+  const isModelListener2 = event2.startsWith("update:");
+  const modifiers = isModelListener2 && getModelModifiers(props2, event2.slice(7));
   if (modifiers) {
     if (modifiers.trim) {
       args = rawArgs.map((a2) => isString$1(a2) ? a2.trim() : a2);
@@ -5797,10 +5797,10 @@ function emit(instance, event, ...rawArgs) {
     }
   }
   let handlerName;
-  let handler = props2[handlerName = toHandlerKey(event)] || // also try camelCase event handler (#2249)
-  props2[handlerName = toHandlerKey(camelize(event))];
+  let handler = props2[handlerName = toHandlerKey(event2)] || // also try camelCase event handler (#2249)
+  props2[handlerName = toHandlerKey(camelize(event2))];
   if (!handler && isModelListener2) {
-    handler = props2[handlerName = toHandlerKey(hyphenate(event))];
+    handler = props2[handlerName = toHandlerKey(hyphenate(event2))];
   }
   if (handler) {
     callWithAsyncErrorHandling(
@@ -7314,11 +7314,11 @@ function patchDOMProp(el, key, value, parentComponent, attrName) {
   }
   needRemove && el.removeAttribute(attrName || key);
 }
-function addEventListener(el, event, handler, options) {
-  el.addEventListener(event, handler, options);
+function addEventListener(el, event2, handler, options) {
+  el.addEventListener(event2, handler, options);
 }
-function removeEventListener(el, event, handler, options) {
-  el.removeEventListener(event, handler, options);
+function removeEventListener(el, event2, handler, options) {
+  el.removeEventListener(event2, handler, options);
 }
 const veiKey = Symbol("_vei");
 function patchEvent(el, rawName, prevValue, nextValue, instance = null) {
@@ -7351,8 +7351,8 @@ function parseName(name) {
       options[m2[0].toLowerCase()] = true;
     }
   }
-  const event = name[2] === ":" ? name.slice(3) : hyphenate(name.slice(2));
-  return [event, options];
+  const event2 = name[2] === ":" ? name.slice(3) : hyphenate(name.slice(2));
+  return [event2, options];
 }
 let cachedNow = 0;
 const p$1 = /* @__PURE__ */ Promise.resolve();
@@ -7748,13 +7748,13 @@ const modifierGuards = {
 const withModifiers = (fn2, modifiers) => {
   const cache2 = fn2._withMods || (fn2._withMods = {});
   const cacheKey = modifiers.join(".");
-  return cache2[cacheKey] || (cache2[cacheKey] = (event, ...args) => {
+  return cache2[cacheKey] || (cache2[cacheKey] = (event2, ...args) => {
     for (let i = 0; i < modifiers.length; i++) {
       const guard = modifierGuards[modifiers[i]];
-      if (guard && guard(event, modifiers))
+      if (guard && guard(event2, modifiers))
         return;
     }
-    return fn2(event, ...args);
+    return fn2(event2, ...args);
   });
 };
 const keyNames = {
@@ -7769,15 +7769,15 @@ const keyNames = {
 const withKeys = (fn2, modifiers) => {
   const cache2 = fn2._withKeys || (fn2._withKeys = {});
   const cacheKey = modifiers.join(".");
-  return cache2[cacheKey] || (cache2[cacheKey] = (event) => {
-    if (!("key" in event)) {
+  return cache2[cacheKey] || (cache2[cacheKey] = (event2) => {
+    if (!("key" in event2)) {
       return;
     }
-    const eventKey = hyphenate(event.key);
+    const eventKey = hyphenate(event2.key);
     if (modifiers.some(
       (k) => k === eventKey || keyNames[k] === eventKey
     )) {
-      return fn2(event);
+      return fn2(event2);
     }
   });
 };
@@ -7890,8 +7890,8 @@ class WebStorage {
     const versionCode = this.versionToNumber(this.version);
     return new Promise((resolve2, reject) => {
       const request = indexedDB.open(this.dbName, versionCode);
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
+      request.onupgradeneeded = (event2) => {
+        const db = event2.target.result;
         for (const storeName of db.objectStoreNames) {
           db.deleteObjectStore(storeName);
         }
@@ -7986,8 +7986,8 @@ class WebStorage {
       const store2 = tx.objectStore(this.storeName);
       const keys2 = [];
       const request = store2.openCursor();
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
+      request.onsuccess = (event2) => {
+        const cursor = event2.target.result;
         if (cursor) {
           keys2.push(cursor.key);
           cursor.continue();
@@ -8561,12 +8561,12 @@ async function listEvents(store2 = false) {
   }
   return events2;
 }
-async function addEvent(event) {
+async function addEvent(event2) {
   await gapi.client.calendar.events.insert({
     calendarId: "primary",
-    resource: event
+    resource: event2
   });
-  console.log("Событие добавлено:", event.summary);
+  console.log("Событие добавлено:", event2.summary);
 }
 function makeEvent(task, slot, endDate) {
   return {
@@ -8583,13 +8583,24 @@ function makeEvent(task, slot, endDate) {
     }
   };
 }
-async function updateEvent(event) {
+async function updateEvent(event2) {
   await gapi.client.calendar.events.update({
     calendarId: "primary",
-    eventId: event.id,
-    resource: event
+    eventId: event2.id,
+    resource: event2
   });
-  console.log("Событие обновлено:", event.summary);
+  console.log("Событие обновлено:", event2.summary);
+}
+async function deleteEvent(eventId) {
+  try {
+    await gapi.client.calendar.events.delete({
+      calendarId: "primary",
+      eventId
+    });
+    console.log("Событие удалено:", event.summary);
+  } catch (error) {
+    console.error("Ошибка при удалении события:", error);
+  }
 }
 function getFreeSlots(events2, options = {}) {
   if (!Array.isArray(events2))
@@ -8736,12 +8747,12 @@ async function setTaskCompleted() {
   this.$store.dispatch("todos/initTodos");
   const now2 = new Date();
   let today_events = await listEvents();
-  today_events.forEach((event) => {
-    let task_uuid = event.description;
+  today_events.forEach((event2) => {
+    let task_uuid = event2.description;
     let todos2 = this.$store.getters["todos/getTodos"];
     const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
     const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
-    if (task.length && task[0].task_date < today && new Date(event.start.dateTime).getTime() < today) {
+    if (task.length && task[0].task_date < today && new Date(event2.start.dateTime).getTime() < today) {
       makeTaskDone(task, this.$store);
     }
   });
@@ -8786,8 +8797,8 @@ async function setTaskToCalendar() {
         continue;
       }
       const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
-      const event = makeEvent(task, slot, endDate);
-      await addEvent(event);
+      const event2 = makeEvent(task, slot, endDate);
+      await addEvent(event2);
       const updatedDuration = slot.duration - duration;
       if (updatedDuration < 15) {
         freeSlots.splice(slotIndex, 1);
@@ -9057,9 +9068,9 @@ const _sfc_main$2A = {
           case "calendar":
             const calendarEvents = this.events;
             const hasMatchingEvent = calendarEvents == null ? void 0 : calendarEvents.some(
-              (event) => {
+              (event2) => {
                 var _a2;
-                return (_a2 = event.description) == null ? void 0 : _a2.includes(todo.task_uuid);
+                return (_a2 = event2.description) == null ? void 0 : _a2.includes(todo.task_uuid);
               }
             );
             return start < today && hasMatchingEvent;
@@ -9078,7 +9089,7 @@ const _sfc_main$2A = {
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1e3);
-      const event = {
+      const event2 = {
         summary: task[0].task_title,
         description: task[0].task_uuid,
         colorId: 7,
@@ -9092,28 +9103,37 @@ const _sfc_main$2A = {
         }
       };
       let list = await listEvents(this.$store);
+      let exist = list.filter((event3) => {
+        var _a2;
+        return (_a2 = event3.description) == null ? void 0 : _a2.includes(task_uuid);
+      });
+      if (exist.length) {
+        event2.summary = exist[0].summary;
+        event2.id = exist[0].id;
+        await updateEvent(event2);
+      } else {
+        await addEvent(event2);
+        task[0].break_multiplier = parseInt(task[0].break_multiplier) + 1;
+      }
+      makeTaskDone(task, this.$store);
+    },
+    deleteTodo: throttle_1(async function(task_uuid) {
+      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
+      let list = await listEvents(this.$store);
       let exist = list.filter((event2) => {
         var _a2;
         return (_a2 = event2.description) == null ? void 0 : _a2.includes(task_uuid);
       });
       if (exist.length) {
-        event.summary = exist[0].summary;
-        event.id = exist[0].id;
-        await updateEvent(event);
-      } else {
-        await addEvent(event);
-        task[0].break_multiplier = parseInt(task[0].break_multiplier) + 1;
+        let eventId = exist[0].id;
+        await deleteEvent(eventId);
       }
-      makeTaskDone(task, this.$store);
-    },
-    deleteTodo: throttle_1(function(task_uuid) {
-      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       makeTaskDone(task, this.$store, { deleted: 1 });
     }, 1e3),
     getSortedTodos() {
       switch (this.filter) {
         case "calendar":
-          const calendarOrder = this.events.map((event) => event.description).filter((uuid) => uuid);
+          const calendarOrder = this.events.map((event2) => event2.description).filter((uuid) => uuid);
           const uuidOrderMap = /* @__PURE__ */ new Map();
           calendarOrder.forEach((uuid, index2) => {
             uuidOrderMap.set(uuid, index2);
@@ -12721,16 +12741,16 @@ function useEventListener(...args) {
     cleanups.forEach((fn2) => fn2());
     cleanups.length = 0;
   };
-  const register3 = (el, event, listener, options2) => {
-    el.addEventListener(event, listener, options2);
-    return () => el.removeEventListener(event, listener, options2);
+  const register3 = (el, event2, listener, options2) => {
+    el.addEventListener(event2, listener, options2);
+    return () => el.removeEventListener(event2, listener, options2);
   };
   const stopWatch = watch(() => [unrefElement(target), resolveUnref(options)], ([el, options2]) => {
     cleanup();
     if (!el)
       return;
-    cleanups.push(...events2.flatMap((event) => {
-      return listeners.map((listener) => register3(el, event, listener, options2));
+    cleanups.push(...events2.flatMap((event2) => {
+      return listeners.map((listener) => register3(el, event2, listener, options2));
     }));
   }, { immediate: true, flush: "post" });
   const stop = () => {
@@ -12750,27 +12770,27 @@ function onClickOutside(target, handler, options = {}) {
     Array.from(window2.document.body.children).forEach((el) => el.addEventListener("click", noop$1));
   }
   let shouldListen = true;
-  const shouldIgnore = (event) => {
+  const shouldIgnore = (event2) => {
     return ignore.some((target2) => {
       if (typeof target2 === "string") {
-        return Array.from(window2.document.querySelectorAll(target2)).some((el) => el === event.target || event.composedPath().includes(el));
+        return Array.from(window2.document.querySelectorAll(target2)).some((el) => el === event2.target || event2.composedPath().includes(el));
       } else {
         const el = unrefElement(target2);
-        return el && (event.target === el || event.composedPath().includes(el));
+        return el && (event2.target === el || event2.composedPath().includes(el));
       }
     });
   };
-  const listener = (event) => {
+  const listener = (event2) => {
     const el = unrefElement(target);
-    if (!el || el === event.target || event.composedPath().includes(el))
+    if (!el || el === event2.target || event2.composedPath().includes(el))
       return;
-    if (event.detail === 0)
-      shouldListen = !shouldIgnore(event);
+    if (event2.detail === 0)
+      shouldListen = !shouldIgnore(event2);
     if (!shouldListen) {
       shouldListen = true;
       return;
     }
-    handler(event);
+    handler(event2);
   };
   const cleanup = [
     useEventListener(window2, "click", listener, { passive: true, capture }),
@@ -12779,11 +12799,11 @@ function onClickOutside(target, handler, options = {}) {
       if (el)
         shouldListen = !e.composedPath().includes(el) && !shouldIgnore(e);
     }, { passive: true }),
-    detectIframe && useEventListener(window2, "blur", (event) => {
+    detectIframe && useEventListener(window2, "blur", (event2) => {
       var _a2;
       const el = unrefElement(target);
       if (((_a2 = window2.document.activeElement) == null ? void 0 : _a2.tagName) === "IFRAME" && !(el == null ? void 0 : el.contains(window2.document.activeElement)))
-        handler(event);
+        handler(event2);
     })
   ].filter(Boolean);
   const stop = () => cleanup.forEach((fn2) => fn2());
@@ -12795,8 +12815,8 @@ function useActiveElement(options = {}) {
   const document2 = (_a2 = options.document) != null ? _a2 : window2 == null ? void 0 : window2.document;
   const activeElement = computedWithControl(() => null, () => document2 == null ? void 0 : document2.activeElement);
   if (window2) {
-    useEventListener(window2, "blur", (event) => {
-      if (event.relatedTarget !== null)
+    useEventListener(window2, "blur", (event2) => {
+      if (event2.relatedTarget !== null)
         return;
       activeElement.trigger();
     }, true);
@@ -13056,13 +13076,13 @@ function useVModel(props2, key, emit2, options = {}) {
   } = options;
   const vm = getCurrentInstance();
   const _emit = emit2 || (vm == null ? void 0 : vm.emit) || ((_a2 = vm == null ? void 0 : vm.$emit) == null ? void 0 : _a2.bind(vm)) || ((_c = (_b = vm == null ? void 0 : vm.proxy) == null ? void 0 : _b.$emit) == null ? void 0 : _c.bind(vm == null ? void 0 : vm.proxy));
-  let event = eventName;
+  let event2 = eventName;
   if (!key) {
     {
       key = "modelValue";
     }
   }
-  event = eventName || event || `update:${key.toString()}`;
+  event2 = eventName || event2 || `update:${key.toString()}`;
   const cloneFn = (val) => !clone2 ? val : isFunction(clone2) ? clone2(val) : cloneFnJSON(val);
   const getValue2 = () => isDef(props2[key]) ? cloneFn(props2[key]) : defaultValue;
   if (passive) {
@@ -13071,7 +13091,7 @@ function useVModel(props2, key, emit2, options = {}) {
     watch(() => props2[key], (v2) => proxy.value = cloneFn(v2));
     watch(proxy, (v2) => {
       if (v2 !== props2[key] || deep)
-        _emit(event, v2);
+        _emit(event2, v2);
     }, { deep });
     return proxy;
   } else {
@@ -13080,7 +13100,7 @@ function useVModel(props2, key, emit2, options = {}) {
         return getValue2();
       },
       set(value) {
-        _emit(event, value);
+        _emit(event2, value);
       }
     });
   }
@@ -15081,21 +15101,21 @@ function useFocusController(target, {
   const wrapperRef = shallowRef();
   const disabled = useProp("disabled");
   const isFocused = ref(false);
-  const handleFocus = (event) => {
-    const cancelFocus = isFunction$2(beforeFocus) ? beforeFocus(event) : false;
+  const handleFocus = (event2) => {
+    const cancelFocus = isFunction$2(beforeFocus) ? beforeFocus(event2) : false;
     if (cancelFocus || isFocused.value)
       return;
     isFocused.value = true;
-    emit2("focus", event);
+    emit2("focus", event2);
     afterFocus == null ? void 0 : afterFocus();
   };
-  const handleBlur = (event) => {
+  const handleBlur = (event2) => {
     var _a2;
-    const cancelBlur = isFunction$2(beforeBlur) ? beforeBlur(event) : false;
-    if (cancelBlur || event.relatedTarget && ((_a2 = wrapperRef.value) == null ? void 0 : _a2.contains(event.relatedTarget)))
+    const cancelBlur = isFunction$2(beforeBlur) ? beforeBlur(event2) : false;
+    if (cancelBlur || event2.relatedTarget && ((_a2 = wrapperRef.value) == null ? void 0 : _a2.contains(event2.relatedTarget)))
       return;
     isFocused.value = false;
-    emit2("blur", event);
+    emit2("blur", event2);
     afterBlur == null ? void 0 : afterBlur();
   };
   const handleClick = () => {
@@ -15129,26 +15149,26 @@ function useComposition({
   emit: emit2
 }) {
   const isComposing = ref(false);
-  const handleCompositionStart = (event) => {
-    emit2 == null ? void 0 : emit2("compositionstart", event);
+  const handleCompositionStart = (event2) => {
+    emit2 == null ? void 0 : emit2("compositionstart", event2);
     isComposing.value = true;
   };
-  const handleCompositionUpdate = (event) => {
+  const handleCompositionUpdate = (event2) => {
     var _a2;
-    emit2 == null ? void 0 : emit2("compositionupdate", event);
-    const text = (_a2 = event.target) == null ? void 0 : _a2.value;
+    emit2 == null ? void 0 : emit2("compositionupdate", event2);
+    const text = (_a2 = event2.target) == null ? void 0 : _a2.value;
     const lastCharacter = text[text.length - 1] || "";
     isComposing.value = !isKorean(lastCharacter);
   };
-  const handleCompositionEnd = (event) => {
-    emit2 == null ? void 0 : emit2("compositionend", event);
+  const handleCompositionEnd = (event2) => {
+    emit2 == null ? void 0 : emit2("compositionend", event2);
     if (isComposing.value) {
       isComposing.value = false;
-      nextTick(() => afterComposition(event));
+      nextTick(() => afterComposition(event2));
     }
   };
-  const handleComposition = (event) => {
-    event.type === "compositionend" ? handleCompositionEnd(event) : handleCompositionUpdate(event);
+  const handleComposition = (event2) => {
+    event2.type === "compositionend" ? handleCompositionEnd(event2) : handleCompositionUpdate(event2);
   };
   return {
     isComposing,
@@ -15333,9 +15353,9 @@ const _sfc_main$2u = /* @__PURE__ */ defineComponent({
         return;
       input2.value = formatterValue;
     };
-    const handleInput = async (event) => {
+    const handleInput = async (event2) => {
       recordCursor();
-      let { value } = event.target;
+      let { value } = event2.target;
       if (props2.formatter && props2.parser) {
         value = props2.parser(value);
       }
@@ -15351,8 +15371,8 @@ const _sfc_main$2u = /* @__PURE__ */ defineComponent({
       setNativeInputValue();
       setCursor();
     };
-    const handleChange = (event) => {
-      let { value } = event.target;
+    const handleChange = (event2) => {
+      let { value } = event2.target;
       if (props2.formatter && props2.parser) {
         value = props2.parser(value);
       }
@@ -16604,9 +16624,9 @@ const EVENT_CODE = {
   end: "End"
 };
 let registeredEscapeHandlers = [];
-const cachedHandler = (event) => {
-  if (event.code === EVENT_CODE.esc) {
-    registeredEscapeHandlers.forEach((registeredHandler) => registeredHandler(event));
+const cachedHandler = (event2) => {
+  if (event2.code === EVENT_CODE.esc) {
+    registeredEscapeHandlers.forEach((registeredHandler) => registeredHandler(event2));
   }
 };
 const useEscapeKeydown = (handler) => {
@@ -16650,9 +16670,9 @@ const _sfc_main$2n = defineComponent({
     let lastFocusBeforeTrapped;
     let lastFocusAfterTrapped;
     const { focusReason: focusReason2 } = useFocusReason();
-    useEscapeKeydown((event) => {
+    useEscapeKeydown((event2) => {
       if (props2.trapped && !focusLayer.paused) {
-        emit2("release-requested", event);
+        emit2("release-requested", event2);
       }
     });
     const focusLayer = {
@@ -17514,25 +17534,25 @@ const usePopperContentFocusTrap = (props2, emit2) => {
   const onFocusAfterTrapped = () => {
     emit2("focus");
   };
-  const onFocusAfterReleased = (event) => {
+  const onFocusAfterReleased = (event2) => {
     var _a2;
-    if (((_a2 = event.detail) == null ? void 0 : _a2.focusReason) !== "pointer") {
+    if (((_a2 = event2.detail) == null ? void 0 : _a2.focusReason) !== "pointer") {
       focusStartRef.value = "first";
       emit2("blur");
     }
   };
-  const onFocusInTrap = (event) => {
+  const onFocusInTrap = (event2) => {
     if (props2.visible && !trapped.value) {
-      if (event.target) {
-        focusStartRef.value = event.target;
+      if (event2.target) {
+        focusStartRef.value = event2.target;
       }
       trapped.value = true;
     }
   };
-  const onFocusoutPrevented = (event) => {
+  const onFocusoutPrevented = (event2) => {
     if (!props2.trapping) {
-      if (event.detail.focusReason === "pointer") {
-        event.preventDefault();
+      if (event2.detail.focusReason === "pointer") {
+        event2.preventDefault();
       }
       trapped.value = false;
     }
@@ -17954,21 +17974,21 @@ const useDelayedToggle = ({
     registerTimeout: registerTimeoutForAutoClose,
     cancelTimeout: cancelTimeoutForAutoClose
   } = useTimeout();
-  const onOpen = (event) => {
+  const onOpen = (event2) => {
     registerTimeout(() => {
-      open(event);
+      open(event2);
       const _autoClose = unref(autoClose);
       if (isNumber(_autoClose) && _autoClose > 0) {
         registerTimeoutForAutoClose(() => {
-          close2(event);
+          close2(event2);
         }, _autoClose);
       }
     }, unref(showAfter));
   };
-  const onClose = (event) => {
+  const onClose = (event2) => {
     cancelTimeoutForAutoClose();
     registerTimeout(() => {
-      close2(event);
+      close2(event2);
     }, unref(hideAfter));
   };
   return {
@@ -18047,31 +18067,31 @@ const createModelToggleComposable = (name) => {
     const props2 = instance.props;
     const hasUpdateHandler = computed(() => isFunction$2(props2[updateEventKeyRaw2]));
     const isModelBindingAbsent = computed(() => props2[name] === null);
-    const doShow = (event) => {
+    const doShow = (event2) => {
       if (indicator.value === true) {
         return;
       }
       indicator.value = true;
       if (toggleReason) {
-        toggleReason.value = event;
+        toggleReason.value = event2;
       }
       if (isFunction$2(onShow)) {
-        onShow(event);
+        onShow(event2);
       }
     };
-    const doHide = (event) => {
+    const doHide = (event2) => {
       if (indicator.value === false) {
         return;
       }
       indicator.value = false;
       if (toggleReason) {
-        toggleReason.value = event;
+        toggleReason.value = event2;
       }
       if (isFunction$2(onHide)) {
-        onHide(event);
+        onHide(event2);
       }
     };
-    const show = (event) => {
+    const show = (event2) => {
       if (props2.disabled === true || isFunction$2(shouldProceed) && !shouldProceed())
         return;
       const shouldEmit = hasUpdateHandler.value && isClient;
@@ -18079,10 +18099,10 @@ const createModelToggleComposable = (name) => {
         emit2(updateEventKey, true);
       }
       if (isModelBindingAbsent.value || !shouldEmit) {
-        doShow(event);
+        doShow(event2);
       }
     };
-    const hide = (event) => {
+    const hide = (event2) => {
       if (props2.disabled === true || !isClient)
         return;
       const shouldEmit = hasUpdateHandler.value && isClient;
@@ -18090,7 +18110,7 @@ const createModelToggleComposable = (name) => {
         emit2(updateEventKey, false);
       }
       if (isModelBindingAbsent.value || !shouldEmit) {
-        doHide(event);
+        doHide(event2);
       }
     };
     const onChange = (val) => {
@@ -18179,10 +18199,10 @@ const whenTrigger = (trigger2, type4, handler) => {
   };
 };
 const composeEventHandlers = (theirsHandler, oursHandler, { checkForDefaultPrevented = true } = {}) => {
-  const handleEvent = (event) => {
-    const shouldPrevent = theirsHandler == null ? void 0 : theirsHandler(event);
+  const handleEvent = (event2) => {
+    const shouldPrevent = theirsHandler == null ? void 0 : theirsHandler(event2);
     if (checkForDefaultPrevented === false || !shouldPrevent) {
-      return oursHandler == null ? void 0 : oursHandler(event);
+      return oursHandler == null ? void 0 : oursHandler(event2);
     }
   };
   return handleEvent;
@@ -18397,10 +18417,10 @@ const _sfc_main$2j = /* @__PURE__ */ defineComponent({
         onClose();
       }
     };
-    const isFocusInsideContent = (event) => {
+    const isFocusInsideContent = (event2) => {
       var _a2;
       const popperContent = (_a2 = contentRef.value) == null ? void 0 : _a2.popperContentRef;
-      const activeElement = (event == null ? void 0 : event.relatedTarget) || document.activeElement;
+      const activeElement = (event2 == null ? void 0 : event2.relatedTarget) || document.activeElement;
       return popperContent == null ? void 0 : popperContent.contains(activeElement);
     };
     watch(() => unref(open), (val) => {
@@ -18523,17 +18543,17 @@ const _sfc_main$2i = /* @__PURE__ */ defineComponent({
       id,
       open: readonly(open),
       trigger: toRef(props2, "trigger"),
-      onOpen: (event) => {
-        onOpen(event);
+      onOpen: (event2) => {
+        onOpen(event2);
       },
-      onClose: (event) => {
-        onClose(event);
+      onClose: (event2) => {
+        onClose(event2);
       },
-      onToggle: (event) => {
+      onToggle: (event2) => {
         if (unref(open)) {
-          onClose(event);
+          onClose(event2);
         } else {
-          onOpen(event);
+          onOpen(event2);
         }
       },
       onShow: () => {
@@ -18555,9 +18575,9 @@ const _sfc_main$2i = /* @__PURE__ */ defineComponent({
         open.value = false;
       }
     });
-    const isFocusInsideContent = (event) => {
+    const isFocusInsideContent = (event2) => {
       var _a2;
-      return (_a2 = contentRef.value) == null ? void 0 : _a2.isFocusInsideContent(event);
+      return (_a2 = contentRef.value) == null ? void 0 : _a2.isFocusInsideContent(event2);
     };
     onDeactivated(() => open.value && hide());
     expose({
@@ -18800,11 +18820,11 @@ const _sfc_main$2h = /* @__PURE__ */ defineComponent({
       }
       debouncedGetData(value);
     };
-    const handleMouseDown = (event) => {
+    const handleMouseDown = (event2) => {
       var _a2;
       if (disabled.value)
         return;
-      if (((_a2 = event.target) == null ? void 0 : _a2.tagName) !== "INPUT" || refInput.value.includes(document.activeElement)) {
+      if (((_a2 = event2.target) == null ? void 0 : _a2.tagName) !== "INPUT" || refInput.value.includes(document.activeElement)) {
         activated.value = true;
       }
     };
@@ -19187,10 +19207,10 @@ const useBackTop = (props2, emit2, componentName2) => {
     if (el.value)
       visible.value = el.value.scrollTop >= props2.visibilityHeight;
   };
-  const handleClick = (event) => {
+  const handleClick = (event2) => {
     var _a2;
     (_a2 = el.value) == null ? void 0 : _a2.scrollTo({ top: 0, behavior: "smooth" });
-    emit2("click", event);
+    emit2("click", event2);
   };
   const handleScrollThrottled = useThrottleFn(handleScroll2, 300, true);
   useEventListener(container, "scroll", handleScrollThrottled);
@@ -23702,21 +23722,21 @@ let Node$2 = class Node2 {
     this.text = text;
     return text;
   }
-  broadcast(event, ...args) {
-    const handlerName = `onParent${capitalize(event)}`;
+  broadcast(event2, ...args) {
+    const handlerName = `onParent${capitalize(event2)}`;
     this.children.forEach((child) => {
       if (child) {
-        child.broadcast(event, ...args);
+        child.broadcast(event2, ...args);
         child[handlerName] && child[handlerName](...args);
       }
     });
   }
-  emit(event, ...args) {
+  emit(event2, ...args) {
     const { parent: parent2 } = this;
-    const handlerName = `onChild${capitalize(event)}`;
+    const handlerName = `onChild${capitalize(event2)}`;
     if (parent2) {
       parent2[handlerName] && parent2[handlerName](...args);
-      parent2.emit(event, ...args);
+      parent2.emit(event2, ...args);
     }
   }
   onParentCheck(checked) {
@@ -24196,11 +24216,11 @@ const _sfc_main$1X = /* @__PURE__ */ defineComponent({
         ns.is("round", round2)
       ];
     });
-    const handleClose = (event) => {
-      emit2("close", event);
+    const handleClose = (event2) => {
+      emit2("close", event2);
     };
-    const handleClick = (event) => {
-      emit2("click", event);
+    const handleClick = (event2) => {
+      emit2("click", event2);
     };
     const handleVNodeMounted = (vnode) => {
       var _a2, _b, _c;
@@ -24441,9 +24461,9 @@ const _sfc_main$1W = /* @__PURE__ */ defineComponent({
     const { form, formItem } = useFormItem();
     const { valueOnClear } = useEmptyValues(props2);
     const { isComposing, handleComposition } = useComposition({
-      afterComposition(event) {
+      afterComposition(event2) {
         var _a2;
-        const text = (_a2 = event.target) == null ? void 0 : _a2.value;
+        const text = (_a2 = event2.target) == null ? void 0 : _a2.value;
         handleInput(text);
       }
     });
@@ -25520,11 +25540,11 @@ let isDragging = false;
 function draggable(element, options) {
   if (!isClient)
     return;
-  const moveFn = function(event) {
+  const moveFn = function(event2) {
     var _a2;
-    (_a2 = options.drag) == null ? void 0 : _a2.call(options, event);
+    (_a2 = options.drag) == null ? void 0 : _a2.call(options, event2);
   };
-  const upFn = function(event) {
+  const upFn = function(event2) {
     var _a2;
     document.removeEventListener("mousemove", moveFn);
     document.removeEventListener("mouseup", upFn);
@@ -25533,13 +25553,13 @@ function draggable(element, options) {
     document.onselectstart = null;
     document.ondragstart = null;
     isDragging = false;
-    (_a2 = options.end) == null ? void 0 : _a2.call(options, event);
+    (_a2 = options.end) == null ? void 0 : _a2.call(options, event2);
   };
-  const downFn = function(event) {
+  const downFn = function(event2) {
     var _a2;
     if (isDragging)
       return;
-    event.preventDefault();
+    event2.preventDefault();
     document.onselectstart = () => false;
     document.ondragstart = () => false;
     document.addEventListener("mousemove", moveFn);
@@ -25547,7 +25567,7 @@ function draggable(element, options) {
     document.addEventListener("touchmove", moveFn);
     document.addEventListener("touchend", upFn);
     isDragging = true;
-    (_a2 = options.start) == null ? void 0 : _a2.call(options, event);
+    (_a2 = options.start) == null ? void 0 : _a2.call(options, event2);
   };
   element.addEventListener("mousedown", downFn);
   element.addEventListener("touchstart", downFn, { passive: false });
@@ -25581,18 +25601,18 @@ const getOffsetTop = (el) => {
 const getOffsetTopDistance = (el, containerEl) => {
   return Math.abs(getOffsetTop(el) - getOffsetTop(containerEl));
 };
-const getClientXY = (event) => {
+const getClientXY = (event2) => {
   let clientX;
   let clientY;
-  if (event.type === "touchend") {
-    clientY = event.changedTouches[0].clientY;
-    clientX = event.changedTouches[0].clientX;
-  } else if (event.type.startsWith("touch")) {
-    clientY = event.touches[0].clientY;
-    clientX = event.touches[0].clientX;
+  if (event2.type === "touchend") {
+    clientY = event2.changedTouches[0].clientY;
+    clientX = event2.changedTouches[0].clientX;
+  } else if (event2.type.startsWith("touch")) {
+    clientY = event2.touches[0].clientY;
+    clientX = event2.touches[0].clientX;
   } else {
-    clientY = event.clientY;
-    clientX = event.clientX;
+    clientY = event2.clientY;
+    clientX = event2.clientX;
   }
   return {
     clientX,
@@ -25606,20 +25626,20 @@ const useAlphaSlider = (props2) => {
   const bar = shallowRef();
   const alpha = computed(() => props2.color.get("alpha"));
   const alphaLabel = computed(() => t("el.colorpicker.alphaLabel"));
-  function handleClick(event) {
+  function handleClick(event2) {
     var _a2;
-    const target = event.target;
+    const target = event2.target;
     if (target !== thumb.value) {
-      handleDrag(event);
+      handleDrag(event2);
     }
     (_a2 = thumb.value) == null ? void 0 : _a2.focus();
   }
-  function handleDrag(event) {
+  function handleDrag(event2) {
     if (!bar.value || !thumb.value)
       return;
     const el = instance.vnode.el;
     const rect = el.getBoundingClientRect();
-    const { clientX, clientY } = getClientXY(event);
+    const { clientX, clientY } = getClientXY(event2);
     if (!props2.vertical) {
       let left = clientX - rect.left;
       left = Math.max(thumb.value.offsetWidth / 2, left);
@@ -25632,20 +25652,20 @@ const useAlphaSlider = (props2) => {
       props2.color.set("alpha", Math.round((top - thumb.value.offsetHeight / 2) / (rect.height - thumb.value.offsetHeight) * 100));
     }
   }
-  function handleKeydown(event) {
-    const { code, shiftKey } = event;
+  function handleKeydown(event2) {
+    const { code, shiftKey } = event2;
     const step = shiftKey ? 10 : 1;
     switch (code) {
       case EVENT_CODE.left:
       case EVENT_CODE.down:
-        event.preventDefault();
-        event.stopPropagation();
+        event2.preventDefault();
+        event2.stopPropagation();
         incrementPosition(-step);
         break;
       case EVENT_CODE.right:
       case EVENT_CODE.up:
-        event.preventDefault();
-        event.stopPropagation();
+        event2.preventDefault();
+        event2.stopPropagation();
         incrementPosition(step);
         break;
     }
@@ -25713,11 +25733,11 @@ const useAlphaSliderDOM = (props2, {
     if (!bar.value || !thumb.value)
       return;
     const dragConfig = {
-      drag: (event) => {
-        handleDrag(event);
+      drag: (event2) => {
+        handleDrag(event2);
       },
-      end: (event) => {
-        handleDrag(event);
+      end: (event2) => {
+        handleDrag(event2);
       }
     };
     draggable(bar.value, dragConfig);
@@ -25816,18 +25836,18 @@ const _sfc_main$1P = defineComponent({
     watch(() => hueValue.value, () => {
       update3();
     });
-    function handleClick(event) {
-      const target = event.target;
+    function handleClick(event2) {
+      const target = event2.target;
       if (target !== thumb.value) {
-        handleDrag(event);
+        handleDrag(event2);
       }
     }
-    function handleDrag(event) {
+    function handleDrag(event2) {
       if (!bar.value || !thumb.value)
         return;
       const el = instance.vnode.el;
       const rect = el.getBoundingClientRect();
-      const { clientX, clientY } = getClientXY(event);
+      const { clientX, clientY } = getClientXY(event2);
       let hue;
       if (!props2.vertical) {
         let left = clientX - rect.left;
@@ -25872,11 +25892,11 @@ const _sfc_main$1P = defineComponent({
       if (!bar.value || !thumb.value)
         return;
       const dragConfig = {
-        drag: (event) => {
-          handleDrag(event);
+        drag: (event2) => {
+          handleDrag(event2);
         },
-        end: (event) => {
-          handleDrag(event);
+        end: (event2) => {
+          handleDrag(event2);
         }
       };
       draggable(bar.value, dragConfig);
@@ -26334,10 +26354,10 @@ const _sfc_main$1N = defineComponent({
       cursorTop.value = (100 - value) * height / 100;
       background.value = `hsl(${props2.color.get("hue")}, 100%, 50%)`;
     }
-    function handleDrag(event) {
+    function handleDrag(event2) {
       const el = instance.vnode.el;
       const rect = el.getBoundingClientRect();
-      const { clientX, clientY } = getClientXY(event);
+      const { clientX, clientY } = getClientXY(event2);
       let left = clientX - rect.left;
       let top = clientY - rect.top;
       left = Math.max(0, left);
@@ -26356,11 +26376,11 @@ const _sfc_main$1N = defineComponent({
     });
     onMounted(() => {
       draggable(instance.vnode.el, {
-        drag: (event) => {
-          handleDrag(event);
+        drag: (event2) => {
+          handleDrag(event2);
         },
-        end: (event) => {
-          handleDrag(event);
+        end: (event2) => {
+          handleDrag(event2);
         }
       });
       update3();
@@ -26428,9 +26448,9 @@ const _sfc_main$1M = /* @__PURE__ */ defineComponent({
       beforeFocus() {
         return colorDisabled.value;
       },
-      beforeBlur(event) {
+      beforeBlur(event2) {
         var _a2;
-        return (_a2 = popper.value) == null ? void 0 : _a2.isFocusInsideContent(event);
+        return (_a2 = popper.value) == null ? void 0 : _a2.isFocusInsideContent(event2);
       },
       afterBlur() {
         setShowPicker(false);
@@ -26546,24 +26566,24 @@ const _sfc_main$1M = /* @__PURE__ */ defineComponent({
       hide();
       isFocused.value && focus();
     }
-    function handleEsc(event) {
-      event.preventDefault();
-      event.stopPropagation();
+    function handleEsc(event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
       setShowPicker(false);
       resetColor();
     }
-    function handleKeyDown(event) {
-      switch (event.code) {
+    function handleKeyDown(event2) {
+      switch (event2.code) {
         case EVENT_CODE.enter:
         case EVENT_CODE.numpadEnter:
         case EVENT_CODE.space:
-          event.preventDefault();
-          event.stopPropagation();
+          event2.preventDefault();
+          event2.stopPropagation();
           show();
           inputRef.value.focus();
           break;
         case EVENT_CODE.esc:
-          handleEsc(event);
+          handleEsc(event2);
           break;
       }
     }
@@ -27593,9 +27613,9 @@ const _sfc_main$1F = /* @__PURE__ */ defineComponent({
       afterFocus() {
         pickerVisible.value = true;
       },
-      beforeBlur(event) {
+      beforeBlur(event2) {
         var _a2;
-        return !hasJustTabExitedInput && ((_a2 = refPopper.value) == null ? void 0 : _a2.isFocusInsideContent(event));
+        return !hasJustTabExitedInput && ((_a2 = refPopper.value) == null ? void 0 : _a2.isFocusInsideContent(event2));
       },
       afterBlur() {
         handleChange();
@@ -27758,11 +27778,11 @@ const _sfc_main$1F = /* @__PURE__ */ defineComponent({
     const isYearsPicker = computed(() => props2.type === "years");
     const triggerIcon = computed(() => props2.prefixIcon || (isTimeLikePicker.value ? clock_default : calendar_default));
     const showClose = ref(false);
-    const onClearIconClick = (event) => {
+    const onClearIconClick = (event2) => {
       if (props2.readonly || pickerDisabled.value)
         return;
       if (showClose.value) {
-        event.stopPropagation();
+        event2.stopPropagation();
         if (pickerOptions.value.handleClear) {
           pickerOptions.value.handleClear();
         } else {
@@ -27778,11 +27798,11 @@ const _sfc_main$1F = /* @__PURE__ */ defineComponent({
       const { modelValue } = props2;
       return !modelValue || isArray$3(modelValue) && !modelValue.filter(Boolean).length;
     });
-    const onMouseDownInput = async (event) => {
+    const onMouseDownInput = async (event2) => {
       var _a2;
       if (props2.readonly || pickerDisabled.value)
         return;
-      if (((_a2 = event.target) == null ? void 0 : _a2.tagName) !== "INPUT" || isFocused.value) {
+      if (((_a2 = event2.target) == null ? void 0 : _a2.tagName) !== "INPUT" || isFocused.value) {
         pickerVisible.value = true;
       }
     };
@@ -27796,11 +27816,11 @@ const _sfc_main$1F = /* @__PURE__ */ defineComponent({
     const onMouseLeave = () => {
       showClose.value = false;
     };
-    const onTouchStartInput = (event) => {
+    const onTouchStartInput = (event2) => {
       var _a2;
       if (props2.readonly || pickerDisabled.value)
         return;
-      if (((_a2 = event.touches[0].target) == null ? void 0 : _a2.tagName) !== "INPUT" || isFocused.value) {
+      if (((_a2 = event2.touches[0].target) == null ? void 0 : _a2.tagName) !== "INPUT" || isFocused.value) {
         pickerVisible.value = true;
       }
     };
@@ -27852,23 +27872,23 @@ const _sfc_main$1F = /* @__PURE__ */ defineComponent({
     const isValidValue2 = (value) => {
       return pickerOptions.value.isValidValue(value);
     };
-    const handleKeydownInput = async (event) => {
+    const handleKeydownInput = async (event2) => {
       if (props2.readonly || pickerDisabled.value)
         return;
-      const { code } = event;
-      emitKeydown(event);
+      const { code } = event2;
+      emitKeydown(event2);
       if (code === EVENT_CODE.esc) {
         if (pickerVisible.value === true) {
           pickerVisible.value = false;
-          event.preventDefault();
-          event.stopPropagation();
+          event2.preventDefault();
+          event2.stopPropagation();
         }
         return;
       }
       if (code === EVENT_CODE.down) {
         if (pickerOptions.value.handleFocusPicker) {
-          event.preventDefault();
-          event.stopPropagation();
+          event2.preventDefault();
+          event2.stopPropagation();
         }
         if (pickerVisible.value === false) {
           pickerVisible.value = true;
@@ -27888,15 +27908,15 @@ const _sfc_main$1F = /* @__PURE__ */ defineComponent({
           handleChange();
           pickerVisible.value = false;
         }
-        event.stopPropagation();
+        event2.stopPropagation();
         return;
       }
       if (userInput.value) {
-        event.stopPropagation();
+        event2.stopPropagation();
         return;
       }
       if (pickerOptions.value.handleKeydownInput) {
-        pickerOptions.value.handleKeydownInput(event);
+        pickerOptions.value.handleKeydownInput(event2);
       }
     };
     const onUserInput = (e) => {
@@ -27905,16 +27925,16 @@ const _sfc_main$1F = /* @__PURE__ */ defineComponent({
         pickerVisible.value = true;
       }
     };
-    const handleStartInput = (event) => {
-      const target = event.target;
+    const handleStartInput = (event2) => {
+      const target = event2.target;
       if (userInput.value) {
         userInput.value = [target.value, userInput.value[1]];
       } else {
         userInput.value = [target.value, null];
       }
     };
-    const handleEndInput = (event) => {
-      const target = event.target;
+    const handleEndInput = (event2) => {
+      const target = event2.target;
       if (userInput.value) {
         userInput.value = [userInput.value[0], target.value];
       } else {
@@ -28672,19 +28692,19 @@ const _sfc_main$1D = /* @__PURE__ */ defineComponent({
       const next = (index2 + step + list.length) % list.length;
       timePickerOptions["start_emitSelectRange"](mapping[next]);
     };
-    const handleKeydown = (event) => {
-      const code = event.code;
+    const handleKeydown = (event2) => {
+      const code = event2.code;
       const { left, right, up, down } = EVENT_CODE;
       if ([left, right].includes(code)) {
         const step = code === left ? -1 : 1;
         changeSelectionRange(step);
-        event.preventDefault();
+        event2.preventDefault();
         return;
       }
       if ([up, down].includes(code)) {
         const step = code === up ? -1 : 1;
         timePickerOptions["start_scrollDown"](step);
-        event.preventDefault();
+        event2.preventDefault();
         return;
       }
     };
@@ -28866,20 +28886,20 @@ const _sfc_main$1C = /* @__PURE__ */ defineComponent({
         timePickerOptions["end_emitSelectRange"](mapping[next - half]);
       }
     };
-    const handleKeydown = (event) => {
-      const code = event.code;
+    const handleKeydown = (event2) => {
+      const code = event2.code;
       const { left, right, up, down } = EVENT_CODE;
       if ([left, right].includes(code)) {
         const step = code === left ? -1 : 1;
         changeSelectionRange(step);
-        event.preventDefault();
+        event2.preventDefault();
         return;
       }
       if ([up, down].includes(code)) {
         const step = code === up ? -1 : 1;
         const role = selectionRange.value[0] < offset2.value ? "start" : "end";
         timePickerOptions[`${role}_scrollDown`](step);
-        event.preventDefault();
+        event2.preventDefault();
         return;
       }
     };
@@ -29436,11 +29456,11 @@ const useBasicDateTable = (props2, emit2) => {
     const offsetFromStart = row * 7 + (column - (props2.showWeekNumber ? 1 : 0)) - unref(offsetDay);
     return unref(startDate).add(offsetFromStart, "day");
   };
-  const handleMouseMove = (event) => {
+  const handleMouseMove = (event2) => {
     var _a2;
     if (!props2.rangeState.selecting)
       return;
-    let target = event.target;
+    let target = event2.target;
     if (target.tagName === "SPAN") {
       target = (_a2 = target.parentNode) == null ? void 0 : _a2.parentNode;
     }
@@ -29465,19 +29485,19 @@ const useBasicDateTable = (props2, emit2) => {
   const isSelectedCell = (cell) => {
     return !unref(hasCurrent) && (cell == null ? void 0 : cell.text) === 1 && cell.type === "normal" || cell.isCurrent;
   };
-  const handleFocus = (event) => {
+  const handleFocus = (event2) => {
     if (focusWithClick || unref(hasCurrent) || props2.selectionMode !== "date")
       return;
-    handlePickDate(event, true);
+    handlePickDate(event2, true);
   };
-  const handleMouseDown = (event) => {
-    const target = event.target.closest("td");
+  const handleMouseDown = (event2) => {
+    const target = event2.target.closest("td");
     if (!target)
       return;
     focusWithClick = true;
   };
-  const handleMouseUp = (event) => {
-    const target = event.target.closest("td");
+  const handleMouseUp = (event2) => {
+    const target = event2.target.closest("td");
     if (!target)
       return;
     focusWithClick = false;
@@ -29509,8 +29529,8 @@ const useBasicDateTable = (props2, emit2) => {
     const newValue = selected ? castArray(props2.parsedValue).filter((d2) => (d2 == null ? void 0 : d2.valueOf()) !== newDate.valueOf()) : castArray(props2.parsedValue).concat([newDate]);
     emit2("pick", newValue);
   };
-  const handlePickDate = (event, isKeyboardMovement = false) => {
-    const target = event.target.closest("td");
+  const handlePickDate = (event2, isKeyboardMovement = false) => {
+    const target = event2.target.closest("td");
     if (!target)
       return;
     const row = target.parentNode.rowIndex - 1;
@@ -29837,11 +29857,11 @@ const _sfc_main$1A = /* @__PURE__ */ defineComponent({
       const month = cell.text;
       return castArray(props2.date).findIndex((date4) => date4.year() === year && date4.month() === month) >= 0;
     };
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (event2) => {
       var _a2;
       if (!props2.rangeState.selecting)
         return;
-      let target = event.target;
+      let target = event2.target;
       if (target.tagName === "SPAN") {
         target = (_a2 = target.parentNode) == null ? void 0 : _a2.parentNode;
       }
@@ -29863,9 +29883,9 @@ const _sfc_main$1A = /* @__PURE__ */ defineComponent({
         });
       }
     };
-    const handleMonthTableClick = (event) => {
+    const handleMonthTableClick = (event2) => {
       var _a2;
-      const target = (_a2 = event.target) == null ? void 0 : _a2.closest("td");
+      const target = (_a2 = event2.target) == null ? void 0 : _a2.closest("td");
       if ((target == null ? void 0 : target.tagName) !== "TD")
         return;
       if (hasClass(target, "disabled"))
@@ -29875,7 +29895,7 @@ const _sfc_main$1A = /* @__PURE__ */ defineComponent({
       const month = row * 4 + column;
       const newDate = props2.date.startOf("year").month(month);
       if (props2.selectionMode === "months") {
-        if (event.type === "keydown") {
+        if (event2.type === "keydown") {
           emit2("pick", castArray(props2.parsedValue), false);
           return;
         }
@@ -30051,9 +30071,9 @@ const _sfc_main$1z = /* @__PURE__ */ defineComponent({
       const year = cell.text;
       return castArray(props2.date).findIndex((date4) => date4.year() === year) >= 0;
     };
-    const handleYearTableClick = (event) => {
+    const handleYearTableClick = (event2) => {
       var _a2;
-      const target = (_a2 = event.target) == null ? void 0 : _a2.closest("td");
+      const target = (_a2 = event2.target) == null ? void 0 : _a2.closest("td");
       if (!target || !target.textContent || hasClass(target, "disabled"))
         return;
       const column = target.cellIndex;
@@ -30073,7 +30093,7 @@ const _sfc_main$1z = /* @__PURE__ */ defineComponent({
           emit2("select", false);
         }
       } else if (props2.selectionMode === "years") {
-        if (event.type === "keydown") {
+        if (event2.type === "keydown") {
           emit2("pick", castArray(props2.parsedValue), false);
           return;
         }
@@ -30084,11 +30104,11 @@ const _sfc_main$1z = /* @__PURE__ */ defineComponent({
         emit2("pick", selectedYear);
       }
     };
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (event2) => {
       var _a2;
       if (!props2.rangeState.selecting)
         return;
-      const target = (_a2 = event.target) == null ? void 0 : _a2.closest("td");
+      const target = (_a2 = event2.target) == null ? void 0 : _a2.closest("td");
       if (!target)
         return;
       const row = target.parentNode.rowIndex;
@@ -30467,8 +30487,8 @@ const _sfc_main$1y = /* @__PURE__ */ defineComponent({
         handleKeyControl(EVENT_CODE.down);
       }
     };
-    const handleKeydownTable = (event) => {
-      const { code } = event;
+    const handleKeydownTable = (event2) => {
+      const { code } = event2;
       const validCode = [
         EVENT_CODE.up,
         EVENT_CODE.down,
@@ -30481,11 +30501,11 @@ const _sfc_main$1y = /* @__PURE__ */ defineComponent({
       ];
       if (validCode.includes(code)) {
         handleKeyControl(code);
-        event.stopPropagation();
-        event.preventDefault();
+        event2.stopPropagation();
+        event2.preventDefault();
       }
       if ([EVENT_CODE.enter, EVENT_CODE.space, EVENT_CODE.numpadEnter].includes(code) && userInputDate.value === null && userInputTime.value === null) {
-        event.preventDefault();
+        event2.preventDefault();
         emit2(innerDate.value, false);
       }
     };
@@ -33186,10 +33206,10 @@ const useDialog = (props2, targetRef) => {
   function onCloseAutoFocus() {
     emit2("closeAutoFocus");
   }
-  function onFocusoutPrevented(event) {
+  function onFocusoutPrevented(event2) {
     var _a22;
-    if (((_a22 = event.detail) == null ? void 0 : _a22.focusReason) === "pointer") {
-      event.preventDefault();
+    if (((_a22 = event2.detail) == null ? void 0 : _a22.focusReason) === "pointer") {
+      event2.preventDefault();
     }
   }
   if (props2.lockScroll) {
@@ -33783,8 +33803,8 @@ const getDirectionAwareKey = (key, dir) => {
       return key;
   }
 };
-const getFocusIntent = (event, orientation, dir) => {
-  const key = getDirectionAwareKey(event.code, dir);
+const getFocusIntent = (event2, orientation, dir) => {
+  const key = getDirectionAwareKey(event2.code, dir);
   if (orientation === "vertical" && [EVENT_CODE.left, EVENT_CODE.right].includes(key))
     return void 0;
   if (orientation === "horizontal" && [EVENT_CODE.up, EVENT_CODE.down].includes(key))
@@ -34111,9 +34131,9 @@ const _sfc_main$1k = defineComponent({
     function handleBeforeShowTooltip() {
       emit2("visible-change", true);
     }
-    function handleShowTooltip(event) {
+    function handleShowTooltip(event2) {
       var _a2;
-      if ((event == null ? void 0 : event.type) === "keydown") {
+      if ((event2 == null ? void 0 : event2.type) === "keydown") {
         (_a2 = contentRef.value) == null ? void 0 : _a2.focus();
       }
     }
@@ -34143,8 +34163,8 @@ const _sfc_main$1k = defineComponent({
         preventScroll: true
       });
     };
-    const handlerMainButtonClick = (event) => {
-      emit2("click", event);
+    const handlerMainButtonClick = (event2) => {
+      emit2("click", event2);
     };
     return {
       t,
@@ -36847,10 +36867,10 @@ const _sfc_main$1b = /* @__PURE__ */ defineComponent({
       }
       transform.value.enableTransition = enableTransition;
     }
-    function onFocusoutPrevented(event) {
+    function onFocusoutPrevented(event2) {
       var _a22;
-      if (((_a22 = event.detail) == null ? void 0 : _a22.focusReason) === "pointer") {
-        event.preventDefault();
+      if (((_a22 = event2.detail) == null ? void 0 : _a22.focusReason) === "pointer") {
+        event2.preventDefault();
       }
     }
     function onCloseRequested() {
@@ -37202,15 +37222,15 @@ const _sfc_main$1a = /* @__PURE__ */ defineComponent({
       hasLoadError.value = false;
       imageSrc.value = props2.src;
     };
-    function handleLoad(event) {
+    function handleLoad(event2) {
       isLoading.value = false;
       hasLoadError.value = false;
-      emit2("load", event);
+      emit2("load", event2);
     }
-    function handleError2(event) {
+    function handleError2(event2) {
       isLoading.value = false;
       hasLoadError.value = true;
-      emit2("error", event);
+      emit2("error", event2);
     }
     function handleLazyLoad() {
       if (isInContainer(container.value, _scrollContainer.value)) {
@@ -37577,16 +37597,16 @@ const _sfc_main$19 = /* @__PURE__ */ defineComponent({
       var _a2, _b;
       (_b = (_a2 = input.value) == null ? void 0 : _a2.blur) == null ? void 0 : _b.call(_a2);
     };
-    const handleFocus = (event) => {
-      emit2("focus", event);
+    const handleFocus = (event2) => {
+      emit2("focus", event2);
     };
-    const handleBlur = (event) => {
+    const handleBlur = (event2) => {
       var _a2, _b;
       data.userInput = null;
       if (isFirefox() && data.currentValue === null && ((_a2 = input.value) == null ? void 0 : _a2.input)) {
         input.value.input.value = "";
       }
-      emit2("blur", event);
+      emit2("blur", event2);
       if (props2.validateEvent) {
         (_b = formItem == null ? void 0 : formItem.validate) == null ? void 0 : _b.call(formItem, "blur").catch((err) => debugWarn());
       }
@@ -37818,7 +37838,7 @@ function useInputTag({ props: props2, emit: emit2, formItem }) {
     var _a2, _b;
     return isUndefined(props2.max) ? false : ((_b = (_a2 = props2.modelValue) == null ? void 0 : _a2.length) != null ? _b : 0) >= props2.max;
   });
-  const handleInput = (event) => {
+  const handleInput = (event2) => {
     var _a2, _b;
     if (inputLimit.value) {
       inputValue.value = void 0;
@@ -37833,29 +37853,29 @@ function useInputTag({ props: props2, emit: emit2, formItem }) {
         handleAddTag();
       }
     }
-    emit2(INPUT_EVENT, event.target.value);
+    emit2(INPUT_EVENT, event2.target.value);
   };
-  const handleKeydown = (event) => {
+  const handleKeydown = (event2) => {
     var _a2;
     if (isComposing.value)
       return;
-    switch (event.code) {
+    switch (event2.code) {
       case props2.trigger:
-        event.preventDefault();
-        event.stopPropagation();
+        event2.preventDefault();
+        event2.stopPropagation();
         handleAddTag();
         break;
       case EVENT_CODE.numpadEnter:
         if (props2.trigger === EVENT_CODE.enter) {
-          event.preventDefault();
-          event.stopPropagation();
+          event2.preventDefault();
+          event2.stopPropagation();
           handleAddTag();
         }
         break;
       case EVENT_CODE.backspace:
         if (!inputValue.value && ((_a2 = props2.modelValue) == null ? void 0 : _a2.length)) {
-          event.preventDefault();
-          event.stopPropagation();
+          event2.preventDefault();
+          event2.stopPropagation();
           handleRemoveTag(props2.modelValue.length - 1);
         }
         break;
@@ -38003,18 +38023,18 @@ function useDragTag({
   function getTagClassName(index2) {
     return `.${ns.e("inner")} .${ns.namespace.value}-tag:nth-child(${index2 + 1})`;
   }
-  function handleDragStart(event, index2) {
+  function handleDragStart(event2, index2) {
     draggingIndex = index2;
     draggingTag = wrapperRef.value.querySelector(getTagClassName(index2));
     if (draggingTag) {
       draggingTag.style.opacity = "0.5";
     }
-    event.dataTransfer.effectAllowed = "move";
+    event2.dataTransfer.effectAllowed = "move";
   }
-  function handleDragOver(event, index2) {
+  function handleDragOver(event2, index2) {
     dropIndex = index2;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
+    event2.preventDefault();
+    event2.dataTransfer.dropEffect = "move";
     if (isUndefined(draggingIndex) || draggingIndex === index2) {
       showDropIndicator.value = false;
       return;
@@ -38022,7 +38042,7 @@ function useDragTag({
     const dropPosition = wrapperRef.value.querySelector(getTagClassName(index2)).getBoundingClientRect();
     const dropPrev = !(draggingIndex + 1 === index2);
     const dropNext = !(draggingIndex - 1 === index2);
-    const distance = event.clientX - dropPosition.left;
+    const distance = event2.clientX - dropPosition.left;
     const prevPercent = dropPrev ? dropNext ? 0.5 : 1 : -1;
     const nextPercent = dropNext ? dropPrev ? 0.5 : 0 : 1;
     if (distance <= dropPosition.width * prevPercent) {
@@ -38049,8 +38069,8 @@ function useDragTag({
     });
     showDropIndicator.value = !!dropType;
   }
-  function handleDragEnd(event) {
-    event.preventDefault();
+  function handleDragEnd(event2) {
+    event2.preventDefault();
     if (draggingTag) {
       draggingTag.style.opacity = "";
     }
@@ -38226,8 +38246,8 @@ const _sfc_main$18 = /* @__PURE__ */ defineComponent({
               draggable: unref(closable) && _ctx.draggable,
               "disable-transitions": "",
               onClose: ($event) => unref(handleRemoveTag)(index2),
-              onDragstart: (event) => unref(handleDragStart)(event, index2),
-              onDragover: (event) => unref(handleDragOver)(event, index2),
+              onDragstart: (event2) => unref(handleDragStart)(event2, index2),
+              onDragover: (event2) => unref(handleDragOver)(event2, index2),
               onDragend: unref(handleDragEnd),
               onDrop: withModifiers(() => {
               }, ["stop"])
@@ -38378,9 +38398,9 @@ const _sfc_main$17 = /* @__PURE__ */ defineComponent({
       } else
         return props2.underline;
     });
-    function handleClick(event) {
+    function handleClick(event2) {
       if (!props2.disabled)
-        emit2("click", event);
+        emit2("click", event2);
     }
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("a", {
@@ -38432,9 +38452,9 @@ let SubMenu$1 = class SubMenu {
   addListeners() {
     const parentNode = this.parent.domNode;
     Array.prototype.forEach.call(this.subMenuItems, (el) => {
-      el.addEventListener("keydown", (event) => {
+      el.addEventListener("keydown", (event2) => {
         let prevDef = false;
-        switch (event.code) {
+        switch (event2.code) {
           case EVENT_CODE.down: {
             this.gotoSubIndex(this.subIndex + 1);
             prevDef = true;
@@ -38453,13 +38473,13 @@ let SubMenu$1 = class SubMenu {
           case EVENT_CODE.numpadEnter:
           case EVENT_CODE.space: {
             prevDef = true;
-            event.currentTarget.click();
+            event2.currentTarget.click();
             break;
           }
         }
         if (prevDef) {
-          event.preventDefault();
-          event.stopPropagation();
+          event2.preventDefault();
+          event2.stopPropagation();
         }
         return false;
       });
@@ -38482,35 +38502,35 @@ let MenuItem$1 = class MenuItem {
     this.addListeners();
   }
   addListeners() {
-    this.domNode.addEventListener("keydown", (event) => {
+    this.domNode.addEventListener("keydown", (event2) => {
       let prevDef = false;
-      switch (event.code) {
+      switch (event2.code) {
         case EVENT_CODE.down: {
-          triggerEvent(event.currentTarget, "mouseenter");
+          triggerEvent(event2.currentTarget, "mouseenter");
           this.submenu && this.submenu.gotoSubIndex(0);
           prevDef = true;
           break;
         }
         case EVENT_CODE.up: {
-          triggerEvent(event.currentTarget, "mouseenter");
+          triggerEvent(event2.currentTarget, "mouseenter");
           this.submenu && this.submenu.gotoSubIndex(this.submenu.subMenuItems.length - 1);
           prevDef = true;
           break;
         }
         case EVENT_CODE.tab: {
-          triggerEvent(event.currentTarget, "mouseleave");
+          triggerEvent(event2.currentTarget, "mouseleave");
           break;
         }
         case EVENT_CODE.enter:
         case EVENT_CODE.numpadEnter:
         case EVENT_CODE.space: {
           prevDef = true;
-          event.currentTarget.click();
+          event2.currentTarget.click();
           break;
         }
       }
       if (prevDef) {
-        event.preventDefault();
+        event2.preventDefault();
       }
     });
   }
@@ -38741,9 +38761,9 @@ var SubMenu2 = defineComponent({
         active: active.value
       });
     };
-    const handleMouseenter = (event, showTimeout = subMenuShowTimeout.value) => {
+    const handleMouseenter = (event2, showTimeout = subMenuShowTimeout.value) => {
       var _a2;
-      if (event.type === "focus")
+      if (event2.type === "focus")
         return;
       if (rootMenu.props.menuTrigger === "click" && rootMenu.props.mode === "horizontal" || !rootMenu.props.collapse && rootMenu.props.mode === "vertical" || props2.disabled) {
         subMenu.mouseInChild.value = true;
@@ -39824,9 +39844,9 @@ const useSelect$2 = (props2, emit2) => {
         states.menuVisibleOnFocus = true;
       }
     },
-    beforeBlur(event) {
+    beforeBlur(event2) {
       var _a2, _b;
-      return ((_a2 = tooltipRef.value) == null ? void 0 : _a2.isFocusInsideContent(event)) || ((_b = tagTooltipRef.value) == null ? void 0 : _b.isFocusInsideContent(event));
+      return ((_a2 = tooltipRef.value) == null ? void 0 : _a2.isFocusInsideContent(event2)) || ((_b = tagTooltipRef.value) == null ? void 0 : _b.isFocusInsideContent(event2));
     },
     afterBlur() {
       var _a2;
@@ -40068,8 +40088,8 @@ const useSelect$2 = (props2, emit2) => {
     }
     handleQueryChange(states.inputValue);
   };
-  const onInput = (event) => {
-    states.inputValue = event.target.value;
+  const onInput = (event2) => {
+    states.inputValue = event2.target.value;
     if (props2.remote) {
       debouncedOnInputChange();
     } else {
@@ -40105,7 +40125,7 @@ const useSelect$2 = (props2, emit2) => {
       emit2("remove-tag", removeTagValue);
     }
   };
-  const deleteTag = (event, tag) => {
+  const deleteTag = (event2, tag) => {
     const index2 = states.selected.indexOf(tag);
     if (index2 > -1 && !selectDisabled.value) {
       const value = castArray$1(props2.modelValue).slice();
@@ -40114,11 +40134,11 @@ const useSelect$2 = (props2, emit2) => {
       emitChange(value);
       emit2("remove-tag", tag.value);
     }
-    event.stopPropagation();
+    event2.stopPropagation();
     focus();
   };
-  const deleteSelected = (event) => {
-    event.stopPropagation();
+  const deleteSelected = (event2) => {
+    event2.stopPropagation();
     const value = props2.multiple ? [] : valueOnClear.value;
     if (props2.multiple) {
       for (const item of states.selected) {
@@ -40227,13 +40247,13 @@ const useSelect$2 = (props2, emit2) => {
     }
     (_a2 = inputRef.value) == null ? void 0 : _a2.blur();
   };
-  const handleClearClick = (event) => {
-    deleteSelected(event);
+  const handleClearClick = (event2) => {
+    deleteSelected(event2);
   };
-  const handleClickOutside = (event) => {
+  const handleClickOutside = (event2) => {
     expanded.value = false;
     if (isFocused.value) {
-      const _event2 = new FocusEvent("focus", event);
+      const _event2 = new FocusEvent("focus", event2);
       nextTick(() => handleBlur(_event2));
     }
   };
@@ -41349,8 +41369,8 @@ const _sfc_main$V = /* @__PURE__ */ defineComponent({
         onPagerClick(e);
       }
     }
-    function onPagerClick(event) {
-      const target = event.target;
+    function onPagerClick(event2) {
+      const target = event2.target;
       if (target.tagName.toLowerCase() === "ul" || props2.disabled) {
         return;
       }
@@ -42522,19 +42542,19 @@ const _sfc_main$R = /* @__PURE__ */ defineComponent({
       emit2(CHANGE_EVENT, _currentValue);
       return _currentValue;
     }
-    function setCurrentValue(value, event) {
+    function setCurrentValue(value, event2) {
       if (rateDisabled.value) {
         return;
       }
-      if (props2.allowHalf && event) {
-        let target = event.target;
+      if (props2.allowHalf && event2) {
+        let target = event2.target;
         if (hasClass(target, ns.e("item"))) {
           target = target.querySelector(`.${ns.e("icon")}`);
         }
         if (target.clientWidth === 0 || hasClass(target, ns.e("decimal"))) {
           target = target.parentNode;
         }
-        pointerAtLeftHalf.value = event.offsetX * 2 <= target.clientWidth;
+        pointerAtLeftHalf.value = event2.offsetX * 2 <= target.clientWidth;
         currentValue.value = pointerAtLeftHalf.value ? value - 0.5 : value;
       } else {
         currentValue.value = value;
@@ -44375,9 +44395,9 @@ const useSelect$1 = (props2, emit2) => {
         states.menuVisibleOnFocus = true;
       }
     },
-    beforeBlur(event) {
+    beforeBlur(event2) {
       var _a2, _b;
-      return ((_a2 = tooltipRef.value) == null ? void 0 : _a2.isFocusInsideContent(event)) || ((_b = tagTooltipRef.value) == null ? void 0 : _b.isFocusInsideContent(event));
+      return ((_a2 = tooltipRef.value) == null ? void 0 : _a2.isFocusInsideContent(event2)) || ((_b = tagTooltipRef.value) == null ? void 0 : _b.isFocusInsideContent(event2));
     },
     afterBlur() {
       var _a2;
@@ -44714,7 +44734,7 @@ const useSelect$1 = (props2, emit2) => {
     }
     focus();
   };
-  const deleteTag = (event, option) => {
+  const deleteTag = (event2, option) => {
     let selectedOptions = props2.modelValue.slice();
     const index2 = getValueIndex(selectedOptions, getValue2(option));
     if (index2 > -1 && !selectDisabled.value) {
@@ -44727,7 +44747,7 @@ const useSelect$1 = (props2, emit2) => {
       emit2("remove-tag", getValue2(option));
       removeNewOption(option);
     }
-    event.stopPropagation();
+    event2.stopPropagation();
     focus();
   };
   const focus = () => {
@@ -44838,18 +44858,18 @@ const useSelect$1 = (props2, emit2) => {
       states.hoveringIndex = filteredOptions.value.findIndex((item) => props2.modelValue.some((modelValue) => getValueKey(modelValue) === getValueKey(item)));
     }
   };
-  const onInput = (event) => {
-    states.inputValue = event.target.value;
+  const onInput = (event2) => {
+    states.inputValue = event2.target.value;
     if (props2.remote) {
       debouncedOnInputChange();
     } else {
       return onInputChange();
     }
   };
-  const handleClickOutside = (event) => {
+  const handleClickOutside = (event2) => {
     expanded.value = false;
     if (isFocused.value) {
-      const _event2 = new FocusEvent("focus", event);
+      const _event2 = new FocusEvent("focus", event2);
       handleBlur(_event2);
     }
   };
@@ -45748,11 +45768,11 @@ const useSliderButton = (props2, initData, emit2) => {
       hideTooltip();
     }
   };
-  const onButtonDown = (event) => {
+  const onButtonDown = (event2) => {
     if (disabled.value)
       return;
-    event.preventDefault();
-    onDragStart(event);
+    event2.preventDefault();
+    onDragStart(event2);
     window.addEventListener("mousemove", onDragging);
     window.addEventListener("touchmove", onDragging);
     window.addEventListener("mouseup", onDragEnd);
@@ -45791,9 +45811,9 @@ const useSliderButton = (props2, initData, emit2) => {
     setPosition(100);
     emitChange();
   };
-  const onKeyDown = (event) => {
+  const onKeyDown = (event2) => {
     let isPreventDefault = true;
-    switch (event.code) {
+    switch (event2.code) {
       case EVENT_CODE.left:
       case EVENT_CODE.down:
         onLeftKeyDown();
@@ -45818,27 +45838,27 @@ const useSliderButton = (props2, initData, emit2) => {
         isPreventDefault = false;
         break;
     }
-    isPreventDefault && event.preventDefault();
+    isPreventDefault && event2.preventDefault();
   };
-  const getClientXY2 = (event) => {
+  const getClientXY2 = (event2) => {
     let clientX;
     let clientY;
-    if (event.type.startsWith("touch")) {
-      clientY = event.touches[0].clientY;
-      clientX = event.touches[0].clientX;
+    if (event2.type.startsWith("touch")) {
+      clientY = event2.touches[0].clientY;
+      clientX = event2.touches[0].clientX;
     } else {
-      clientY = event.clientY;
-      clientX = event.clientX;
+      clientY = event2.clientY;
+      clientX = event2.clientX;
     }
     return {
       clientX,
       clientY
     };
   };
-  const onDragStart = (event) => {
+  const onDragStart = (event2) => {
     initData.dragging = true;
     initData.isClick = true;
-    const { clientX, clientY } = getClientXY2(event);
+    const { clientX, clientY } = getClientXY2(event2);
     if (props2.vertical) {
       initData.startY = clientY;
     } else {
@@ -45847,13 +45867,13 @@ const useSliderButton = (props2, initData, emit2) => {
     initData.startPosition = Number.parseFloat(currentPosition.value);
     initData.newPosition = initData.startPosition;
   };
-  const onDragging = (event) => {
+  const onDragging = (event2) => {
     if (initData.dragging) {
       initData.isClick = false;
       displayTooltip();
       resetSize();
       let diff;
-      const { clientX, clientY } = getClientXY2(event);
+      const { clientX, clientY } = getClientXY2(event2);
       if (props2.vertical) {
         initData.currentY = clientY;
         diff = (initData.startY - initData.currentY) / sliderSize.value * 100;
@@ -46110,18 +46130,18 @@ const useSlide = (props2, initData, emit2) => {
     await nextTick();
     emit2(CHANGE_EVENT, props2.range ? [minValue.value, maxValue.value] : props2.modelValue);
   };
-  const handleSliderPointerEvent = (event) => {
+  const handleSliderPointerEvent = (event2) => {
     var _a2, _b, _c, _d, _e, _f;
     if (sliderDisabled.value || initData.dragging)
       return;
     resetSize();
     let newPercent = 0;
     if (props2.vertical) {
-      const clientY = (_c = (_b = (_a2 = event.touches) == null ? void 0 : _a2.item(0)) == null ? void 0 : _b.clientY) != null ? _c : event.clientY;
+      const clientY = (_c = (_b = (_a2 = event2.touches) == null ? void 0 : _a2.item(0)) == null ? void 0 : _b.clientY) != null ? _c : event2.clientY;
       const sliderOffsetBottom = slider.value.getBoundingClientRect().bottom;
       newPercent = (sliderOffsetBottom - clientY) / initData.sliderSize * 100;
     } else {
-      const clientX = (_f = (_e = (_d = event.touches) == null ? void 0 : _d.item(0)) == null ? void 0 : _e.clientX) != null ? _f : event.clientX;
+      const clientX = (_f = (_e = (_d = event2.touches) == null ? void 0 : _d.item(0)) == null ? void 0 : _e.clientX) != null ? _f : event2.clientX;
       const sliderOffsetLeft = slider.value.getBoundingClientRect().left;
       newPercent = (clientX - sliderOffsetLeft) / initData.sliderSize * 100;
     }
@@ -46129,21 +46149,21 @@ const useSlide = (props2, initData, emit2) => {
       return;
     return setPosition(newPercent);
   };
-  const onSliderWrapperPrevent = (event) => {
+  const onSliderWrapperPrevent = (event2) => {
     var _a2, _b;
     if (((_a2 = buttonRefs["firstButton"].value) == null ? void 0 : _a2.dragging) || ((_b = buttonRefs["secondButton"].value) == null ? void 0 : _b.dragging)) {
-      event.preventDefault();
+      event2.preventDefault();
     }
   };
-  const onSliderDown = async (event) => {
-    const buttonRef = handleSliderPointerEvent(event);
+  const onSliderDown = async (event2) => {
+    const buttonRef = handleSliderPointerEvent(event2);
     if (buttonRef) {
       await nextTick();
-      buttonRef.value.onButtonDown(event);
+      buttonRef.value.onButtonDown(event2);
     }
   };
-  const onSliderClick = (event) => {
-    const buttonRef = handleSliderPointerEvent(event);
+  const onSliderClick = (event2) => {
+    const buttonRef = handleSliderPointerEvent(event2);
     if (buttonRef) {
       emitChange();
     }
@@ -47491,9 +47511,9 @@ const _sfc_main$D = /* @__PURE__ */ defineComponent({
 });
 var Switch = /* @__PURE__ */ _export_sfc(_sfc_main$D, [["__file", "switch.vue"]]);
 const ElSwitch = withInstall(Switch);
-const getCell = function(event) {
+const getCell = function(event2) {
   var _a2;
-  return (_a2 = event.target) == null ? void 0 : _a2.closest("td");
+  return (_a2 = event2.target) == null ? void 0 : _a2.closest("td");
 };
 const orderBy = function(array4, sortKey, reverse, sortMethod, sortBy) {
   if (!sortKey && !sortMethod && (!sortBy || isArray$3(sortBy) && !sortBy.length)) {
@@ -49099,11 +49119,11 @@ class TableLayout {
       this.observers.splice(index2, 1);
     }
   }
-  notifyObservers(event) {
+  notifyObservers(event2) {
     const observers = this.observers;
     observers.forEach((observer) => {
       var _a2, _b;
-      switch (event) {
+      switch (event2) {
         case "columns":
           (_a2 = observer.state) == null ? void 0 : _a2.onColumnsChange(this);
           break;
@@ -49111,7 +49131,7 @@ class TableLayout {
           (_b = observer.state) == null ? void 0 : _b.onScrollableChange(this);
           break;
         default:
-          throw new Error(`Table Layout don't have event ${event}.`);
+          throw new Error(`Table Layout don't have event ${event2}.`);
       }
     });
   }
@@ -49451,25 +49471,25 @@ const TABLE_INJECTION_KEY = Symbol("ElTable");
 function useEvent(props2, emit2) {
   const instance = getCurrentInstance();
   const parent2 = inject(TABLE_INJECTION_KEY);
-  const handleFilterClick = (event) => {
-    event.stopPropagation();
+  const handleFilterClick = (event2) => {
+    event2.stopPropagation();
     return;
   };
-  const handleHeaderClick = (event, column) => {
+  const handleHeaderClick = (event2, column) => {
     if (!column.filters && column.sortable) {
-      handleSortClick(event, column, false);
+      handleSortClick(event2, column, false);
     } else if (column.filterable && !column.sortable) {
-      handleFilterClick(event);
+      handleFilterClick(event2);
     }
-    parent2 == null ? void 0 : parent2.emit("header-click", column, event);
+    parent2 == null ? void 0 : parent2.emit("header-click", column, event2);
   };
-  const handleHeaderContextMenu = (event, column) => {
-    parent2 == null ? void 0 : parent2.emit("header-contextmenu", column, event);
+  const handleHeaderContextMenu = (event2, column) => {
+    parent2 == null ? void 0 : parent2.emit("header-contextmenu", column, event2);
   };
   const draggingColumn = ref(null);
   const dragging = ref(false);
   const dragState = ref({});
-  const handleMouseDown = (event, column) => {
+  const handleMouseDown = (event2, column) => {
     if (!isClient)
       return;
     if (column.children && column.children.length > 0)
@@ -49485,7 +49505,7 @@ function useEvent(props2, emit2) {
       const minLeft = columnRect.left - tableLeft + 30;
       addClass(columnEl, "noclick");
       dragState.value = {
-        startMouseLeft: event.clientX,
+        startMouseLeft: event2.clientX,
         startLeft: columnRect.right - tableLeft,
         startColumnLeft: columnRect.left - tableLeft,
         tableLeft
@@ -49498,8 +49518,8 @@ function useEvent(props2, emit2) {
       document.ondragstart = function() {
         return false;
       };
-      const handleMouseMove2 = (event2) => {
-        const deltaLeft = event2.clientX - dragState.value.startMouseLeft;
+      const handleMouseMove2 = (event22) => {
+        const deltaLeft = event22.clientX - dragState.value.startMouseLeft;
         const proxyLeft = dragState.value.startLeft + deltaLeft;
         resizeProxy.style.left = `${Math.max(minLeft, proxyLeft)}px`;
       };
@@ -49509,7 +49529,7 @@ function useEvent(props2, emit2) {
           const finalLeft = Number.parseInt(resizeProxy.style.left, 10);
           const columnWidth = finalLeft - startColumnLeft;
           column.width = column.realWidth = columnWidth;
-          table == null ? void 0 : table.emit("header-dragend", column.width, startLeft - startColumnLeft, column, event);
+          table == null ? void 0 : table.emit("header-dragend", column.width, startLeft - startColumnLeft, column, event2);
           requestAnimationFrame(() => {
             props2.store.scheduleLayout(false, true);
           });
@@ -49531,11 +49551,11 @@ function useEvent(props2, emit2) {
       document.addEventListener("mouseup", handleMouseUp);
     }
   };
-  const handleMouseMove = (event, column) => {
+  const handleMouseMove = (event2, column) => {
     var _a2;
     if (column.children && column.children.length > 0)
       return;
-    const el = event.target;
+    const el = event2.target;
     if (!isElement$1(el)) {
       return;
     }
@@ -49547,7 +49567,7 @@ function useEvent(props2, emit2) {
       const bodyStyle = document.body.style;
       const isLastTh = ((_a2 = target.parentNode) == null ? void 0 : _a2.lastElementChild) === target;
       const allowDarg = props2.allowDragLastColumn || !isLastTh;
-      if (rect.width > 12 && rect.right - event.clientX < 8 && allowDarg) {
+      if (rect.width > 12 && rect.right - event2.clientX < 8 && allowDarg) {
         bodyStyle.cursor = "col-resize";
         if (hasClass(target, "is-sortable")) {
           target.style.cursor = "col-resize";
@@ -49573,11 +49593,11 @@ function useEvent(props2, emit2) {
     const index2 = sortOrders.indexOf(order || null);
     return sortOrders[index2 > sortOrders.length - 2 ? 0 : index2 + 1];
   };
-  const handleSortClick = (event, column, givenOrder) => {
+  const handleSortClick = (event2, column, givenOrder) => {
     var _a2;
-    event.stopPropagation();
+    event2.stopPropagation();
     const order = column.order === givenOrder ? null : givenOrder || toggleOrder(column);
-    const target = (_a2 = event.target) == null ? void 0 : _a2.closest("th");
+    const target = (_a2 = event2.target) == null ? void 0 : _a2.closest("th");
     if (target) {
       if (hasClass(target, "noclick")) {
         removeClass(target, "noclick");
@@ -49586,7 +49606,7 @@ function useEvent(props2, emit2) {
     }
     if (!column.sortable)
       return;
-    const clickTarget = event.currentTarget;
+    const clickTarget = event2.currentTarget;
     if (["ascending", "descending"].some((str) => hasClass(clickTarget, str) && !column.sortOrders.includes(str))) {
       return;
     }
@@ -49757,8 +49777,8 @@ function useUtils$1(props2) {
     }
     return result;
   });
-  const toggleAllSelection = (event) => {
-    event.stopPropagation();
+  const toggleAllSelection = (event2) => {
+    event2.stopPropagation();
     parent2 == null ? void 0 : parent2.store.commit("toggleAllSelection");
   };
   return {
@@ -49978,10 +49998,10 @@ function useEvents(props2) {
   const parent2 = inject(TABLE_INJECTION_KEY);
   const tooltipContent = ref("");
   const tooltipTrigger = ref(h$1("div"));
-  const handleEvent = (event, row, name) => {
+  const handleEvent = (event2, row, name) => {
     var _a2;
     const table = parent2;
-    const cell = getCell(event);
+    const cell = getCell(event2);
     let column;
     const namespace = (_a2 = table == null ? void 0 : table.vnode.el) == null ? void 0 : _a2.dataset.prefix;
     if (cell) {
@@ -49989,20 +50009,20 @@ function useEvents(props2) {
         columns: props2.store.states.columns.value
       }, cell, namespace);
       if (column) {
-        table == null ? void 0 : table.emit(`cell-${name}`, row, column, cell, event);
+        table == null ? void 0 : table.emit(`cell-${name}`, row, column, cell, event2);
       }
     }
-    table == null ? void 0 : table.emit(`row-${name}`, row, column, event);
+    table == null ? void 0 : table.emit(`row-${name}`, row, column, event2);
   };
-  const handleDoubleClick = (event, row) => {
-    handleEvent(event, row, "dblclick");
+  const handleDoubleClick = (event2, row) => {
+    handleEvent(event2, row, "dblclick");
   };
-  const handleClick = (event, row) => {
+  const handleClick = (event2, row) => {
     props2.store.commit("setCurrentRow", row);
-    handleEvent(event, row, "click");
+    handleEvent(event2, row, "click");
   };
-  const handleContextMenu = (event, row) => {
-    handleEvent(event, row, "contextmenu");
+  const handleContextMenu = (event2, row) => {
+    handleEvent(event2, row, "contextmenu");
   };
   const handleMouseEnter = debounce((index2) => {
     props2.store.commit("setHoverRow", index2);
@@ -50023,8 +50043,8 @@ function useEvents(props2) {
       bottom: paddingBottom
     };
   };
-  const toggleRowClassByCell = (rowSpan, event, toggle) => {
-    let node = event.target.parentNode;
+  const toggleRowClassByCell = (rowSpan, event2, toggle) => {
+    let node = event2.target.parentNode;
     while (rowSpan > 1) {
       node = node == null ? void 0 : node.nextSibling;
       if (!node || node.nodeName !== "TR")
@@ -50033,10 +50053,10 @@ function useEvents(props2) {
       rowSpan--;
     }
   };
-  const handleCellMouseEnter = (event, row, tooltipOptions) => {
+  const handleCellMouseEnter = (event2, row, tooltipOptions) => {
     var _a2, _b, _c;
     const table = parent2;
-    const cell = getCell(event);
+    const cell = getCell(event2);
     const namespace = (_a2 = table == null ? void 0 : table.vnode.el) == null ? void 0 : _a2.dataset.prefix;
     let column;
     if (cell) {
@@ -50044,15 +50064,15 @@ function useEvents(props2) {
         columns: props2.store.states.columns.value
       }, cell, namespace);
       if (cell.rowSpan > 1) {
-        toggleRowClassByCell(cell.rowSpan, event, addClass);
+        toggleRowClassByCell(cell.rowSpan, event2, addClass);
       }
       const hoverState = table.hoverState = { cell, column, row };
-      table == null ? void 0 : table.emit("cell-mouse-enter", hoverState.row, hoverState.column, hoverState.cell, event);
+      table == null ? void 0 : table.emit("cell-mouse-enter", hoverState.row, hoverState.column, hoverState.cell, event2);
     }
     if (!tooltipOptions) {
       return;
     }
-    const cellChild = event.target.querySelector(".cell");
+    const cellChild = event2.target.querySelector(".cell");
     if (!(hasClass(cellChild, `${namespace}-tooltip`) && cellChild.childNodes.length)) {
       return;
     }
@@ -50070,15 +50090,15 @@ function useEvents(props2) {
       (_c = removePopper) == null ? void 0 : _c();
     }
   };
-  const handleCellMouseLeave = (event) => {
-    const cell = getCell(event);
+  const handleCellMouseLeave = (event2) => {
+    const cell = getCell(event2);
     if (!cell)
       return;
     if (cell.rowSpan > 1) {
-      toggleRowClassByCell(cell.rowSpan, event, removeClass);
+      toggleRowClassByCell(cell.rowSpan, event2, removeClass);
     }
     const oldHoverState = parent2 == null ? void 0 : parent2.hoverState;
-    parent2 == null ? void 0 : parent2.emit("cell-mouse-leave", oldHoverState == null ? void 0 : oldHoverState.row, oldHoverState == null ? void 0 : oldHoverState.column, oldHoverState == null ? void 0 : oldHoverState.cell, event);
+    parent2 == null ? void 0 : parent2.emit("cell-mouse-leave", oldHoverState == null ? void 0 : oldHoverState.row, oldHoverState == null ? void 0 : oldHoverState.column, oldHoverState == null ? void 0 : oldHoverState.cell, event2);
   };
   return {
     handleDoubleClick,
@@ -50777,7 +50797,7 @@ function useStyle(props2, layout2, store2, table) {
     if (table.hoverState)
       table.hoverState = null;
   };
-  const handleHeaderFooterMousewheel = (event, data) => {
+  const handleHeaderFooterMousewheel = (event2, data) => {
     const { pixelX, pixelY } = data;
     if (Math.abs(pixelX) >= Math.abs(pixelY)) {
       table.refs.bodyWrapper.scrollLeft += data.pixelX / 5;
@@ -50967,15 +50987,15 @@ function useStyle(props2, layout2, store2, table) {
     }
     return {};
   });
-  const handleFixedMousewheel = (event, data) => {
+  const handleFixedMousewheel = (event2, data) => {
     const bodyWrapper = table.refs.bodyWrapper;
     if (Math.abs(data.spinY) > 0) {
       const currentScrollTop = bodyWrapper.scrollTop;
       if (data.pixelY < 0 && currentScrollTop !== 0) {
-        event.preventDefault();
+        event2.preventDefault();
       }
       if (data.pixelY > 0 && bodyWrapper.scrollHeight - bodyWrapper.clientHeight > currentScrollTop) {
-        event.preventDefault();
+        event2.preventDefault();
       }
       bodyWrapper.scrollTop += Math.ceil(data.pixelY / 5);
     } else {
@@ -51255,9 +51275,9 @@ var Y = T;
 */
 const mousewheel = function(element, callback) {
   if (element && element.addEventListener) {
-    const fn2 = function(event) {
-      const normalized = Y(event);
-      callback && Reflect.apply(callback, this, [event, normalized]);
+    const fn2 = function(event2) {
+      const normalized = Y(event2);
+      callback && Reflect.apply(callback, this, [event2, normalized]);
     };
     element.addEventListener("wheel", fn2, { passive: true });
   }
@@ -51673,7 +51693,7 @@ const cellForced = {
         onChange: () => {
           store2.commit("rowSelectedChanged", row);
         },
-        onClick: (event) => event.stopPropagation(),
+        onClick: (event2) => event2.stopPropagation(),
         modelValue: store2.isSelected(row),
         ariaLabel: column.label
       });
@@ -54276,9 +54296,9 @@ const useTableRow = (props2) => {
     const eventHandlers2 = {};
     Object.entries(handlers).forEach(([eventName, handler]) => {
       if (isFunction$2(handler)) {
-        eventHandlers2[eventName] = (event) => {
+        eventHandlers2[eventName] = (event2) => {
           handler({
-            event,
+            event: event2,
             rowData,
             rowIndex,
             rowKey: rowKey2
@@ -54298,15 +54318,15 @@ const useTableRow = (props2) => {
         hovered
       }) => {
         const existedHandler = eventHandlers2[name];
-        eventHandlers2[name] = (event) => {
+        eventHandlers2[name] = (event2) => {
           onRowHover({
-            event,
+            event: event2,
             hovered,
             rowData,
             rowIndex,
             rowKey: rowKey2
           });
-          existedHandler == null ? void 0 : existedHandler(event);
+          existedHandler == null ? void 0 : existedHandler(event2);
         };
       });
     }
@@ -55397,9 +55417,9 @@ const TabNav = defineComponent({
         }
       }
     };
-    const changeTab = (event) => {
+    const changeTab = (event2) => {
       let step = 0;
-      switch (event.code) {
+      switch (event2.code) {
         case EVENT_CODE.left:
         case EVENT_CODE.up:
           step = -1;
@@ -55411,8 +55431,8 @@ const TabNav = defineComponent({
         default:
           return;
       }
-      const tabList = Array.from(event.currentTarget.querySelectorAll("[role=tab]:not(.is-disabled)"));
-      const currentIndex = tabList.indexOf(event.target);
+      const tabList = Array.from(event2.currentTarget.querySelectorAll("[role=tab]:not(.is-disabled)"));
+      const currentIndex = tabList.indexOf(event2.target);
       let nextIndex = currentIndex + step;
       if (nextIndex < 0) {
         nextIndex = tabList.length - 1;
@@ -55593,10 +55613,10 @@ const Tabs = defineComponent({
       } catch (e) {
       }
     };
-    const handleTabClick = (tab, tabName, event) => {
+    const handleTabClick = (tab, tabName, event2) => {
       if (tab.props.disabled)
         return;
-      emit2("tabClick", tab, event);
+      emit2("tabClick", tab, event2);
       setCurrentName(tabName, true);
     };
     const handleTabRemove = (pane, ev) => {
@@ -56035,10 +56055,10 @@ const _sfc_main$w = /* @__PURE__ */ defineComponent({
         filterable: _ctx.editable,
         "empty-values": _ctx.emptyValues,
         "value-on-clear": _ctx.valueOnClear,
-        "onUpdate:modelValue": (event) => _ctx.$emit(unref(UPDATE_MODEL_EVENT), event),
-        onChange: (event) => _ctx.$emit(unref(CHANGE_EVENT), event),
-        onBlur: (event) => _ctx.$emit("blur", event),
-        onFocus: (event) => _ctx.$emit("focus", event),
+        "onUpdate:modelValue": (event2) => _ctx.$emit(unref(UPDATE_MODEL_EVENT), event2),
+        onChange: (event2) => _ctx.$emit(unref(CHANGE_EVENT), event2),
+        onBlur: (event2) => _ctx.$emit("blur", event2),
+        onFocus: (event2) => _ctx.$emit("focus", event2),
         onClear: () => _ctx.$emit("clear")
       }, {
         prefix: withCtx(() => [
@@ -59527,20 +59547,20 @@ function useDragNodeHandler({ props: props2, ctx, el$, dropIndicator$, store: st
     allowDrop: true,
     dropType: null
   });
-  const treeNodeDragStart = ({ event, treeNode }) => {
+  const treeNodeDragStart = ({ event: event2, treeNode }) => {
     if (isFunction$2(props2.allowDrag) && !props2.allowDrag(treeNode.node)) {
-      event.preventDefault();
+      event2.preventDefault();
       return false;
     }
-    event.dataTransfer.effectAllowed = "move";
+    event2.dataTransfer.effectAllowed = "move";
     try {
-      event.dataTransfer.setData("text/plain", "");
+      event2.dataTransfer.setData("text/plain", "");
     } catch (e) {
     }
     dragState.value.draggingNode = treeNode;
-    ctx.emit("node-drag-start", treeNode.node, event);
+    ctx.emit("node-drag-start", treeNode.node, event2);
   };
-  const treeNodeDragOver = ({ event, treeNode }) => {
+  const treeNodeDragOver = ({ event: event2, treeNode }) => {
     const dropNode = treeNode;
     const oldDropNode = dragState.value.dropNode;
     if (oldDropNode && oldDropNode.node.id !== dropNode.node.id) {
@@ -59558,12 +59578,12 @@ function useDragNodeHandler({ props: props2, ctx, el$, dropIndicator$, store: st
       userAllowDropInner = dropInner = props2.allowDrop(draggingNode.node, dropNode.node, "inner");
       dropNext = props2.allowDrop(draggingNode.node, dropNode.node, "next");
     }
-    event.dataTransfer.dropEffect = dropInner || dropPrev || dropNext ? "move" : "none";
+    event2.dataTransfer.dropEffect = dropInner || dropPrev || dropNext ? "move" : "none";
     if ((dropPrev || dropInner || dropNext) && (oldDropNode == null ? void 0 : oldDropNode.node.id) !== dropNode.node.id) {
       if (oldDropNode) {
-        ctx.emit("node-drag-leave", draggingNode.node, oldDropNode.node, event);
+        ctx.emit("node-drag-leave", draggingNode.node, oldDropNode.node, event2);
       }
-      ctx.emit("node-drag-enter", draggingNode.node, dropNode.node, event);
+      ctx.emit("node-drag-enter", draggingNode.node, dropNode.node, event2);
     }
     if (dropPrev || dropInner || dropNext) {
       dragState.value.dropNode = dropNode;
@@ -59590,7 +59610,7 @@ function useDragNodeHandler({ props: props2, ctx, el$, dropIndicator$, store: st
     const prevPercent = dropPrev ? dropInner ? 0.25 : dropNext ? 0.45 : 1 : -1;
     const nextPercent = dropNext ? dropInner ? 0.75 : dropPrev ? 0.55 : 0 : 1;
     let indicatorTop = -9999;
-    const distance = event.clientY - targetPosition.top;
+    const distance = event2.clientY - targetPosition.top;
     if (distance < targetPosition.height * prevPercent) {
       dropType = "before";
     } else if (distance > targetPosition.height * nextPercent) {
@@ -59617,13 +59637,13 @@ function useDragNodeHandler({ props: props2, ctx, el$, dropIndicator$, store: st
     dragState.value.showDropIndicator = dropType === "before" || dropType === "after";
     dragState.value.allowDrop = dragState.value.showDropIndicator || userAllowDropInner;
     dragState.value.dropType = dropType;
-    ctx.emit("node-drag-over", draggingNode.node, dropNode.node, event);
+    ctx.emit("node-drag-over", draggingNode.node, dropNode.node, event2);
   };
-  const treeNodeDragEnd = (event) => {
+  const treeNodeDragEnd = (event2) => {
     const { draggingNode, dropType, dropNode } = dragState.value;
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = "move";
+    event2.preventDefault();
+    if (event2.dataTransfer) {
+      event2.dataTransfer.dropEffect = "move";
     }
     if (draggingNode && dropNode) {
       const draggingNodeCopy = { data: draggingNode.node.data };
@@ -59647,13 +59667,13 @@ function useDragNodeHandler({ props: props2, ctx, el$, dropIndicator$, store: st
         }
       }
       removeClass(dropNode.$el, ns.is("drop-inner"));
-      ctx.emit("node-drag-end", draggingNode.node, dropNode.node, dropType, event);
+      ctx.emit("node-drag-end", draggingNode.node, dropNode.node, dropType, event2);
       if (dropType !== "none") {
-        ctx.emit("node-drop", draggingNode.node, dropNode.node, dropType, event);
+        ctx.emit("node-drop", draggingNode.node, dropNode.node, dropType, event2);
       }
     }
     if (draggingNode && !dropNode) {
-      ctx.emit("node-drag-end", draggingNode.node, null, dropType, event);
+      ctx.emit("node-drag-end", draggingNode.node, null, dropType, event2);
     }
     dragState.value.showDropIndicator = false;
     dragState.value.draggingNode = null;
@@ -59781,13 +59801,13 @@ const _sfc_main$l = defineComponent({
       }
       tree.ctx.emit("node-click", props2.node.data, props2.node, instance, e);
     };
-    const handleContextMenu = (event) => {
+    const handleContextMenu = (event2) => {
       var _a2;
       if ((_a2 = tree.instance.vnode.props) == null ? void 0 : _a2["onNodeContextmenu"]) {
-        event.stopPropagation();
-        event.preventDefault();
+        event2.stopPropagation();
+        event2.preventDefault();
       }
-      tree.ctx.emit("node-contextmenu", event, props2.node.data, props2.node, instance);
+      tree.ctx.emit("node-contextmenu", event2, props2.node.data, props2.node, instance);
     };
     const handleExpandIconClick = () => {
       if (props2.node.isLeaf)
@@ -59817,27 +59837,27 @@ const _sfc_main$l = defineComponent({
       broadcastExpanded(node);
       tree.ctx.emit("node-expand", nodeData, node, instance2);
     };
-    const handleDragStart = (event) => {
+    const handleDragStart = (event2) => {
       if (!tree.props.draggable)
         return;
-      dragEvents.treeNodeDragStart({ event, treeNode: props2 });
+      dragEvents.treeNodeDragStart({ event: event2, treeNode: props2 });
     };
-    const handleDragOver = (event) => {
-      event.preventDefault();
+    const handleDragOver = (event2) => {
+      event2.preventDefault();
       if (!tree.props.draggable)
         return;
       dragEvents.treeNodeDragOver({
-        event,
+        event: event2,
         treeNode: { $el: node$.value, node: props2.node }
       });
     };
-    const handleDrop = (event) => {
-      event.preventDefault();
+    const handleDrop = (event2) => {
+      event2.preventDefault();
     };
-    const handleDragEnd = (event) => {
+    const handleDragEnd = (event2) => {
       if (!tree.props.draggable)
         return;
-      dragEvents.treeNodeDragEnd(event);
+      dragEvents.treeNodeDragEnd(event2);
     };
     return {
       ns,
@@ -61459,13 +61479,13 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
     const handleCheckChange = (value) => {
       emit2("check", props2.node, value);
     };
-    const handleContextMenu = (event) => {
+    const handleContextMenu = (event2) => {
       var _a2, _b, _c, _d;
       if ((_c = (_b = (_a2 = tree == null ? void 0 : tree.instance) == null ? void 0 : _a2.vnode) == null ? void 0 : _b.props) == null ? void 0 : _c["onNodeContextmenu"]) {
-        event.stopPropagation();
-        event.preventDefault();
+        event2.stopPropagation();
+        event2.preventDefault();
       }
-      tree == null ? void 0 : tree.ctx.emit(NODE_CONTEXTMENU, event, (_d = props2.node) == null ? void 0 : _d.data, props2.node);
+      tree == null ? void 0 : tree.ctx.emit(NODE_CONTEXTMENU, event2, (_d = props2.node) == null ? void 0 : _d.data, props2.node);
     };
     return (_ctx, _cache) => {
       var _a2, _b, _c;
@@ -63256,9 +63276,9 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
     const onCloseRequested = () => {
       emit2("close");
     };
-    const onFocusoutPrevented = (event) => {
-      if (event.detail.focusReason === "pointer") {
-        event.preventDefault();
+    const onFocusoutPrevented = (event2) => {
+      if (event2.detail.focusReason === "pointer") {
+        event2.preventDefault();
       }
     };
     return (_ctx, _cache) => {
@@ -64700,11 +64720,11 @@ const _sfc_main$3 = /* @__PURE__ */ defineComponent({
       emit2(INPUT_EVENT, value);
       syncAfterCursorMove();
     };
-    const handleInputKeyDown = (event) => {
+    const handleInputKeyDown = (event2) => {
       var _a2, _b, _c, _d;
-      if (!("code" in event) || ((_a2 = elInputRef.value) == null ? void 0 : _a2.isComposing))
+      if (!("code" in event2) || ((_a2 = elInputRef.value) == null ? void 0 : _a2.isComposing))
         return;
-      switch (event.code) {
+      switch (event2.code) {
         case EVENT_CODE.left:
         case EVENT_CODE.right:
           syncAfterCursorMove();
@@ -64713,14 +64733,14 @@ const _sfc_main$3 = /* @__PURE__ */ defineComponent({
         case EVENT_CODE.down:
           if (!visible.value)
             return;
-          event.preventDefault();
-          (_b = dropdownRef.value) == null ? void 0 : _b.navigateOptions(event.code === EVENT_CODE.up ? "prev" : "next");
+          event2.preventDefault();
+          (_b = dropdownRef.value) == null ? void 0 : _b.navigateOptions(event2.code === EVENT_CODE.up ? "prev" : "next");
           break;
         case EVENT_CODE.enter:
         case EVENT_CODE.numpadEnter:
           if (!visible.value)
             return;
-          event.preventDefault();
+          event2.preventDefault();
           if ((_c = dropdownRef.value) == null ? void 0 : _c.hoverOption) {
             (_d = dropdownRef.value) == null ? void 0 : _d.selectHoverOption();
           } else {
@@ -64730,7 +64750,7 @@ const _sfc_main$3 = /* @__PURE__ */ defineComponent({
         case EVENT_CODE.esc:
           if (!visible.value)
             return;
-          event.preventDefault();
+          event2.preventDefault();
           visible.value = false;
           break;
         case EVENT_CODE.backspace:
@@ -64743,7 +64763,7 @@ const _sfc_main$3 = /* @__PURE__ */ defineComponent({
             const matchOption = props2.options.find((item) => item.value === pattern4);
             const isWhole = isFunction$2(props2.checkIsWhole) ? props2.checkIsWhole(pattern4, prefix) : matchOption;
             if (isWhole && splitIndex !== -1 && splitIndex + 1 === selectionEnd) {
-              event.preventDefault();
+              event2.preventDefault();
               const newValue = inputValue.slice(0, prefixIndex) + inputValue.slice(splitIndex + 1);
               emit2(UPDATE_MODEL_EVENT, newValue);
               const newSelectionEnd = prefixIndex;
@@ -64763,9 +64783,9 @@ const _sfc_main$3 = /* @__PURE__ */ defineComponent({
       afterFocus() {
         syncAfterCursorMove();
       },
-      beforeBlur(event) {
+      beforeBlur(event2) {
         var _a2;
-        return (_a2 = tooltipRef.value) == null ? void 0 : _a2.isFocusInsideContent(event);
+        return (_a2 = tooltipRef.value) == null ? void 0 : _a2.isFocusInsideContent(event2);
       },
       afterBlur() {
         visible.value = false;

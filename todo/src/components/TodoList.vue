@@ -45,7 +45,7 @@
 <script>
 import '../assets/styles/components/TodoList.css';
 import {makeTaskDone, setTaskCompleted, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
-import {addEvent, listEvents, updateEvent} from "@/utils/calendar.js";
+import {addEvent, deleteEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 import throttle from 'lodash/throttle';
 export default {
     data() {
@@ -135,9 +135,17 @@ export default {
             }
             makeTaskDone(task, this.$store);
         },
-        deleteTodo: throttle(function(task_uuid) {
+        deleteTodo: throttle(async function (task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
-            makeTaskDone(task, this.$store, { deleted: 1 });
+            let list = await listEvents(this.$store);
+            let exist = list.filter(event => event.description?.includes(task_uuid));
+            if(exist.length){
+                let eventId = exist[0].id
+                await deleteEvent(eventId)
+            }
+            //TODO удалить из календаря
+
+            makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),
         getSortedTodos(){
             switch (this.filter) {

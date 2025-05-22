@@ -19,23 +19,18 @@ export function makeTaskDone(task, store, options={}){
     switch(repeat_mode) {
         case '0':
             task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
-            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             break;
         case '1':
             task_date = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate() , 0, 0, 1, 0).getTime();
-            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             break;
         case '2':
             task_date = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate() , 0, 0, 1, 0).getTime();
-            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
             break;
         case '6':
             task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 0, 0, 1, 0).getTime();
-            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 23, 59, 0, 0).getTime();
             break;
         case '5':
             task_date = new Date().getTime() + Math.round(repeat_index * 24*60*60*1000);
-            task_finish_date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
             break;
         case '3':
             // Функция для поиска следующего рабочего дня
@@ -63,12 +58,6 @@ export function makeTaskDone(task, store, options={}){
                 0, 0, 1, 0
             ).getTime();
 
-            task_finish_date = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate() + repeat_index3,
-                23, 59, 0, 0
-            ).getTime();
             break;
         default:
             //console.log(task[0])
@@ -79,7 +68,7 @@ export function makeTaskDone(task, store, options={}){
         ...task[0],
         task_date: task_date,
         break_multiplier: break_multiplier,
-        task_finish_date: task_finish_date,
+        task_finish_date: 0,
         number_of_executions:number_of_executions
     };
     store.dispatch("todos/updateTodo", updatedTask);

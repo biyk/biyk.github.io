@@ -31,7 +31,9 @@
                 <!-- Кнопки Старт / Стоп -->
                 <span style="margin-right: 8px;">
                     <button v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
-                    <button v-else @click="stopTask(todo)">⏹ </button>
+                    <span v-else>
+                      <button @click.stop="pauseTask(todo)">⏸</button>
+                    </span>
                 </span>
                 <span class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
                 <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
@@ -47,6 +49,7 @@ import '../assets/styles/components/TodoList.css';
 import {makeTaskDone, setTaskCompleted, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
 import {addEvent, deleteEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 import throttle from 'lodash/throttle';
+
 export default {
     data() {
         return {
@@ -106,6 +109,19 @@ export default {
 
         async toggleTodo(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
+
+            if (task.start_date) {
+                const now = Date.now();
+                const durationMs = now - todo.start_date;
+                const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
+
+                const previous = Number(todo.task_time) || 0;
+                const newAverage = Math.ceil((previous + minutesSpent) / 2);
+
+                todo.task_time = newAverage;
+                todo.start_date = 0;
+                todo.completed = true;
+            }
             const endDate = new Date();
             const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1000);
             const event = {
@@ -143,8 +159,6 @@ export default {
                 let eventId = exist[0].id
                 await deleteEvent(eventId)
             }
-            //TODO удалить из календаря
-
             makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),
         getSortedTodos(){
@@ -182,21 +196,18 @@ export default {
             this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
         },
         startTask(todo) {
-            todo.start_date = Date.now(); // текущее время в миллисекундах
+            if (todo.task_finish_date){
+                todo.start_date = Date.now() - todo.task_finish_date;
+            } else  {
+                todo.start_date = Date.now(); // текущее время в миллисекундах
+            }
             this.$store.dispatch("todos/updateTodo", { ...todo });
         },
-        stopTask(todo) {
+        pauseTask(todo) {
             const now = Date.now();
-            const durationMs = now - todo.start_date;
-            const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
-
-            const previous = Number(todo.task_time) || 0;
-            const newAverage = Math.ceil((previous + minutesSpent) / 2);
-
-            todo.task_time = newAverage;
+            todo.task_finish_date = now - todo.start_date;
             todo.start_date = 0;
-            todo.completed = true;
-            this.toggleTodo(todo.task_uuid)
+            this.$store.dispatch("todos/updateTodo", { ...todo });
         },
     },
     mounted() {

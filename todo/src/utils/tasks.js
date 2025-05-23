@@ -69,6 +69,7 @@ export function makeTaskDone(task, store, options={}){
         task_date: task_date,
         break_multiplier: break_multiplier,
         task_finish_date: 0,
+        start_date: 0,
         number_of_executions:number_of_executions
     };
     store.dispatch("todos/updateTodo", updatedTask);

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.1";
+window.version = "0.3.2";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9194,9 +9194,14 @@ const _hoisted_9 = ["onClick"];
 const _hoisted_10 = { key: 1 };
 const _hoisted_11 = ["onClick"];
 const _hoisted_12 = ["onClick"];
-const _hoisted_13 = ["onClick"];
-const _hoisted_14 = {
-  key: 0,
+const _hoisted_13 = {
+  key: 1,
+  class: "done"
+};
+const _hoisted_14 = ["onClick"];
+const _hoisted_15 = ["onClick"];
+const _hoisted_16 = {
+  key: 2,
   class: "plus"
 };
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
@@ -9248,15 +9253,20 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
                 }, "⏸", 8, _hoisted_11)
               ]))
             ]),
-            createBaseVNode("span", {
+            todo2.start_date == 0 ? (openBlock(), createElementBlock("span", {
+              key: 0,
               class: "done",
               onClick: withModifiers(($event) => $options.toggleTodo(todo2.task_uuid), ["stop"])
-            }, "✅", 8, _hoisted_12),
+            }, "✅", 8, _hoisted_12)) : (openBlock(), createElementBlock("span", _hoisted_13, [
+              createBaseVNode("button", {
+                onClick: withModifiers(($event) => $options.toggleTodo(todo2.task_uuid), ["stop"])
+              }, "⏹", 8, _hoisted_14)
+            ])),
             createBaseVNode("span", {
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo2.task_uuid), ["stop"])
-            }, "ⓧ", 8, _hoisted_13),
-            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_14, "Добавить задачу в календарь")) : createCommentVNode("", true)
+            }, "ⓧ", 8, _hoisted_15),
+            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_16, "Добавить задачу в календарь")) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))

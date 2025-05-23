@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.2";
+window.version = "0.3.3";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8712,6 +8712,7 @@ function makeTaskDone(task, store2, options = {}) {
     task_date,
     break_multiplier,
     task_finish_date: 0,
+    start_date: 0,
     number_of_executions
   };
   store2.dispatch("todos/updateTodo", updatedTask);

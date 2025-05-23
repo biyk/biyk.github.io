@@ -35,7 +35,10 @@
                       <button @click.stop="pauseTask(todo)">⏸</button>
                     </span>
                 </span>
-                <span class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
+                <span  v-if="todo.start_date == 0" class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
+                <span v-else class="done" >
+                    <button @click.stop="toggleTodo(todo.task_uuid)">⏹</button>
+                </span>
                 <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
                 <span v-if="filter==='all'" class="plus" >Добавить задачу в календарь</span>
             </div>

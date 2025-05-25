@@ -167,19 +167,28 @@ export default {
         getSortedTodos(){
             switch (this.filter) {
                 case 'calendar':
-                    const calendarOrder = this.events
-                        .map(event => event.description)
-                        .filter(uuid => uuid); // удалим undefined/null
+                    // Получаем список отфильтрованных задач
+                    const filteredTodos = this.getFilteredTodos();
+                    // Создаём пустой массив для результата
+                    const sortedTodos = [];
 
-                    // Создаём карту соответствия UUID → порядок
-                    const uuidOrderMap = new Map();
-                    calendarOrder.forEach((uuid, index) => {
-                        uuidOrderMap.set(uuid, index);
+                    // Создаём карту задач для быстрого доступа по UUID
+                    const todoMap = new Map();
+                    filteredTodos.forEach(todo => {
+                        todoMap.set(todo.task_uuid, todo);
                     });
+                    // Проходим по событиям и добавляем соответствующие задачи в результат
+                    this.events.forEach(event => {
+                        const uuids = event.description?.split('\n');
+                        uuids?.forEach(uuid=>{
+                            if (uuid && todoMap.has(uuid)) {
+                                sortedTodos.push(todoMap.get(uuid));
+                            }
+                        });
 
-                    // сортируем по их порядку в events
-                    return this.getFilteredTodos()
-                        .sort((a, b) => uuidOrderMap.get(a.task_uuid) - uuidOrderMap.get(b.task_uuid));
+                    });
+                    // Возвращаем отсортированные задачи
+                    return sortedTodos;
                 case 'today':
                 case 'tomorrow':
                 default:

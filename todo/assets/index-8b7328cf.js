@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.4";
+window.version = "0.3.5";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9133,12 +9133,22 @@ const _sfc_main$2A = {
     getSortedTodos() {
       switch (this.filter) {
         case "calendar":
-          const calendarOrder = this.events.map((event2) => event2.description).filter((uuid) => uuid);
-          const uuidOrderMap = /* @__PURE__ */ new Map();
-          calendarOrder.forEach((uuid, index2) => {
-            uuidOrderMap.set(uuid, index2);
+          const filteredTodos = this.getFilteredTodos();
+          const sortedTodos = [];
+          const todoMap = /* @__PURE__ */ new Map();
+          filteredTodos.forEach((todo2) => {
+            todoMap.set(todo2.task_uuid, todo2);
           });
-          return this.getFilteredTodos().sort((a2, b2) => uuidOrderMap.get(a2.task_uuid) - uuidOrderMap.get(b2.task_uuid));
+          this.events.forEach((event2) => {
+            var _a2;
+            const uuids = (_a2 = event2.description) == null ? void 0 : _a2.split("\n");
+            uuids == null ? void 0 : uuids.forEach((uuid) => {
+              if (uuid && todoMap.has(uuid)) {
+                sortedTodos.push(todoMap.get(uuid));
+              }
+            });
+          });
+          return sortedTodos;
         case "today":
         case "tomorrow":
         default:

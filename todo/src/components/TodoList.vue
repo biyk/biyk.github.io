@@ -152,7 +152,9 @@ export default {
                 //т.к. задача была не на сегодня
                 task[0].break_multiplier = parseInt(task[0].break_multiplier) + 1;
             }
-            makeTaskDone(task, this.$store);
+            setTimeout(()=>{
+                makeTaskDone(task, this.$store);
+            }, 300)
         },
         deleteTodo: throttle(async function (task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);

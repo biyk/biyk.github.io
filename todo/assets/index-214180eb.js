@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.5";
+window.version = "0.3.6";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8654,7 +8654,9 @@ function makeTaskDone(task, store2, options = {}) {
     repeat_index,
     repeat_mode,
     task_date,
+    task_time,
     task_finish_date,
+    completed,
     break_multiplier,
     number_of_executions
   } = task[0];
@@ -8707,12 +8709,13 @@ function makeTaskDone(task, store2, options = {}) {
       return;
   }
   if (deleted) {
-    task_date = new Date().getTime() + Math.round(24 * 60 * 60 * 1e3);
+    task_date = new Date(now2.getFullYear(), now2.getMonth() + 1, now2.getDate(), 0, 0, 1, 0).getTime();
   }
   number_of_executions++;
   const updatedTask = {
     ...task[0],
     task_date,
+    task_time,
     break_multiplier,
     task_finish_date: 0,
     start_date: 0,
@@ -9115,7 +9118,9 @@ const _sfc_main$2A = {
         await addEvent(event2);
         task[0].break_multiplier = parseInt(task[0].break_multiplier) + 1;
       }
-      makeTaskDone(task, this.$store);
+      setTimeout(() => {
+        makeTaskDone(task, this.$store);
+      }, 300);
     },
     deleteTodo: throttle_1(async function(task_uuid) {
       const task = this.todos.filter((todo2) => todo2.task_uuid === task_uuid);

@@ -7,7 +7,9 @@ export function makeTaskDone(task, store, options={}){
         repeat_index,
         repeat_mode,
         task_date,
+        task_time,
         task_finish_date,
+        completed,
         break_multiplier,
         number_of_executions
     } = task[0];
@@ -65,12 +67,13 @@ export function makeTaskDone(task, store, options={}){
             return;
     }
     if (deleted){
-        task_date = new Date().getTime() + Math.round( 24*60*60*1000);
+        task_date = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate() , 0, 0, 1, 0).getTime();
     }
     number_of_executions++;
     const updatedTask = {
         ...task[0],
         task_date: task_date,
+        task_time: task_time,
         break_multiplier: break_multiplier,
         task_finish_date: 0,
         start_date: 0,

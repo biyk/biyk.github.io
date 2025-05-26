@@ -18,7 +18,6 @@ export function makeTaskDone(task, store, options={}){
     const now = new Date();
 
 
-    console.log(repeat_mode);
     switch(repeat_mode) {
         case '0':
             task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
@@ -67,7 +66,7 @@ export function makeTaskDone(task, store, options={}){
             return;
     }
     if (deleted){
-        task_date = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate() , 0, 0, 1, 0).getTime();
+        task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate()  + 1 , 0, 0, 1, 0).getTime();
     }
     number_of_executions++;
     const updatedTask = {

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.6";
+window.version = "0.3.7";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8663,7 +8663,6 @@ function makeTaskDone(task, store2, options = {}) {
   let { deleted } = options;
   repeat_index = parseFloat(repeat_index);
   const now2 = new Date();
-  console.log(repeat_mode);
   switch (repeat_mode) {
     case "0":
       task_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
@@ -8709,7 +8708,7 @@ function makeTaskDone(task, store2, options = {}) {
       return;
   }
   if (deleted) {
-    task_date = new Date(now2.getFullYear(), now2.getMonth() + 1, now2.getDate(), 0, 0, 1, 0).getTime();
+    task_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
   }
   number_of_executions++;
   const updatedTask = {
@@ -8743,7 +8742,7 @@ async function setTaskCompleted() {
   today_events.forEach((event2) => {
     let task_uuid = event2.description;
     let todos2 = this.$store.getters["todos/getTodos"];
-    const task = todos2.filter((todo2) => todo2.task_uuid === task_uuid);
+    const task = todos2.filter((todo) => todo.task_uuid === task_uuid);
     const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), now2.getHours(), now2.getMinutes(), 0, 0).getTime();
     if (task.length && task[0].task_date < today && new Date(event2.start.dateTime).getTime() < today) {
       makeTaskDone(task, this.$store);
@@ -8755,10 +8754,10 @@ async function setTaskToCalendar() {
   let all = this.$store.getters["todos/getTodos"].sort((a2, b2) => a2.task_sort - b2.task_sort);
   const now2 = new Date();
   const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
-  let today_tasks = all.filter((todo2) => {
-    if (todo2.task_title === "task_title")
+  let today_tasks = all.filter((todo) => {
+    if (todo.task_title === "task_title")
       return false;
-    const start = todo2.task_date;
+    const start = todo.task_date;
     return start < today;
   });
   let today_events = await listEvents();
@@ -9051,10 +9050,10 @@ const _sfc_main$2A = {
       const now2 = new Date();
       const today = new Date().getTime();
       const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
-      return this.todos.filter((todo2) => {
-        if (todo2.task_title.includes("task_title"))
+      return this.todos.filter((todo) => {
+        if (todo.task_title.includes("task_title"))
           return false;
-        const start = parseInt(todo2.task_date);
+        const start = parseInt(todo.task_date);
         switch (this.filter) {
           case "today":
             return start < today;
@@ -9063,7 +9062,7 @@ const _sfc_main$2A = {
             const hasMatchingEvent = calendarEvents == null ? void 0 : calendarEvents.some(
               (event2) => {
                 var _a2;
-                return (_a2 = event2.description) == null ? void 0 : _a2.includes(todo2.task_uuid);
+                return (_a2 = event2.description) == null ? void 0 : _a2.includes(todo.task_uuid);
               }
             );
             return start < today && hasMatchingEvent;
@@ -9074,21 +9073,23 @@ const _sfc_main$2A = {
         }
       });
     },
-    closeEditor(todo2) {
+    closeEditor(todo) {
       this.visiblePopover = null;
-      this.$store.dispatch("todos/updateTodo", { ...todo2 });
+      this.$store.dispatch("todos/updateTodo", { ...todo });
     },
     async toggleTodo(task_uuid) {
-      const task = this.todos.filter((todo2) => todo2.task_uuid === task_uuid);
-      if (task.start_date) {
+      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
+      console.log(task.start_date);
+      if (task[0].start_date) {
         const now2 = Date.now();
-        const durationMs = now2 - todo.start_date;
+        const durationMs = now2 - task[0].start_date;
         const minutesSpent = Math.ceil(durationMs / 6e4);
-        const previous = Number(todo.task_time) || 0;
+        const previous = Number(task[0].task_time) || 0;
         const newAverage = Math.ceil((previous + minutesSpent) / 2);
-        todo.task_time = newAverage;
-        todo.start_date = 0;
-        todo.completed = true;
+        console.log(minutesSpent, previous, newAverage);
+        task[0].task_time = newAverage;
+        task[0].start_date = 0;
+        task[0].completed = true;
       }
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1e3);
@@ -9123,7 +9124,7 @@ const _sfc_main$2A = {
       }, 300);
     },
     deleteTodo: throttle_1(async function(task_uuid) {
-      const task = this.todos.filter((todo2) => todo2.task_uuid === task_uuid);
+      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       let list = await listEvents(this.$store);
       let exist = list.filter((event2) => {
         var _a2;
@@ -9141,8 +9142,8 @@ const _sfc_main$2A = {
           const filteredTodos = this.getFilteredTodos();
           const sortedTodos = [];
           const todoMap = /* @__PURE__ */ new Map();
-          filteredTodos.forEach((todo2) => {
-            todoMap.set(todo2.task_uuid, todo2);
+          filteredTodos.forEach((todo) => {
+            todoMap.set(todo.task_uuid, todo);
           });
           this.events.forEach((event2) => {
             var _a2;
@@ -9172,19 +9173,19 @@ const _sfc_main$2A = {
     togglePopover(uuid) {
       this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
     },
-    startTask(todo2) {
-      if (todo2.task_finish_date) {
-        todo2.start_date = Date.now() - todo2.task_finish_date;
+    startTask(todo) {
+      if (todo.task_finish_date) {
+        todo.start_date = Date.now() - todo.task_finish_date;
       } else {
-        todo2.start_date = Date.now();
+        todo.start_date = Date.now();
       }
-      this.$store.dispatch("todos/updateTodo", { ...todo2 });
+      this.$store.dispatch("todos/updateTodo", { ...todo });
     },
-    pauseTask(todo2) {
+    pauseTask(todo) {
       const now2 = Date.now();
-      todo2.task_finish_date = now2 - todo2.start_date;
-      todo2.start_date = 0;
-      this.$store.dispatch("todos/updateTodo", { ...todo2 });
+      todo.task_finish_date = now2 - todo.start_date;
+      todo.start_date = 0;
+      this.$store.dispatch("todos/updateTodo", { ...todo });
     }
   },
   mounted() {
@@ -9235,55 +9236,55 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
     }, "Отметить завершенные")) : createCommentVNode("", true),
     createBaseVNode("ul", _hoisted_1$2, [
       createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length) + " (" + toDisplayString($options.getTotalTime()) + " ч.)", 1),
-      (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo2) => {
+      (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
         return openBlock(), createElementBlock("li", {
-          key: todo2.id,
-          class: normalizeClass(["task", todo2.task_color, { completed: todo2.completed }])
+          key: todo.id,
+          class: normalizeClass(["task", todo.task_color, { completed: todo.completed }])
         }, [
           createBaseVNode("span", {
-            title: $options.taskDate(todo2.task_date),
-            onClick: ($event) => $options.togglePopover(todo2.task_uuid),
+            title: $options.taskDate(todo.task_date),
+            onClick: ($event) => $options.togglePopover(todo.task_uuid),
             style: { "cursor": "pointer" }
           }, [
-            createTextVNode(" (" + toDisplayString(todo2.task_time) + ") " + toDisplayString(todo2.task_title) + " (" + toDisplayString($options.taskDate(todo2.task_date)) + ") ", 1),
-            parseInt(todo2.start_date) ? (openBlock(), createElementBlock("span", _hoisted_3$1, toDisplayString((($data.currentTime - todo2.start_date) / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
+            createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.task_date)) + ") ", 1),
+            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_3$1, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
           ], 8, _hoisted_2$1),
-          $data.visiblePopover === todo2.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_4$1, [
+          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_4$1, [
             withDirectives(createBaseVNode("textarea", {
-              "onUpdate:modelValue": ($event) => todo2.task_description = $event,
+              "onUpdate:modelValue": ($event) => todo.task_description = $event,
               rows: "3",
               style: { "width": "100%", "margin-top": "8px" }
             }, null, 8, _hoisted_5), [
-              [vModelText, todo2.task_description]
+              [vModelText, todo.task_description]
             ]),
             createBaseVNode("button", {
-              onClick: ($event) => $options.closeEditor(todo2),
+              onClick: ($event) => $options.closeEditor(todo),
               style: { "margin-top": "4px" }
             }, "✅ Сохранить", 8, _hoisted_6)
           ])) : createCommentVNode("", true),
-          $data.visiblePopover !== todo2.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_7, [
+          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_7, [
             createBaseVNode("span", _hoisted_8, [
-              todo2.start_date == 0 ? (openBlock(), createElementBlock("button", {
+              todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
                 key: 0,
-                onClick: ($event) => $options.startTask(todo2)
+                onClick: ($event) => $options.startTask(todo)
               }, "▶️", 8, _hoisted_9)) : (openBlock(), createElementBlock("span", _hoisted_10, [
                 createBaseVNode("button", {
-                  onClick: withModifiers(($event) => $options.pauseTask(todo2), ["stop"])
+                  onClick: withModifiers(($event) => $options.pauseTask(todo), ["stop"])
                 }, "⏸", 8, _hoisted_11)
               ]))
             ]),
-            todo2.start_date == 0 ? (openBlock(), createElementBlock("span", {
+            todo.start_date == 0 ? (openBlock(), createElementBlock("span", {
               key: 0,
               class: "done",
-              onClick: withModifiers(($event) => $options.toggleTodo(todo2.task_uuid), ["stop"])
+              onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
             }, "✅", 8, _hoisted_12)) : (openBlock(), createElementBlock("span", _hoisted_13, [
               createBaseVNode("button", {
-                onClick: withModifiers(($event) => $options.toggleTodo(todo2.task_uuid), ["stop"])
+                onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
               }, "⏹", 8, _hoisted_14)
             ])),
             createBaseVNode("span", {
               class: "delete",
-              onClick: withModifiers(($event) => $options.deleteTodo(todo2.task_uuid), ["stop"])
+              onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
             }, "ⓧ", 8, _hoisted_15),
             $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_16, "Добавить задачу в календарь")) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
@@ -68728,7 +68729,7 @@ const mutations$3 = {
     saveTodos(state2.todos);
   },
   TOGGLE_TODO(state2, payload) {
-    const item = state2.todos.find((todo2) => todo2.id === payload);
+    const item = state2.todos.find((todo) => todo.id === payload);
     if (item) {
       item.completed = !item.completed;
       saveTodos(state2.todos);
@@ -68737,7 +68738,7 @@ const mutations$3 = {
     }
   },
   DELETE_TODO(state2, payload) {
-    const index2 = state2.todos.findIndex((todo2) => todo2.id === payload);
+    const index2 = state2.todos.findIndex((todo) => todo.id === payload);
     if (index2 !== -1) {
       state2.todos.splice(index2, 1);
       saveTodos(state2.todos);

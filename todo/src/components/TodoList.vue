@@ -112,18 +112,18 @@ export default {
 
         async toggleTodo(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
-
-            if (task.start_date) {
+            console.log(task.start_date)
+            if (task[0].start_date) {
                 const now = Date.now();
-                const durationMs = now - todo.start_date;
+                const durationMs = now - task[0].start_date;
                 const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
 
-                const previous = Number(todo.task_time) || 0;
+                const previous = Number(task[0].task_time) || 0;
                 const newAverage = Math.ceil((previous + minutesSpent) / 2);
-
-                todo.task_time = newAverage;
-                todo.start_date = 0;
-                todo.completed = true;
+                console.log(minutesSpent, previous, newAverage)
+                task[0].task_time = newAverage;
+                task[0].start_date = 0;
+                task[0].completed = true;
             }
             const endDate = new Date();
             const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1000);

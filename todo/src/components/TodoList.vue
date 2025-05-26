@@ -112,15 +112,14 @@ export default {
 
         async toggleTodo(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
-            console.log(task.start_date)
-            if (task[0].start_date) {
+            let start_date = parseInt(task[0].start_date)
+            if (start_date) {
                 const now = Date.now();
-                const durationMs = now - task[0].start_date;
+                const durationMs = now - start_date;
                 const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
 
                 const previous = Number(task[0].task_time) || 0;
                 const newAverage = Math.ceil((previous + minutesSpent) / 2);
-                console.log(minutesSpent, previous, newAverage)
                 task[0].task_time = newAverage;
                 task[0].start_date = 0;
                 task[0].completed = true;
@@ -140,6 +139,7 @@ export default {
                     timeZone: 'Europe/Samara',
                 },
             };
+
             let list = await listEvents(this.$store);
 
             let exist = list.filter(event => event.description?.includes(task_uuid));

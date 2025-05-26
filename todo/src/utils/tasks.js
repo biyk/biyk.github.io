@@ -68,6 +68,7 @@ export function makeTaskDone(task, store, options={}){
     if (deleted){
         task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate()  + 1 , 0, 0, 1, 0).getTime();
     }
+
     number_of_executions++;
     const updatedTask = {
         ...task[0],
@@ -75,9 +76,10 @@ export function makeTaskDone(task, store, options={}){
         task_time: task_time,
         break_multiplier: break_multiplier,
         task_finish_date: 0,
-        start_date: 0,
         number_of_executions:number_of_executions
     };
+
+    console.log(updatedTask)
     store.dispatch("todos/updateTodo", updatedTask);
 
     if (deleted || repeat_mode==='5') return;

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.9";
+window.version = "0.3.10";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8717,9 +8717,9 @@ function makeTaskDone(task, store2, options = {}) {
     task_time,
     break_multiplier,
     task_finish_date: 0,
-    start_date: 0,
     number_of_executions
   };
+  console.log(updatedTask);
   store2.dispatch("todos/updateTodo", updatedTask);
   if (deleted || repeat_mode === "5")
     return;
@@ -9079,14 +9079,13 @@ const _sfc_main$2A = {
     },
     async toggleTodo(task_uuid) {
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
-      console.log(task.start_date);
-      if (task[0].start_date) {
+      let start_date = parseInt(task[0].start_date);
+      if (start_date) {
         const now2 = Date.now();
-        const durationMs = now2 - task[0].start_date;
+        const durationMs = now2 - start_date;
         const minutesSpent = Math.ceil(durationMs / 6e4);
         const previous = Number(task[0].task_time) || 0;
         const newAverage = Math.ceil((previous + minutesSpent) / 2);
-        console.log(minutesSpent, previous, newAverage);
         task[0].task_time = newAverage;
         task[0].start_date = 0;
         task[0].completed = true;

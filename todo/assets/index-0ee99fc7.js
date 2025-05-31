@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.10";
+window.version = "0.3.11";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8801,7 +8801,7 @@ async function setTaskToCalendar() {
     }
   }
   await scheduleTasks();
-  this.$store.dispatch("todos/initTodos");
+  await listEvents(this.$store);
 }
 function taskDate(date4) {
   date4 = parseInt(date4);

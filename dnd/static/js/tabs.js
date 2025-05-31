@@ -1,6 +1,12 @@
 // Функция для отображения выбранной вкладки
 export function showTab(tabId, options={}) {
     let {sidebar, width} = options;
+
+    let activeTab = document.querySelectorAll('.tab-content.active');
+    if (activeTab.length>2){//карта и кнопки внизу... их наверное нужно убратьт
+        tabId = sidebar;
+        sidebar = null;
+    }
     // Скрываем все вкладки и деактивируем кнопки
     document.querySelectorAll('.tab-content').forEach(function(tab) {
         tab.classList.remove('active');
@@ -12,6 +18,7 @@ export function showTab(tabId, options={}) {
     // Показываем выбранную вкладку и активируем кнопку
     document.getElementById(tabId).classList.add('active');
     document.getElementById(tabId+'-controls')?.classList.add('active');
+
     if (sidebar){
         document.getElementById(sidebar).classList.add('active');
         document.getElementById(sidebar+'-controls')?.classList.add('active');
@@ -22,7 +29,6 @@ export function showTab(tabId, options={}) {
         document.getElementsByClassName('admin-menu')[0].style.width = ''
         location.hash = tabId;
     }
-
 }
 
 export function checkTab() {

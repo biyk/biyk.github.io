@@ -184,7 +184,7 @@ export async function setTaskToCalendar() {
     }
 
     await scheduleTasks();
-    this.$store.dispatch("todos/initTodos");
+    await listEvents(this.$store);
 }
 
 export function taskDate(date){

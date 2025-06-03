@@ -3,7 +3,7 @@ export function showTab(tabId, options={}) {
     let {sidebar, width} = options;
 
     let activeTab = document.querySelectorAll('.tab-content.active');
-    if (activeTab.length>2){//карта и кнопки внизу... их наверное нужно убратьт
+    if (activeTab.length>2){//Карта и кнопки внизу... их наверное нужно убрать
         tabId = sidebar;
         sidebar = null;
     }

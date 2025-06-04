@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.12";
+window.version = "0.3.13";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9117,7 +9117,7 @@ const _sfc_main$2A = {
       } else {
         await addEvent(event2);
         task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
-        task[0].repeat_index = parseFloat(task[0].repeat_index) + 0.1;
+        task[0].repeat_index = parseFloat(task[0].repeat_index) - 0.1;
       }
       setTimeout(() => {
         makeTaskDone(task, this.$store);
@@ -9134,7 +9134,7 @@ const _sfc_main$2A = {
         let eventId = exist[0].id;
         await deleteEvent(eventId);
         task[0].break_multiplier = parseFloat(task[0].break_multiplier) - 0.1;
-        task[0].repeat_index = parseFloat(task[0].repeat_index) - 0.1;
+        task[0].repeat_index = parseFloat(task[0].repeat_index) + 0.1;
       }
       makeTaskDone(task, this.$store, { deleted: 1 });
     }, 1e3),

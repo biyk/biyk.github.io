@@ -151,7 +151,7 @@ export default {
                 await addEvent(event);
                 //т.к. задача была не на сегодня
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
-                task[0].repeat_index = parseFloat(task[0].repeat_index) + 0.1;
+                task[0].repeat_index = parseFloat(task[0].repeat_index) - 0.1;
             }
             setTimeout(()=>{
                 makeTaskDone(task, this.$store);
@@ -165,7 +165,7 @@ export default {
                 let eventId = exist[0].id
                 await deleteEvent(eventId)
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) - 0.1;
-                task[0].repeat_index = parseFloat(task[0].repeat_index) - 0.1;
+                task[0].repeat_index = parseFloat(task[0].repeat_index) + 0.1;
 
             }
             makeTaskDone(task, this.$store, {deleted: 1});

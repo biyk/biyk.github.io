@@ -29,8 +29,6 @@ export function makeTaskDone(task, store, options={}){
             task_date = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate() , 0, 0, 1, 0).getTime();
             break;
         case '6':
-            task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + repeat_index, 0, 0, 1, 0).getTime();
-            break;
         case '5':
             task_date = new Date().getTime() + Math.round(repeat_index * 24*60*60*1000);
             break;

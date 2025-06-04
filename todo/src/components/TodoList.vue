@@ -166,7 +166,6 @@ export default {
                 await deleteEvent(eventId)
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) - 0.1;
                 task[0].repeat_index = parseFloat(task[0].repeat_index) + 0.1;
-
             }
             makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),

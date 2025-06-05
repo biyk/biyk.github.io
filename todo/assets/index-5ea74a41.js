@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.19";
+window.version = "0.3.20";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8714,6 +8714,7 @@ function makeTaskDone(task, store2, options = {}) {
     ...task[0],
     task_date,
     task_time,
+    repeat_index,
     break_multiplier,
     task_finish_date: 0,
     number_of_executions

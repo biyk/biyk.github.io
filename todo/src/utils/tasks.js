@@ -73,6 +73,7 @@ export function makeTaskDone(task, store, options={}){
         ...task[0],
         task_date: task_date,
         task_time: task_time,
+        repeat_index:repeat_index,
         break_multiplier: break_multiplier,
         task_finish_date: 0,
         number_of_executions:number_of_executions

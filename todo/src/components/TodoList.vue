@@ -85,6 +85,7 @@ export default {
             const now = new Date();
             const today = new Date().getTime();
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
+            const end_today = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 1).getTime();
             return this.todos.filter(todo => {
                 if (todo.task_title.includes('task_title')) return false;
                 const start = parseInt(todo.task_date);
@@ -96,7 +97,7 @@ export default {
                         const hasMatchingEvent = calendarEvents?.some(
                             event => event.description?.includes(todo.task_uuid)
                         );
-                        return start < today && hasMatchingEvent;
+                        return start < end_today && hasMatchingEvent;
                     case 'tomorrow':
                         return start > today && start < tomorrow;
                     default:
@@ -192,6 +193,7 @@ export default {
                         });
 
                     });
+                    console.log(this.events, filteredTodos, sortedTodos)
                     // Возвращаем отсортированные задачи
                     return sortedTodos;
                 case 'today':

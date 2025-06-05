@@ -14,7 +14,7 @@ export function makeTaskDone(task, store, options={}){
         number_of_executions
     } = task[0];
     let {deleted} = options;
-    repeat_index = parseFloat(repeat_index.replace(',', '.'));
+    repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
     const now = new Date();
 
 

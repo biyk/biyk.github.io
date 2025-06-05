@@ -193,7 +193,6 @@ export default {
                         });
 
                     });
-                    console.log(this.events, filteredTodos, sortedTodos)
                     // Возвращаем отсортированные задачи
                     return sortedTodos;
                 case 'today':

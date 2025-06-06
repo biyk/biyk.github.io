@@ -123,7 +123,8 @@ export async function setTaskToCalendar() {
     //список всех задач
     let all = this.$store.getters["todos/getTodos"].sort((a, b) => a.task_sort - b.task_sort);
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
+    //const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0).getTime();
+    const today = now.getTime();
 
     //список задач которые можно было бы сделать сегодня
     let today_tasks = all.filter(todo => {

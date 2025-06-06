@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.20";
+window.version = "0.3.21";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8753,7 +8753,7 @@ async function setTaskToCalendar() {
   this.$store.dispatch("todos/initTodos");
   let all = this.$store.getters["todos/getTodos"].sort((a2, b2) => a2.task_sort - b2.task_sort);
   const now2 = new Date();
-  const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate(), 23, 59, 0, 0).getTime();
+  const today = now2.getTime();
   let today_tasks = all.filter((todo) => {
     if (todo.task_title === "task_title")
       return false;
@@ -9233,7 +9233,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
       key: 0,
       onClick: _cache[0] || (_cache[0] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
     }, "Заполнить календарь")) : createCommentVNode("", true),
-    $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
+    $props.filter === "0" ? (openBlock(), createElementBlock("button", {
       key: 1,
       onClick: _cache[1] || (_cache[1] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
     }, "Отметить завершенные")) : createCommentVNode("", true),

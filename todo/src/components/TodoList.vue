@@ -1,6 +1,6 @@
 <template>
     <button v-if="filter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
-    <button  v-if="filter==='calendar'" @click="setTaskCompleted">Отметить завершенные</button>
+    <button  v-if="filter==='0'" @click="setTaskCompleted">Отметить завершенные</button>
     <ul class="tasks">
         <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.)</li>
         <li

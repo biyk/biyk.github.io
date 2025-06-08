@@ -15,7 +15,7 @@ export function makeTaskDone(task, store, options={}){
     } = task[0];
     let {deleted} = options;
     repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
-    repeat_index = Math.max(repeat_index, 1)
+    repeat_index = Math.max(repeat_index, 1);//Нормализация даты
     const now = new Date();
 
 

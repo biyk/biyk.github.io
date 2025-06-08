@@ -15,7 +15,7 @@
                 <TodoNew />
             </el-tab-pane>
             <el-tab-pane label="Магазин" name="shop">
-                <div>Тут будут покупки</div>
+                <Shop/>
             </el-tab-pane>
             <el-tab-pane label="Персонаж" name="player">
                 <div>Тут будут данные игрока</div>
@@ -36,7 +36,8 @@ import Settings from "@/components/Settings.vue"
 import { useStore } from 'vuex'
 import 'element-plus/dist/index.css'
 import './assets/styles/App.css'
-import { startTaskAgent, stopTaskAgent } from "@/agents/taskAgent.js"  // ← 🔥
+import { startTaskAgent, stopTaskAgent } from "@/agents/taskAgent.js"
+import Shop from "@/components/Shop.vue";  // ← 🔥
 
 export default {
     data() {
@@ -45,6 +46,7 @@ export default {
         };
     },
     components: {
+        Shop,
         Settings,
         TodoNew,
         TodoList

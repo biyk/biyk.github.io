@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.21";
+window.version = "0.3.22";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7842,7 +7842,7 @@ const _export_sfc$1 = (sfc, props2) => {
   }
   return target;
 };
-const _sfc_main$2B = {
+const _sfc_main$2C = {
   data() {
     return {
       task_title: "",
@@ -7860,7 +7860,7 @@ const _sfc_main$2B = {
     }
   }
 };
-function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
+function _sfc_render$w(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock("form", null, [
     withDirectives(createBaseVNode("input", {
       class: "todo-input",
@@ -7876,7 +7876,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     }, "+")
   ]);
 }
-const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v]]);
+const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2C, [["render", _sfc_render$w]]);
 const TodoList$1 = "";
 class WebStorage {
   constructor(dbName = "WebStorageDB", storeName = "keyval") {
@@ -9018,7 +9018,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const _sfc_main$2A = {
+const _sfc_main$2B = {
   data() {
     return {
       visiblePopover: null,
@@ -9199,10 +9199,10 @@ const _sfc_main$2A = {
     }, 1e3);
   }
 };
-const _hoisted_1$2 = { class: "tasks" };
-const _hoisted_2$1 = ["title", "onClick"];
-const _hoisted_3$1 = { key: 0 };
-const _hoisted_4$1 = {
+const _hoisted_1$3 = { class: "tasks" };
+const _hoisted_2$2 = ["title", "onClick"];
+const _hoisted_3$2 = { key: 0 };
+const _hoisted_4$2 = {
   key: 0,
   class: "editable-description"
 };
@@ -9227,7 +9227,7 @@ const _hoisted_16 = {
   key: 2,
   class: "plus"
 };
-function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
+function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock(Fragment, null, [
     $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
       key: 0,
@@ -9237,7 +9237,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
       key: 1,
       onClick: _cache[1] || (_cache[1] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
     }, "Отметить завершенные")) : createCommentVNode("", true),
-    createBaseVNode("ul", _hoisted_1$2, [
+    createBaseVNode("ul", _hoisted_1$3, [
       createBaseVNode("li", null, toDisplayString($options.getSortedTodos().length) + " (" + toDisplayString($options.getTotalTime()) + " ч.)", 1),
       (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
         return openBlock(), createElementBlock("li", {
@@ -9250,9 +9250,9 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
             style: { "cursor": "pointer" }
           }, [
             createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.task_date)) + ") ", 1),
-            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_3$1, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
-          ], 8, _hoisted_2$1),
-          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_4$1, [
+            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_3$2, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
+          ], 8, _hoisted_2$2),
+          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_4$2, [
             withDirectives(createBaseVNode("textarea", {
               "onUpdate:modelValue": ($event) => todo.task_description = $event,
               rows: "3",
@@ -9296,9 +9296,9 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v]]);
 const Settings_vue_vue_type_style_index_0_scoped_9ef4f987_lang = "";
-const _sfc_main$2z = {
+const _sfc_main$2A = {
   name: "Settings",
   data() {
     return {
@@ -9336,20 +9336,20 @@ const _sfc_main$2z = {
     }
   }
 };
-const _hoisted_1$1 = { class: "settings" };
-const _hoisted_2 = {
+const _hoisted_1$2 = { class: "settings" };
+const _hoisted_2$1 = {
   key: 0,
   class: "form"
 };
-const _hoisted_3 = { key: 1 };
-const _hoisted_4 = ["onClick"];
-function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
-  return openBlock(), createElementBlock("div", _hoisted_1$1, [
+const _hoisted_3$1 = { key: 1 };
+const _hoisted_4$1 = ["onClick"];
+function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
+  return openBlock(), createElementBlock("div", _hoisted_1$2, [
     _cache[5] || (_cache[5] = createBaseVNode("h2", null, "Настройки", -1)),
     createBaseVNode("button", {
       onClick: _cache[0] || (_cache[0] = ($event) => $data.showForm = !$data.showForm)
     }, toDisplayString($data.showForm ? "Отмена" : "Добавить"), 1),
-    $data.showForm ? (openBlock(), createElementBlock("div", _hoisted_2, [
+    $data.showForm ? (openBlock(), createElementBlock("div", _hoisted_2$1, [
       withDirectives(createBaseVNode("input", {
         "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => $data.code = $event),
         placeholder: "Код (code)",
@@ -9368,7 +9368,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
         onClick: _cache[3] || (_cache[3] = (...args) => $options.saveSetting && $options.saveSetting(...args))
       }, "Сохранить")
     ])) : createCommentVNode("", true),
-    $options.settings.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_3, [
+    $options.settings.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_3$1, [
       _cache[4] || (_cache[4] = createBaseVNode("h3", null, "Сохранённые настройки:", -1)),
       createBaseVNode("ul", null, [
         (openBlock(true), createElementBlock(Fragment, null, renderList($options.settings, (setting, index2) => {
@@ -9376,14 +9376,14 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
             createBaseVNode("span", null, toDisplayString(setting.code) + ": " + toDisplayString(setting.value), 1),
             createBaseVNode("button", {
               onClick: ($event) => $options.deleteSetting(index2)
-            }, "Удалить", 8, _hoisted_4)
+            }, "Удалить", 8, _hoisted_4$1)
           ]);
         }), 128))
       ])
     ])) : createCommentVNode("", true)
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-9ef4f987"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-9ef4f987"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }
@@ -10360,6 +10360,68 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
+const Shop_vue_vue_type_style_index_0_scoped_47a00ff7_lang = "";
+const _sfc_main$2z = {
+  name: "ProductList",
+  data() {
+    return {
+      products: [],
+      cart: null
+    };
+  },
+  methods: {
+    fetchProducts(api) {
+      return;
+    },
+    fetchCart(api) {
+      return;
+    },
+    addToCart(productId) {
+      return;
+    }
+  },
+  async mounted() {
+    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
+    this.fetchProducts(api);
+    this.fetchCart(api);
+  }
+};
+const _hoisted_1$1 = { key: 0 };
+const _hoisted_2 = ["onClick"];
+const _hoisted_3 = { key: 1 };
+const _hoisted_4 = {
+  key: 2,
+  class: "cart"
+};
+function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
+  return openBlock(), createElementBlock("div", null, [
+    $data.products.length ? (openBlock(), createElementBlock("ul", _hoisted_1$1, [
+      (openBlock(true), createElementBlock(Fragment, null, renderList($data.products, (product) => {
+        return openBlock(), createElementBlock("li", {
+          key: product.id,
+          class: "product-item"
+        }, [
+          createBaseVNode("span", null, toDisplayString(product.name) + " - $" + toDisplayString(product.price), 1),
+          createBaseVNode("button", {
+            onClick: ($event) => $options.addToCart(product.id)
+          }, " 🛒 ", 8, _hoisted_2)
+        ]);
+      }), 128))
+    ])) : (openBlock(), createElementBlock("p", _hoisted_3, "Загрузка товаров...")),
+    $data.cart ? (openBlock(), createElementBlock("div", _hoisted_4, [
+      _cache[0] || (_cache[0] = createBaseVNode("h3", null, "Корзина", -1)),
+      createBaseVNode("ul", null, [
+        (openBlock(true), createElementBlock(Fragment, null, renderList($data.cart.items, (item) => {
+          return openBlock(), createElementBlock("li", {
+            key: item.id
+          }, toDisplayString(item.name) + " x" + toDisplayString(item.quantity), 1);
+        }), 128))
+      ])
+    ])) : createCommentVNode("", true)
+  ]);
+}
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-47a00ff7"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {
@@ -10368,6 +10430,7 @@ const _sfc_main$2y = {
     };
   },
   components: {
+    Shop,
     Settings,
     TodoNew,
     TodoList
@@ -10407,6 +10470,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_TodoList = resolveComponent("TodoList");
   const _component_el_tab_pane = resolveComponent("el-tab-pane");
   const _component_TodoNew = resolveComponent("TodoNew");
+  const _component_Shop = resolveComponent("Shop");
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
@@ -10456,16 +10520,16 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
           label: "Магазин",
           name: "shop"
         }, {
-          default: withCtx(() => _cache[1] || (_cache[1] = [
-            createBaseVNode("div", null, "Тут будут покупки", -1)
-          ])),
+          default: withCtx(() => [
+            createVNode(_component_Shop)
+          ]),
           _: 1
         }),
         createVNode(_component_el_tab_pane, {
           label: "Персонаж",
           name: "player"
         }, {
-          default: withCtx(() => _cache[2] || (_cache[2] = [
+          default: withCtx(() => _cache[1] || (_cache[1] = [
             createBaseVNode("div", null, "Тут будут данные игрока", -1)
           ])),
           _: 1
@@ -10482,7 +10546,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
       ]),
       _: 1
     }, 8, ["modelValue"]),
-    _cache[3] || (_cache[3] = createBaseVNode("img", {
+    _cache[2] || (_cache[2] = createBaseVNode("img", {
       src: _imports_0,
       class: "vue-logo",
       alt: "Vue.js Logo"

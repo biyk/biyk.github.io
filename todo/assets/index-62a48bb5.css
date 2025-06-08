@@ -144,3 +144,12 @@ h1 {
     width: 50px;
     margin: 0 auto;
 }
+
+.product-item[data-v-47a00ff7] {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.cart[data-v-47a00ff7] {
+    margin-top: 20px;
+}

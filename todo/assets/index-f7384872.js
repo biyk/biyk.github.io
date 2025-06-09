@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.23";
+window.version = "0.3.24";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8238,16 +8238,21 @@ let Table$2 = class Table {
     return await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2 });
   }
   async getAll(options = {}) {
-    let { caching, formated } = options;
-    const range3 = this.list + "!A1:Z5000";
-    let spreadsheetId2 = this.spreadsheetId;
+    let { caching, formated, range: range3, spreadsheetId: spreadsheetId2, format: format2 = "array" } = options;
+    range3 = range3 || this.list;
+    spreadsheetId2 = spreadsheetId2 || this.spreadsheetId;
     let response = await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2, caching });
     if (response) {
       this.columns[this.list] = response[0];
       sessionStorage.setItem(spreadsheetId2 + "/" + this.list + "/columns", JSON.stringify(response[0]));
       this.setCodes(response);
       if (formated) {
-        return this.formatData(response);
+        if (format2 === "array") {
+          return this.formatData(response);
+        } else {
+          const orm = new ORM(this.columns[this.list]);
+          return response.map((e) => orm.getFormated(e));
+        }
       }
     }
     return response;
@@ -9206,7 +9211,7 @@ const _hoisted_4$2 = {
   key: 0,
   class: "editable-description"
 };
-const _hoisted_5 = ["onUpdate:modelValue"];
+const _hoisted_5$1 = ["onUpdate:modelValue"];
 const _hoisted_6 = ["onClick"];
 const _hoisted_7 = {
   key: 1,
@@ -9257,7 +9262,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
               "onUpdate:modelValue": ($event) => todo.task_description = $event,
               rows: "3",
               style: { "width": "100%", "margin-top": "8px" }
-            }, null, 8, _hoisted_5), [
+            }, null, 8, _hoisted_5$1), [
               [vModelText, todo.task_description]
             ]),
             createBaseVNode("button", {
@@ -10360,37 +10365,66 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_47a00ff7_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_3a2653b7_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
     return {
       products: [],
-      cart: null
+      cart: null,
+      api: null
     };
   },
   methods: {
-    fetchProducts(api) {
-      return;
+    async fetchProducts() {
+      let itemsTable = new Table$2({
+        spreadsheetId: this.spreadsheetId,
+        list: "real_life_rewards"
+      });
+      this.products = await itemsTable.getAll({ formated: true, format: "orm" });
     },
-    fetchCart(api) {
-      return;
-    },
-    addToCart(productId) {
-      return;
+    async buyProduct(product) {
+      let heroTable = new Table$2({
+        spreadsheetId: this.spreadsheetId,
+        list: "real_life_hero"
+      });
+      let hero2 = await heroTable.getAll({ formated: true, format: "array" });
+      let balance = parseInt(hero2.hero_money) - parseInt(product["reward_cost"]);
+      await heroTable.updateRowByCode("hero_money", { value: balance });
+      let historyTable = new Table$2({
+        spreadsheetId: this.spreadsheetId,
+        list: "rewards_history"
+      });
+      await historyTable.addRow({
+        claim_date: new Date().getTime(),
+        item_id: generateUUIDv4(),
+        gold_spent: product["reward_cost"],
+        reward_title: product["reward_title"],
+        reward_id: product["reward_id"]
+      });
+      let itemsTable = new Table$2({
+        spreadsheetId: this.spreadsheetId,
+        list: "real_life_rewards"
+      });
+      await itemsTable.updateRowByCode(product["reward_title"], { "reward_done": parseInt(product["reward_done"]) + 1 });
+      this.$store.dispatch("hero/initHero");
     }
   },
   async mounted() {
-    const api = window.GoogleSheetDB || new GoogleSheetDB();
-    await api.waitGoogle();
-    this.fetchProducts(api);
-    this.fetchCart(api);
+    const data = localStorage.getItem("todo-settings");
+    let settings2 = data ? JSON.parse(data) : [];
+    const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
+    this.spreadsheetId = spreadsheetSetting ? spreadsheetSetting.value : "";
+    this.api = window.GoogleSheetDB || new GoogleSheetDB();
+    await this.api.waitGoogle();
+    await this.fetchProducts();
   }
 };
 const _hoisted_1$1 = { key: 0 };
-const _hoisted_2 = ["onClick"];
-const _hoisted_3 = { key: 1 };
-const _hoisted_4 = {
+const _hoisted_2 = { key: 0 };
+const _hoisted_3 = ["onClick"];
+const _hoisted_4 = { key: 1 };
+const _hoisted_5 = {
   key: 2,
   class: "cart"
 };
@@ -10399,17 +10433,19 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     $data.products.length ? (openBlock(), createElementBlock("ul", _hoisted_1$1, [
       (openBlock(true), createElementBlock(Fragment, null, renderList($data.products, (product) => {
         return openBlock(), createElementBlock("li", {
-          key: product.id,
+          key: product["reward_id"],
           class: "product-item"
         }, [
-          createBaseVNode("span", null, toDisplayString(product.name) + " - $" + toDisplayString(product.price), 1),
-          createBaseVNode("button", {
-            onClick: ($event) => $options.addToCart(product.id)
-          }, " 🛒 ", 8, _hoisted_2)
+          parseInt(product["reward_cost"]) ? (openBlock(), createElementBlock("span", _hoisted_2, [
+            createTextVNode(toDisplayString(product["reward_title"]) + " - " + toDisplayString(product["reward_cost"]) + " ", 1),
+            createBaseVNode("button", {
+              onClick: ($event) => $options.buyProduct(product)
+            }, " 🛒 ", 8, _hoisted_3)
+          ])) : createCommentVNode("", true)
         ]);
       }), 128))
-    ])) : (openBlock(), createElementBlock("p", _hoisted_3, "Загрузка товаров...")),
-    $data.cart ? (openBlock(), createElementBlock("div", _hoisted_4, [
+    ])) : (openBlock(), createElementBlock("p", _hoisted_4, "Загрузка товаров...")),
+    $data.cart ? (openBlock(), createElementBlock("div", _hoisted_5, [
       _cache[0] || (_cache[0] = createBaseVNode("h3", null, "Корзина", -1)),
       createBaseVNode("ul", null, [
         (openBlock(true), createElementBlock(Fragment, null, renderList($data.cart.items, (item) => {
@@ -10421,7 +10457,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-47a00ff7"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-3a2653b7"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

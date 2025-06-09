@@ -271,21 +271,28 @@ export class Table {
     }
 
     async getAll(options = {}) {
-        let {caching, formated} = options;
-        const range = this.list + '!A1:Z5000';
-        let spreadsheetId = this.spreadsheetId;
+        let {caching, formated, range, spreadsheetId, format='array'} = options;
+        range = range || this.list;
+        spreadsheetId = spreadsheetId || this.spreadsheetId;
         let response = await this.api.fetchSheetValues({range, spreadsheetId, caching});
         if (response){
             this.columns[this.list] = response[0];
             sessionStorage.setItem(spreadsheetId + '/' + this.list + '/columns', JSON.stringify(response[0]));
             this.setCodes(response);
             if (formated) {
-                return this.formatData(response);
+                if (format === 'array'){
+                    return this.formatData(response);
+                } else {
+                    const orm = new ORM(this.columns[this.list]);
+                    return response.map(e => orm.getFormated(e));
+                }
             }
         }
 
         return response;
     }
+
+
 
     async getColumns(list) {
         if (!this.columns[list]) {

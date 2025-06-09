@@ -1,11 +1,11 @@
 <template>
     <div>
         <ul v-if="products.length">
-            <li v-for="product in products" :key="product.id" class="product-item">
-                <span>{{ product.name }} - ${{ product.price }}</span>
-                <button @click="addToCart(product.id)">
+            <li v-for="product in products" :key="product['reward_id']" class="product-item">
+                <span v-if="parseInt(product['reward_cost'])">{{ product['reward_title'] }} - {{ product['reward_cost'] }} <button @click="buyProduct(product)">
                     🛒
-                </button>
+                </button></span>
+
             </li>
         </ul>
         <p v-else>Загрузка товаров...</p>
@@ -24,56 +24,71 @@
 <script>
 
 
-import {GoogleSheetDB} from "../../../dnd/static/js/db/google.js";
+import {GoogleSheetDB, ORM, spreadsheetId, Table} from "../../../dnd/static/js/db/google.js";
+import {generateUUIDv4} from "@/utils/uuid.js";
+import { useStore } from 'vuex'
 
 export default {
     name: 'ProductList',
     data() {
         return {
             products: [],
-            cart: null
+            cart: null,
+            api: null,
         }
     },
     methods: {
-        fetchProducts(api) {
-            let axios;
-            return;
-            axios.get('/api/products')
-                .then(response => {
-                    this.products = response.data
-                })
-                .catch(error => {
-                    console.error('Ошибка при загрузке товаров:', error)
-                })
+        async fetchProducts() {
+            let itemsTable = new Table({
+                spreadsheetId: this.spreadsheetId,
+                list: 'real_life_rewards',
+            });
+            this.products = await itemsTable.getAll({formated:true, format: 'orm'});
         },
-        fetchCart(api) {
-            let axios;
-            return;
-            axios.get('/api/cart')
-                .then(response => {
-                    this.cart = response.data
-                })
-                .catch(error => {
-                    console.error('Ошибка при обновлении корзины:', error)
-                })
-        },
-        addToCart(productId) {
-            let axios;
-            return;
-            axios.post('/api/cart/add', { productId })
-                .then(() => {
-                    this.fetchCart()
-                })
-                .catch(error => {
-                    console.error('Ошибка при добавлении в корзину:', error)
-                })
+        async buyProduct(product) {
+            // получить текущий баланс
+            let heroTable = new Table({
+                spreadsheetId: this.spreadsheetId,
+                list: 'real_life_hero',
+            });
+            let hero = await heroTable.getAll({formated: true, format: 'array'});
+
+            // вычесть стоимость из баланса
+            let balance = parseInt(hero.hero_money) - parseInt(product['reward_cost']);
+
+            // записать баланс в таблицу
+            await heroTable.updateRowByCode('hero_money', {value: balance});
+
+            // добавить в историю покупок
+            let historyTable = new Table({
+                spreadsheetId: this.spreadsheetId,
+                list: 'rewards_history',
+            });
+            await historyTable.addRow({
+                claim_date: new Date().getTime(),
+                item_id:generateUUIDv4(),
+                gold_spent: product['reward_cost'],
+                reward_title: product['reward_title'],
+                reward_id: product['reward_id']
+            });
+
+            // обновить количество товара
+            let itemsTable = new Table({
+                spreadsheetId: this.spreadsheetId,
+                list: 'real_life_rewards',
+            });
+            await itemsTable.updateRowByCode(product['reward_title'], {'reward_done': parseInt(product['reward_done']) + 1});
+            this.$store.dispatch("hero/initHero");
         }
     },
     async mounted() {
-        const api = window.GoogleSheetDB || new GoogleSheetDB();
-        await api.waitGoogle();
-        this.fetchProducts(api)
-        this.fetchCart(api)
+        const data = localStorage.getItem('todo-settings');
+        let settings =  data ? JSON.parse(data) : [];
+        const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+        this.spreadsheetId = spreadsheetSetting ? spreadsheetSetting.value : '';
+        this.api = window.GoogleSheetDB || new GoogleSheetDB();
+        await this.api.waitGoogle();
+        await this.fetchProducts()
     }
 }
 </script>

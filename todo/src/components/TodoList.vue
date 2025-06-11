@@ -176,7 +176,7 @@ export default {
                     // Получаем список отфильтрованных задач
                     const filteredTodos = this.getFilteredTodos();
                     // Создаём пустой массив для результата
-                    const sortedTodos = [];
+                    let sortedTodos = [];
 
                     // Создаём карту задач для быстрого доступа по UUID
                     const todoMap = new Map();
@@ -193,6 +193,10 @@ export default {
                         });
 
                     });
+
+                    sortedTodos = sortedTodos.concat(
+                        this.todos.filter(todo => parseInt(todo.task_time) && parseInt(todo.task_finish_date))
+                    );
                     // Возвращаем отсортированные задачи
                     return sortedTodos;
                 case 'today':

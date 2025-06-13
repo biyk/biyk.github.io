@@ -8,42 +8,164 @@
             src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
             integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
             crossorigin="anonymous"></script>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+        }
+        th, td {
+            border: 1px solid #999;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
 
 <form>
+    <label>Название<br>
+        <input class="my_input" name="title" value="" type="text">
+    </label>
+    <br>
+    <hr>
     <label> вес (г)<br>
-        <input name="mass" value="" type="number">
+        <input class="my_input" name="mass" value="" type="number">
     </label>
     <br>
     <hr>
     <label> цена (руб)<br>
-        <input name="price" value="" type="number">
+        <input class="my_input" name="price" value="" type="number">
     </label>
     <br>
     <hr>
     <label> калорийность на 100г<br>
-        <input name="kkal" value="" type="number">
+        <input class="my_input" name="kkal" value="" type="number">
     </label>
     <br>
     <hr>
     <label> Результат
-        <div class="result" value="0"></div>
+        <div class="result" value="0">0</div>
     </label>
-    <button type="reset">Сбросить</button>
+    <button type="button" id="saveBtn">Сохранить</button>
 </form>
+
+<!-- Таблица для сохранённых результатов -->
+<div id="savedResults" style="max-width: 600px; margin: 2em auto;"></div>
+
+<!-- Кнопка для полного сброса -->
+<button type="button" id="clearAllBtn" style="display: block; margin: 1em auto;">Сбросить всё</button>
 
 <script>
     let timer;
 
-    $('input').on('keyup change', function () {
-        cancelIdleCallback(timer);
-        timer = requestIdleCallback(function () {
-            let imass = $('[name="price"]').val()/ ($('[name="mass"]').val()/100);
-            let result = 2500*imass/$('[name="kkal"]').val();
-            $('.result').text(result);
+    function calculate() {
+        const mass = parseFloat($('[name="mass"]').val());
+        const price = parseFloat($('[name="price"]').val());
+        const kkal = parseFloat($('[name="kkal"]').val());
+
+        if (!mass || !price || !kkal) {
+            $('.result').text('0');
+            return 0;
+        }
+
+        const imass = price / (mass / 100);
+        const result = 2500 * imass / kkal;
+        $('.result').text(result.toFixed(2));
+        return result;
+    }
+
+    function saveToLocalStorage(data) {
+        if (typeof(Storage) !== "undefined") {
+            localStorage.setItem('savedResults', JSON.stringify(data));
+        }
+    }
+
+    function loadFromLocalStorage() {
+        if (typeof(Storage) === "undefined") return [];
+
+        const saved = localStorage.getItem('savedResults');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    function renderTable(data) {
+        if (!data.length) return;
+
+        $('#savedResults').html(`
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Вес (г)</th>
+                        <th>Цена (₽)</th>
+                        <th>Ккал/100г</th>
+                        <th>Результат</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        `);
+
+        const tbody = $('#savedResults tbody');
+        data.forEach(item => {
+            tbody.append(`
+                <tr>
+                    <td>${item.title}</td>
+                    <td>${item.mass}</td>
+                    <td>${item.price}</td>
+                    <td>${item.kkal}</td>
+                    <td>${item.result}</td>
+                </tr>
+            `);
+        });
+    }
+
+    $(document).ready(function () {
+        const savedItems = loadFromLocalStorage();
+        renderTable(savedItems);
+
+        $('input').on('keyup change', function () {
+            cancelIdleCallback(timer);
+            timer = requestIdleCallback(calculate);
+        });
+
+        $('#saveBtn').on('click', function () {
+            const title = $('[name="title"]').val().trim();
+            const mass = $('[name="mass"]').val();
+            const price = $('[name="price"]').val();
+            const kkal = $('[name="kkal"]').val();
+            const result = calculate();
+
+            if (!title || result === 0) return;
+
+            const entry = {
+                title,
+                mass,
+                price,
+                kkal,
+                result: result.toFixed(2)
+            };
+
+            const data = loadFromLocalStorage();
+            data.push(entry);
+            saveToLocalStorage(data);
+            renderTable(data);
+
+            $('form')[0].reset();
+            $('.result').text('0');
+        });
+
+        $('#clearAllBtn').on('click', function () {
+            localStorage.removeItem('savedResults');
+            $('#savedResults').empty();
+            $('form')[0].reset();
+            $('.result').text('0');
         });
     });
 </script>
+
 </body>
 </html>

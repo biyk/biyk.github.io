@@ -25,7 +25,7 @@ label {
     font-weight: bold;
 }
 
-input[type="number"] {
+.my_input {
     width: 100%;
     padding: 0.5em;
     margin-top: 0.4em;
@@ -47,7 +47,7 @@ input[type="number"] {
 }
 
 /* Кнопка сброса */
-button[type="reset"] {
+#saveBtn {
     margin-top: 1em;
     width: 100%;
     padding: 0.7em;
@@ -59,7 +59,7 @@ button[type="reset"] {
     cursor: pointer;
 }
 
-button[type="reset"]:hover {
+#saveBtn:hover {
     background-color: #c33;
 }
 
@@ -81,4 +81,19 @@ button[type="reset"]:hover {
     button[type="reset"] {
         font-size: 1.1em;
     }
+}
+
+.saved-result-row {
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+    padding: 0.5em 1em;
+    margin-bottom: 0.5em;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background-color: #f9f9f9;
+    font-family: sans-serif;
 }

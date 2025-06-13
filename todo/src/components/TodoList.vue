@@ -195,7 +195,15 @@ export default {
                     });
 
                     sortedTodos = sortedTodos.concat(
-                        this.todos.filter(todo => parseInt(todo.task_time) && parseInt(todo.task_finish_date))
+                        this.todos.filter(todo => {
+                            // Проверка, есть ли уже такой task_uuid в sortedTodos
+                            const alreadyIncluded = sortedTodos.some(e => e.task_uuid === todo.task_uuid);
+
+                            // Добавляем только если его ещё нет и поля корректны
+                            return !alreadyIncluded &&
+                                parseInt(todo.task_time) &&
+                                parseInt(todo.task_finish_date);
+                        })
                     );
                     // Возвращаем отсортированные задачи
                     return sortedTodos;

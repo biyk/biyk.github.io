@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.25";
+window.version = "0.3.26";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9163,7 +9163,10 @@ const _sfc_main$2B = {
             });
           });
           sortedTodos = sortedTodos.concat(
-            this.todos.filter((todo) => parseInt(todo.task_time) && parseInt(todo.task_finish_date))
+            this.todos.filter((todo) => {
+              const alreadyIncluded = sortedTodos.some((e) => e.task_uuid === todo.task_uuid);
+              return !alreadyIncluded && parseInt(todo.task_time) && parseInt(todo.task_finish_date);
+            })
           );
           return sortedTodos;
         case "today":

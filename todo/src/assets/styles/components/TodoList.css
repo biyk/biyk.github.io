@@ -71,3 +71,36 @@
     cursor: pointer;
 
 }
+
+
+
+.task-description {
+    cursor: pointer;
+}
+
+@media screen and (max-width: 576px) {
+    .el-tabs__header{
+        width: 100vw;
+    }
+    .task-description {
+        display: inline-block;
+        position: absolute;
+    }
+
+    .tasks {
+        padding-left: 5px;
+    }
+
+    .tasks li {
+        display: inline-block;
+        width: 90vw;
+    }
+
+    .tasks .buttons{
+        position: relative;
+        z-index: 1;
+    }
+    .task:before {
+        /*content: "\2002";*/
+    }
+}

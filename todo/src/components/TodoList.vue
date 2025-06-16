@@ -9,11 +9,11 @@
             :class="['task', todo.task_color, { completed: todo.completed }]"
         >
             <span
+                class="task-description"
                 :title="taskDate(todo.task_date)"
                 @click="togglePopover(todo.task_uuid)"
-                style="cursor: pointer;"
             >
-                ({{ todo.task_time}}) {{ todo.task_title }} ({{taskDate(todo.task_date)}})
+                ({{ todo.task_time}}) {{ todo.task_title }}
                 <span v-if="parseInt(todo.start_date)"> {{ ((currentTime - todo.start_date) / (60*1000)).toFixed(2)}}</span>
             </span>
 

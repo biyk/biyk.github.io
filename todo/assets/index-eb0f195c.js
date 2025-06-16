@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.28";
+window.version = "0.3.29";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9256,11 +9256,11 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
           class: normalizeClass(["task", todo.task_color, { completed: todo.completed }])
         }, [
           createBaseVNode("span", {
+            class: "task-description",
             title: $options.taskDate(todo.task_date),
-            onClick: ($event) => $options.togglePopover(todo.task_uuid),
-            style: { "cursor": "pointer" }
+            onClick: ($event) => $options.togglePopover(todo.task_uuid)
           }, [
-            createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " (" + toDisplayString($options.taskDate(todo.task_date)) + ") ", 1),
+            createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " ", 1),
             parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_3$2, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
           ], 8, _hoisted_2$2),
           $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_4$2, [

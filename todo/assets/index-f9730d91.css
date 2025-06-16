@@ -82,6 +82,38 @@
 
 }
 
+
+
+.task-description {
+    cursor: pointer;
+}
+
+@media screen and (max-width: 576px) {
+    .el-tabs__header{
+        width: 100vw;
+    }
+    .task-description {
+        display: inline-block;
+        position: absolute;
+    }
+
+    .tasks {
+        padding-left: 5px;
+    }
+
+    .tasks li {
+        display: inline-block;
+        width: 90vw;
+    }
+
+    .tasks .buttons{
+        position: relative;
+        z-index: 1;
+    }
+    .task:before {
+        /*content: "\2002";*/
+    }
+}
 .settings[data-v-9ef4f987] {
     margin-top: 1rem;
 }
@@ -132,6 +164,13 @@ body {
     border-radius: 1rem;
     padding: 1rem;
     box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
+    max-width: 600px;
+}
+
+@media screen and (max-width: 576px) {
+    .container {
+        max-width: unset;
+    }
 }
 
 h1 {

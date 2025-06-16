@@ -183,6 +183,7 @@ export default {
                     filteredTodos.forEach(todo => {
                         todoMap.set(todo.task_uuid, todo);
                     });
+
                     // Проходим по событиям и добавляем соответствующие задачи в результат
                     this.events.forEach(event => {
                         const uuids = event.description?.split('\n');
@@ -201,8 +202,8 @@ export default {
 
                             // Добавляем только если его ещё нет и поля корректны
                             return !alreadyIncluded &&
-                                parseInt(todo.task_time) &&
-                                parseInt(todo.task_finish_date);
+                                ((parseInt(todo.task_time) &&
+                                parseInt(todo.task_finish_date)) || parseInt(todo.start_date));
                         })
                     );
                     // Возвращаем отсортированные задачи

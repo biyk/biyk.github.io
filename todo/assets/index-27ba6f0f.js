@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.30";
+window.version = "0.3.31";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8715,11 +8715,13 @@ function makeTaskDone(task, store2, options = {}) {
     task_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
   }
   number_of_executions++;
+  let money_reward = Math.round(task_time / 2);
   const updatedTask = {
     ...task[0],
     task_date,
     task_time,
     repeat_index,
+    money_reward,
     break_multiplier,
     task_finish_date: 0,
     number_of_executions
@@ -8729,7 +8731,7 @@ function makeTaskDone(task, store2, options = {}) {
   if (deleted || repeat_mode === "5")
     return;
   let hero2 = { ...store2.getters["hero/getHero"] };
-  hero2.hero_money = parseInt(hero2.hero_money) + parseInt(task[0].money_reward);
+  hero2.hero_money = parseInt(hero2.hero_money) + money_reward;
   store2.dispatch("hero/updateHero", hero2);
 }
 function taskSort(task) {

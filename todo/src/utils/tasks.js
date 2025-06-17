@@ -69,11 +69,13 @@ export function makeTaskDone(task, store, options={}){
     }
 
     number_of_executions++;
+    let money_reward = Math.round(task_time/2)
     const updatedTask = {
         ...task[0],
         task_date: task_date,
         task_time: task_time,
         repeat_index:repeat_index,
+        money_reward:money_reward,
         break_multiplier: break_multiplier,
         task_finish_date: 0,
         number_of_executions:number_of_executions
@@ -84,7 +86,8 @@ export function makeTaskDone(task, store, options={}){
 
     if (deleted || repeat_mode==='5') return;
     let hero = { ...store.getters["hero/getHero"] }; // создаем копию объекта
-    hero.hero_money = parseInt(hero.hero_money) + parseInt(task[0].money_reward);
+    money_reward
+    hero.hero_money = parseInt(hero.hero_money) + money_reward;
 
     store.dispatch("hero/updateHero", hero);
 }

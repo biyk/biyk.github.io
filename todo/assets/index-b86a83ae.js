@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.33";
+window.version = "0.3.34";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9234,28 +9234,29 @@ const _sfc_main$2B = {
 const _hoisted_1$3 = { class: "tasks" };
 const _hoisted_2$2 = ["title", "onClick"];
 const _hoisted_3$2 = { key: 0 };
-const _hoisted_4$2 = {
+const _hoisted_4$2 = { key: 1 };
+const _hoisted_5$1 = {
   key: 0,
   class: "editable-description"
 };
-const _hoisted_5$1 = ["onUpdate:modelValue"];
-const _hoisted_6 = ["onClick"];
-const _hoisted_7 = {
+const _hoisted_6 = ["onUpdate:modelValue"];
+const _hoisted_7 = ["onClick"];
+const _hoisted_8 = {
   key: 1,
   class: "buttons"
 };
-const _hoisted_8 = { style: { "margin-right": "8px" } };
-const _hoisted_9 = ["onClick"];
-const _hoisted_10 = { key: 1 };
-const _hoisted_11 = ["onClick"];
+const _hoisted_9 = { style: { "margin-right": "8px" } };
+const _hoisted_10 = ["onClick"];
+const _hoisted_11 = { key: 1 };
 const _hoisted_12 = ["onClick"];
-const _hoisted_13 = {
+const _hoisted_13 = ["onClick"];
+const _hoisted_14 = {
   key: 1,
   class: "done"
 };
-const _hoisted_14 = ["onClick"];
 const _hoisted_15 = ["onClick"];
-const _hoisted_16 = {
+const _hoisted_16 = ["onClick"];
+const _hoisted_17 = {
   key: 2,
   class: "plus"
 };
@@ -9282,46 +9283,46 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
             onClick: ($event) => $options.togglePopover(todo.task_uuid)
           }, [
             createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " ", 1),
-            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_3$2, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
+            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_3$2, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : parseInt(todo.task_finish_date) ? (openBlock(), createElementBlock("span", _hoisted_4$2, toDisplayString((todo.task_finish_date / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
           ], 8, _hoisted_2$2),
-          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_4$2, [
+          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_5$1, [
             withDirectives(createBaseVNode("textarea", {
               "onUpdate:modelValue": ($event) => todo.task_description = $event,
               rows: "3",
               style: { "width": "100%", "margin-top": "8px" }
-            }, null, 8, _hoisted_5$1), [
+            }, null, 8, _hoisted_6), [
               [vModelText, todo.task_description]
             ]),
             createBaseVNode("button", {
               onClick: ($event) => $options.closeEditor(todo),
               style: { "margin-top": "4px" }
-            }, "✅ Сохранить", 8, _hoisted_6)
+            }, "✅ Сохранить", 8, _hoisted_7)
           ])) : createCommentVNode("", true),
-          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_7, [
-            createBaseVNode("span", _hoisted_8, [
+          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_8, [
+            createBaseVNode("span", _hoisted_9, [
               todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
                 key: 0,
                 onClick: ($event) => $options.startTask(todo)
-              }, "▶️", 8, _hoisted_9)) : (openBlock(), createElementBlock("span", _hoisted_10, [
+              }, "▶️", 8, _hoisted_10)) : (openBlock(), createElementBlock("span", _hoisted_11, [
                 createBaseVNode("button", {
                   onClick: withModifiers(($event) => $options.pauseTask(todo), ["stop"])
-                }, "⏸", 8, _hoisted_11)
+                }, "⏸", 8, _hoisted_12)
               ]))
             ]),
             todo.start_date == 0 ? (openBlock(), createElementBlock("span", {
               key: 0,
               class: "done",
               onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-            }, "✅", 8, _hoisted_12)) : (openBlock(), createElementBlock("span", _hoisted_13, [
+            }, "✅", 8, _hoisted_13)) : (openBlock(), createElementBlock("span", _hoisted_14, [
               createBaseVNode("button", {
                 onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-              }, "⏹", 8, _hoisted_14)
+              }, "⏹", 8, _hoisted_15)
             ])),
             createBaseVNode("span", {
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
-            }, "ⓧ", 8, _hoisted_15),
-            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_16, "Добавить задачу в календарь")) : createCommentVNode("", true)
+            }, "ⓧ", 8, _hoisted_16),
+            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_17, "Добавить задачу в календарь")) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))

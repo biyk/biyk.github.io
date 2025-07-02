@@ -15,6 +15,7 @@
             >
                 ({{ todo.task_time}}) {{ todo.task_title }}
                 <span v-if="parseInt(todo.start_date)"> {{ ((currentTime - todo.start_date) / (60*1000)).toFixed(2)}}</span>
+                <span v-else-if="parseInt(todo.task_finish_date)"> {{ ((todo.task_finish_date) / (60*1000)).toFixed(2)}}</span>
             </span>
 
             <div v-if="visiblePopover === todo.task_uuid" class="editable-description">

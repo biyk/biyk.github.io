@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.32";
+window.version = "0.3.33";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8653,6 +8653,25 @@ function getFreeSlots(events2, options = {}) {
   }
   return freeSlots;
 }
+async function logExecuteTask(updatedTask, store2) {
+  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  await api.waitGoogle();
+  const settings2 = store2.getters["settings/allSettings"];
+  const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
+  let table = new Table$2({
+    spreadsheetId: spreadsheetSetting.value,
+    list: "task_executions"
+  });
+  await table.addRow({
+    execution_id: generateUUIDv4(),
+    execution_date: new Date().getTime(),
+    execution_time: updatedTask.task_time,
+    gained_gold: updatedTask.money_reward,
+    task_title: updatedTask.task_title,
+    task_id: updatedTask.task_uuid,
+    task_date: new Date().toLocaleDateString("ru-RU")
+  });
+}
 function makeTaskDone(task, store2, options = {}) {
   let {
     repeat_days_of_week,
@@ -8660,8 +8679,6 @@ function makeTaskDone(task, store2, options = {}) {
     repeat_mode,
     task_date,
     task_time,
-    task_finish_date,
-    completed,
     break_multiplier,
     number_of_executions
   } = task[0];
@@ -8733,6 +8750,8 @@ function makeTaskDone(task, store2, options = {}) {
   let hero2 = { ...store2.getters["hero/getHero"] };
   hero2.hero_money = parseInt(hero2.hero_money) + money_reward;
   store2.dispatch("hero/updateHero", hero2);
+  logExecuteTask(updatedTask, store2).then(() => {
+  });
 }
 function taskSort(task) {
   const now2 = new Date();

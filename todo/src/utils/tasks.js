@@ -1,4 +1,29 @@
 import {addEvent, getFreeSlots, listEvents, makeEvent} from "@/utils/calendar.js";
+import {GoogleSheetDB, Table} from "../../../dnd/static/js/db/google.js";
+import {generateUUIDv4} from "@/utils/uuid.js";
+
+async function logExecuteTask(updatedTask, store) {
+    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
+
+    const settings = store.getters["settings/allSettings"];
+    const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+
+    let table = new Table({
+        spreadsheetId: spreadsheetSetting.value,
+        list: "task_executions"
+    });
+
+    await table.addRow({
+        execution_id: generateUUIDv4(),
+        execution_date: new Date().getTime(),
+        execution_time: updatedTask.task_time,
+        gained_gold: updatedTask.money_reward,
+        task_title: updatedTask.task_title,
+        task_id: updatedTask.task_uuid,
+        task_date: new Date().toLocaleDateString('ru-RU'),
+    })
+}
 
 export function makeTaskDone(task, store, options={}){
 
@@ -8,8 +33,6 @@ export function makeTaskDone(task, store, options={}){
         repeat_mode,
         task_date,
         task_time,
-        task_finish_date,
-        completed,
         break_multiplier,
         number_of_executions
     } = task[0];
@@ -84,12 +107,17 @@ export function makeTaskDone(task, store, options={}){
     console.log(updatedTask)
     store.dispatch("todos/updateTodo", updatedTask);
 
+
     if (deleted || repeat_mode==='5') return;
     let hero = { ...store.getters["hero/getHero"] }; // создаем копию объекта
 
     hero.hero_money = parseInt(hero.hero_money) + money_reward;
 
     store.dispatch("hero/updateHero", hero);
+
+    logExecuteTask(updatedTask, store).then(()=>{
+
+    })
 }
 
 export function taskSort(task){

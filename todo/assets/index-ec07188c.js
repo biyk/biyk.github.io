@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.34";
+window.version = "0.3.35";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9170,6 +9170,12 @@ const _sfc_main$2B = {
         case "calendar":
           const filteredTodos = this.getFilteredTodos();
           let sortedTodos = [];
+          sortedTodos = sortedTodos.concat(
+            this.todos.filter((todo) => {
+              const alreadyIncluded = sortedTodos.some((e) => e.task_uuid === todo.task_uuid);
+              return !alreadyIncluded && (parseInt(todo.task_time) && parseInt(todo.task_finish_date) || parseInt(todo.start_date));
+            })
+          );
           const todoMap = /* @__PURE__ */ new Map();
           filteredTodos.forEach((todo) => {
             todoMap.set(todo.task_uuid, todo);
@@ -9183,12 +9189,6 @@ const _sfc_main$2B = {
               }
             });
           });
-          sortedTodos = sortedTodos.concat(
-            this.todos.filter((todo) => {
-              const alreadyIncluded = sortedTodos.some((e) => e.task_uuid === todo.task_uuid);
-              return !alreadyIncluded && (parseInt(todo.task_time) && parseInt(todo.task_finish_date) || parseInt(todo.start_date));
-            })
-          );
           return sortedTodos;
         case "today":
         case "tomorrow":

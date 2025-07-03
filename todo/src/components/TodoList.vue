@@ -179,6 +179,18 @@ export default {
                     // Создаём пустой массив для результата
                     let sortedTodos = [];
 
+                    sortedTodos = sortedTodos.concat(
+                        this.todos.filter(todo => {
+                            // Проверка, есть ли уже такой task_uuid в sortedTodos
+                            const alreadyIncluded = sortedTodos.some(e => e.task_uuid === todo.task_uuid);
+
+                            // Добавляем только если его ещё нет и поля корректны
+                            return !alreadyIncluded &&
+                                ((parseInt(todo.task_time) &&
+                                    parseInt(todo.task_finish_date)) || parseInt(todo.start_date));
+                        })
+                    );
+
                     // Создаём карту задач для быстрого доступа по UUID
                     const todoMap = new Map();
                     filteredTodos.forEach(todo => {
@@ -196,17 +208,6 @@ export default {
 
                     });
 
-                    sortedTodos = sortedTodos.concat(
-                        this.todos.filter(todo => {
-                            // Проверка, есть ли уже такой task_uuid в sortedTodos
-                            const alreadyIncluded = sortedTodos.some(e => e.task_uuid === todo.task_uuid);
-
-                            // Добавляем только если его ещё нет и поля корректны
-                            return !alreadyIncluded &&
-                                ((parseInt(todo.task_time) &&
-                                parseInt(todo.task_finish_date)) || parseInt(todo.start_date));
-                        })
-                    );
                     // Возвращаем отсортированные задачи
                     return sortedTodos;
                 case 'today':

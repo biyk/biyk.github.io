@@ -196,12 +196,16 @@ export default {
                     filteredTodos.forEach(todo => {
                         todoMap.set(todo.task_uuid, todo);
                     });
+                    const existMap = new Map();
+                    sortedTodos.forEach(todo => {
+                        existMap.set(todo.task_uuid, todo);
+                    });
 
                     // Проходим по событиям и добавляем соответствующие задачи в результат
                     this.events.forEach(event => {
                         const uuids = event.description?.split('\n');
                         uuids?.forEach(uuid=>{
-                            if (uuid && todoMap.has(uuid)) {
+                            if (uuid && todoMap.has(uuid) && !existMap.has(uuid)) {
                                 sortedTodos.push(todoMap.get(uuid));
                             }
                         });

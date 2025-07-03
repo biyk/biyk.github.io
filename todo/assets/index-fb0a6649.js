@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.3.35";
+window.version = "0.3.36";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9180,11 +9180,15 @@ const _sfc_main$2B = {
           filteredTodos.forEach((todo) => {
             todoMap.set(todo.task_uuid, todo);
           });
+          const existMap = /* @__PURE__ */ new Map();
+          sortedTodos.forEach((todo) => {
+            existMap.set(todo.task_uuid, todo);
+          });
           this.events.forEach((event2) => {
             var _a2;
             const uuids = (_a2 = event2.description) == null ? void 0 : _a2.split("\n");
             uuids == null ? void 0 : uuids.forEach((uuid) => {
-              if (uuid && todoMap.has(uuid)) {
+              if (uuid && todoMap.has(uuid) && !existMap.has(uuid)) {
                 sortedTodos.push(todoMap.get(uuid));
               }
             });

@@ -1,21 +1,26 @@
 import {getRandomColor} from "./script/helpers.js";
 
 export function drowMarker(data) {
+    console.log(data);
     let id = data.id  || new Date().getTime();
     const marker = L.marker(data.latlng, {
         icon: L.divIcon({
             className: 'custom-marker',
-            html: `<span class="custom-marker-number" >${data.selectedIcon.number || ''}</span><div style="width: 60px;" data-id="${id}">${data.selectedIcon.emoji}</div>`,
+            html: `<span class="custom-marker-number" >${data.selectedIcon.number || ''}</span>
+                    <div style="${data.style}" data-id="${id}">${data.selectedIcon.emoji}</div>`,
         }),
         draggable: window.admin_mode //|| parseInt(id) === parseInt(localStorage.getItem('auth_code'))
     }).addTo(this.map);
     let backgroundColor = data.backgroundColor || data.selectedIcon.backgroundColor || getRandomColor();
     let text = data.text ?? '';
+    let style = data.style ?? '';
+    console.log(data);
     if (window.admin_mode){
         marker.bindPopup(`
                <button onclick="window.mapManager.removeMarker(${id})">Remove</button>
                <button onclick="window.mapManager.toggleMarker(${id})">Toggle</button>
                <textarea style="width: 300px;" onchange="window.mapManager.changeMarkerText(${id}, this)">${text}</textarea>
+               <textarea style="width: 300px;" onchange="window.mapManager.changeMarkerStyles(${id}, this)">${style}</textarea>
            `);
     }
     marker._icon.style.opacity = data.show ? 1 : (window.admin_mode) ? 0.5: 0;
@@ -49,6 +54,7 @@ export function createMarkers(config){
                 latlng: settings.latlng,
                 backgroundColor: settings.backgroundColor,
                 show: settings.show,
+                style: settings.style,
                 text: settings.text,
             })
         });

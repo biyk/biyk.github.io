@@ -519,6 +519,13 @@ class MapManager {
             this.Listner.dispatchEvent(new CustomEvent('update_config', {detail: {type: 'markers'}}));
         }
     }
+    changeMarkerStyles(id, textarea) {
+        const marker = this.points.get(id);
+        if (marker) {
+            marker.settings.style = textarea.value;
+            this.Listner.dispatchEvent(new CustomEvent('update_config', {detail: {type: 'markers'}}));
+        }
+    }
 
     toggleAdminMode() {
         toggleAdminMode.call(this)

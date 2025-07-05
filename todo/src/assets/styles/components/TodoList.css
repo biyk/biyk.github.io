@@ -76,7 +76,6 @@
 
 .task-description {
     cursor: pointer;
-    position: fixed;
 }
 
 @media screen and (max-width: 576px) {

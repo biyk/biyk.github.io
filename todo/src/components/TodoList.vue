@@ -2,7 +2,7 @@
     <button v-if="filter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
     <button  v-if="filter==='0'" @click="setTaskCompleted">Отметить завершенные</button>
     <ul class="tasks">
-        <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.)</li>
+        <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.) <span style="float: right">{{log.today}} / {{log.week}} / {{log.month}}</span></li>
         <li
             v-for="todo in getSortedTodos()"
             :key="todo.id"
@@ -50,7 +50,7 @@
 
 <script>
 import '../assets/styles/components/TodoList.css';
-import {makeTaskDone, setTaskCompleted, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
+import {calcExecutions, makeTaskDone, setTaskCompleted, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
 import {addEvent, deleteEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 import throttle from 'lodash/throttle';
 
@@ -61,6 +61,7 @@ export default {
             total: 0,
             timer: 0,
             currentTime: 0,
+            log:{}
         };
     },
     computed: {
@@ -155,8 +156,10 @@ export default {
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
                 task[0].repeat_index = parseFloat(task[0].repeat_index) - 0.1;
             }
-            setTimeout(()=>{
-                makeTaskDone(task, this.$store);
+            setTimeout(async () => {
+                await makeTaskDone(task, this.$store);
+                this.log = await calcExecutions(this.$store);
+                console.log(this.log);
             }, 300)
         },
         deleteTodo: throttle(async function (task_uuid) {

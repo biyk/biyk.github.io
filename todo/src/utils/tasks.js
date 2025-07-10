@@ -88,8 +88,8 @@ export async function calcExecutions(store){
 
     // Расчёт
     let today = today_time;
-    let week = weekDaysWithData.size > 0 ? week_time / weekDaysWithData.size : 0;
-    let month = monthDaysWithData.size > 0 ? month_time / monthDaysWithData.size : 0;
+    let week = weekDaysWithData.size > 0 ? Math.round(week_time*100 / weekDaysWithData.size)/100 : 0;
+    let month = monthDaysWithData.size > 0 ? Math.round(month_time*100 / monthDaysWithData.size)/100 : 0;
 
     return { today, week, month }
 

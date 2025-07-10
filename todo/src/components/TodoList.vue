@@ -250,12 +250,13 @@ export default {
             this.$store.dispatch("todos/updateTodo", { ...todo });
         },
     },
-    mounted() {
+    async mounted() {
         this.$store.dispatch("todos/initTodos");
         listEvents(this.$store);
         this.timer = setInterval(() => {
             this.currentTime = new Date().getTime();
         }, 1000);
+        this.log = await calcExecutions(this.$store);
     }
 };
 </script>

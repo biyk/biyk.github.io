@@ -25,7 +25,77 @@ async function logExecuteTask(updatedTask, store) {
     })
 }
 
-export function makeTaskDone(task, store, options={}){
+export async function calcExecutions(store){
+    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
+
+    const settings = store.getters["settings/allSettings"];
+    const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+
+    let table = new Table({
+        spreadsheetId: spreadsheetSetting.value,
+        list: "task_executions"
+    });
+
+    let list = await table.getAll({formated: true, format: 'orm'});
+
+    let today_time = 0;
+    let week_time = 0;
+    let month_time = 0;
+
+    let now = new Date();
+    let startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    let sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime(); // включая сегодня
+
+// Предыдущий месяц
+    let prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    let prevMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    let daysInPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    let startOfPrevMonth = new Date(prevMonthYear, prevMonth, now.getDate() - daysInPrevMonth).getTime();
+
+    // Уникальные даты с данными для подсчёта рабочих дней
+    let weekDaysWithData = new Set();
+    let monthDaysWithData = new Set();
+
+    list.forEach((item) => {
+        if (!item.execution_date || !item.execution_time) return;
+
+        let execDate = parseInt(item.execution_date);
+        let execution_time = parseInt(item.execution_time);
+        // Сегодня
+        if (execDate >= startOfToday) {
+            today_time += execution_time;
+        }
+
+        // Последние 7 дней (включая сегодня)
+        if (execDate >= sevenDaysAgo) {
+            week_time += execution_time;
+
+            // Добавляем только уникальные дни
+            let dayKey = new Date(execDate).toDateString();
+            weekDaysWithData.add(dayKey);
+        }
+
+        // Прошлый месяц
+        if (execDate >= startOfPrevMonth) {
+            month_time += execution_time;
+
+            // Добавляем только уникальные дни
+            let dayKey = new Date(execDate).toDateString();
+            monthDaysWithData.add(dayKey);
+        }
+    });
+
+    // Расчёт
+    let today = today_time;
+    let week = weekDaysWithData.size > 0 ? week_time / weekDaysWithData.size : 0;
+    let month = monthDaysWithData.size > 0 ? month_time / monthDaysWithData.size : 0;
+
+    return { today, week, month }
+
+}
+
+export async function makeTaskDone(task, store, options = {}) {
 
     let {
         repeat_days_of_week,
@@ -42,31 +112,32 @@ export function makeTaskDone(task, store, options={}){
     const now = new Date();
 
 
-    switch(repeat_mode) {
+    switch (repeat_mode) {
         case '0':
             task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
             break;
         case '1':
-            task_date = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate() , 0, 0, 1, 0).getTime();
+            task_date = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate(), 0, 0, 1, 0).getTime();
             break;
         case '2':
-            task_date = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate() , 0, 0, 1, 0).getTime();
+            task_date = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate(), 0, 0, 1, 0).getTime();
             break;
         case '6':
         case '5':
-            task_date = new Date().getTime() + Math.round(repeat_index * 24*60*60*1000);
+            task_date = new Date().getTime() + Math.round(repeat_index * 24 * 60 * 60 * 1000);
             break;
         case '3':
+
             // Функция для поиска следующего рабочего дня
-            function getNextWorkingDayOffset(repeatDays, currentDay) {
-                for (let offset = 1; offset <= 7; offset++) {
-                    let dayIndex = (currentDay + offset) % 7;
-                    if (repeatDays[dayIndex] === '1') {
-                        return offset;
-                    }
+        function getNextWorkingDayOffset(repeatDays, currentDay) {
+            for (let offset = 1; offset <= 7; offset++) {
+                let dayIndex = (currentDay + offset) % 7;
+                if (repeatDays[dayIndex] === '1') {
+                    return offset;
                 }
-                return null; // нет рабочих дней
             }
+            return null; // нет рабочих дней
+        }
 
             const currentDay = now.getDay(); // 0 = воскресенье, ..., 6 = суббота
             const repeat_index3 = getNextWorkingDayOffset(repeat_days_of_week, currentDay);
@@ -87,37 +158,36 @@ export function makeTaskDone(task, store, options={}){
             //console.log(task[0])
             return;
     }
-    if (deleted){
-        task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate()  + 1 , 0, 0, 1, 0).getTime();
+    if (deleted) {
+        task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
     }
 
     number_of_executions++;
-    let money_reward = Math.round(task_time/2)
+    let money_reward = Math.round(task_time / 2)
     const updatedTask = {
         ...task[0],
         task_date: task_date,
         task_time: task_time,
-        repeat_index:repeat_index,
-        money_reward:money_reward,
+        repeat_index: repeat_index,
+        money_reward: money_reward,
         break_multiplier: break_multiplier,
         task_finish_date: 0,
-        number_of_executions:number_of_executions
+        number_of_executions: number_of_executions
     };
 
     console.log(updatedTask)
     store.dispatch("todos/updateTodo", updatedTask);
 
 
-    if (deleted || repeat_mode==='5') return;
-    let hero = { ...store.getters["hero/getHero"] }; // создаем копию объекта
+    if (deleted || repeat_mode === '5') return;
+    let hero = {...store.getters["hero/getHero"]}; // создаем копию объекта
 
     hero.hero_money = parseInt(hero.hero_money) + money_reward;
 
     store.dispatch("hero/updateHero", hero);
 
-    logExecuteTask(updatedTask, store).then(()=>{
 
-    })
+    await logExecuteTask(updatedTask, store);
 }
 
 export function taskSort(task){

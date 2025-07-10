@@ -283,7 +283,8 @@ export class Table {
                 if (format === 'array'){
                     return this.formatData(response);
                 } else {
-                    const orm = new ORM(this.columns[this.list]);
+                    let columns = this.columns[this.list] || this.columns;
+                    const orm = new ORM(columns);
                     return response.map(e => orm.getFormated(e));
                 }
             }

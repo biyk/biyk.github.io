@@ -252,7 +252,7 @@ export default {
     },
     async mounted() {
         this.$store.dispatch("todos/initTodos");
-        listEvents(this.$store);
+        await listEvents(this.$store);
         this.timer = setInterval(() => {
             this.currentTime = new Date().getTime();
         }, 1000);

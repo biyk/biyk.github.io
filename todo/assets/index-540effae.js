@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.6";
+window.version = "0.4.7";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8715,8 +8715,8 @@ async function calcExecutions(store2) {
     }
   });
   let today = today_time;
-  let week = weekDaysWithData.size > 0 ? week_time / weekDaysWithData.size : 0;
-  let month = monthDaysWithData.size > 0 ? month_time / monthDaysWithData.size : 0;
+  let week = weekDaysWithData.size > 0 ? Math.round(week_time * 100 / weekDaysWithData.size) / 100 : 0;
+  let month = monthDaysWithData.size > 0 ? Math.round(month_time * 100 / monthDaysWithData.size) / 100 : 0;
   return { today, week, month };
 }
 async function makeTaskDone(task, store2, options = {}) {

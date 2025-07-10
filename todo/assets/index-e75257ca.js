@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.5";
+window.version = "0.4.6";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9278,7 +9278,7 @@ const _sfc_main$2B = {
   },
   async mounted() {
     this.$store.dispatch("todos/initTodos");
-    listEvents(this.$store);
+    await listEvents(this.$store);
     this.timer = setInterval(() => {
       this.currentTime = new Date().getTime();
     }, 1e3);

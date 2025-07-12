@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.8";
+window.version = "0.4.9";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -10453,7 +10453,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_4db42474_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_12175de5_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10463,7 +10463,15 @@ const _sfc_main$2z = {
       api: null
     };
   },
+  computed: {
+    hero() {
+      return this.$store.getters["hero/getHero"];
+    }
+  },
   methods: {
+    cost(product) {
+      return parseInt(Math.round(product["reward_cost"] * this.calc()));
+    },
     async fetchProducts() {
       let itemsTable = new Table$2({
         spreadsheetId: this.spreadsheetId,
@@ -10476,7 +10484,7 @@ const _sfc_main$2z = {
       if (calc && calc.today) {
         return calc.week / calc.today;
       }
-      return 1;
+      return calc.week;
     },
     async buyProduct(product) {
       let heroTable = new Table$2({
@@ -10533,10 +10541,11 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
           class: "product-item"
         }, [
           parseInt(product["reward_cost"]) ? (openBlock(), createElementBlock("span", _hoisted_2, [
-            createTextVNode(toDisplayString(product["reward_title"]) + " - " + toDisplayString(parseInt(Math.round(product["reward_cost"] * $options.calc()))) + " ", 1),
-            createBaseVNode("button", {
+            createTextVNode(toDisplayString(product["reward_title"]) + " - " + toDisplayString($options.cost(product)) + " ", 1),
+            $options.hero.hero_money > $options.cost(product) ? (openBlock(), createElementBlock("button", {
+              key: 0,
               onClick: ($event) => $options.buyProduct(product)
-            }, " 🛒 ", 8, _hoisted_3)
+            }, "🛒", 8, _hoisted_3)) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ]);
       }), 128))
@@ -10553,7 +10562,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-4db42474"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-12175de5"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

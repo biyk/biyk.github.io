@@ -2,9 +2,10 @@
     <div>
         <ul v-if="products.length">
             <li v-for="product in products" :key="product['reward_id']" class="product-item">
-                <span v-if="parseInt(product['reward_cost'])">{{ product['reward_title'] }} - {{ parseInt(Math.round(product['reward_cost'] * calc()) ) }} <button @click="buyProduct(product)">
-                    🛒
-                </button></span>
+                <span v-if="parseInt(product['reward_cost'])">{{ product['reward_title'] }} - {{ cost(product) }} <button
+                    v-if="hero.hero_money > cost(product)"
+                    @click="buyProduct(product)">🛒</button>
+                </span>
 
             </li>
         </ul>
@@ -37,7 +38,15 @@ export default {
             api: null,
         }
     },
+    computed: {
+        hero() {
+            return this.$store.getters["hero/getHero"];
+        },
+    },
     methods: {
+        cost (product){
+            return parseInt(Math.round(product['reward_cost'] * this.calc()) )
+        },
         async fetchProducts() {
             let itemsTable = new Table({
                 spreadsheetId: this.spreadsheetId,
@@ -51,7 +60,7 @@ export default {
             if (calc && calc.today){
                 return calc.week / calc.today
             }
-            return 1;
+            return calc.week;
         },
         async buyProduct(product) {
             // получить текущий баланс

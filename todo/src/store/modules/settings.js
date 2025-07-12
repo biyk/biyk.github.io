@@ -12,10 +12,12 @@ function loadFromStorage() {
 
 export const state = {
     settings: loadFromStorage(),  // Массив настроек
+    calc: {}
 }
 
 export const getters = {
     allSettings: (state) => state.settings,  // Получить все настройки
+    allCalc: (state) => state.calc
 }
 
 export const mutations = {
@@ -27,6 +29,9 @@ export const mutations = {
         state.settings.splice(index, 1)  // Удаляем настройку по индексу
         await saveToStorage(state.settings)
     },
+    async CALC_SETTING(state, settings) {
+        state.calc = settings;
+    },
 }
 
 export const actions = {
@@ -36,4 +41,9 @@ export const actions = {
     deleteSetting({ commit }, index) {
         commit('DELETE_SETTING', index)  // Вызываем мутацию для удаления
     },
+    calcSettings({ commit }, settings) {
+        console.log(settings);
+        commit('CALC_SETTING', settings)  // Вызываем мутацию для удаления
+    },
+
 }

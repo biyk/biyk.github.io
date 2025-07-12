@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.7";
+window.version = "0.4.8";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8717,7 +8717,9 @@ async function calcExecutions(store2) {
   let today = today_time;
   let week = weekDaysWithData.size > 0 ? Math.round(week_time * 100 / weekDaysWithData.size) / 100 : 0;
   let month = monthDaysWithData.size > 0 ? Math.round(month_time * 100 / monthDaysWithData.size) / 100 : 0;
-  return { today, week, month };
+  let calc = { today, week, month };
+  store2.dispatch("settings/calcSettings", calc);
+  return calc;
 }
 async function makeTaskDone(task, store2, options = {}) {
   let {
@@ -10451,7 +10453,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_3a2653b7_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_4db42474_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10469,13 +10471,21 @@ const _sfc_main$2z = {
       });
       this.products = await itemsTable.getAll({ formated: true, format: "orm" });
     },
+    calc() {
+      let calc = this.$store.getters["settings/allCalc"];
+      if (calc && calc.today) {
+        return calc.week / calc.today;
+      }
+      return 1;
+    },
     async buyProduct(product) {
       let heroTable = new Table$2({
         spreadsheetId: this.spreadsheetId,
         list: "real_life_hero"
       });
       let hero2 = await heroTable.getAll({ formated: true, format: "array" });
-      let balance = parseInt(hero2.hero_money) - parseInt(product["reward_cost"]);
+      let reward_cost = parseInt(Math.round(product["reward_cost"] * this.calc()));
+      let balance = parseInt(hero2.hero_money) - reward_cost;
       await heroTable.updateRowByCode("hero_money", { value: balance });
       let historyTable = new Table$2({
         spreadsheetId: this.spreadsheetId,
@@ -10484,7 +10494,7 @@ const _sfc_main$2z = {
       await historyTable.addRow({
         claim_date: new Date().getTime(),
         item_id: generateUUIDv4(),
-        gold_spent: product["reward_cost"],
+        gold_spent: reward_cost,
         reward_title: product["reward_title"],
         reward_id: product["reward_id"]
       });
@@ -10523,7 +10533,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
           class: "product-item"
         }, [
           parseInt(product["reward_cost"]) ? (openBlock(), createElementBlock("span", _hoisted_2, [
-            createTextVNode(toDisplayString(product["reward_title"]) + " - " + toDisplayString(product["reward_cost"]) + " ", 1),
+            createTextVNode(toDisplayString(product["reward_title"]) + " - " + toDisplayString(parseInt(Math.round(product["reward_cost"] * $options.calc()))) + " ", 1),
             createBaseVNode("button", {
               onClick: ($event) => $options.buyProduct(product)
             }, " 🛒 ", 8, _hoisted_3)
@@ -10543,7 +10553,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-3a2653b7"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-4db42474"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {
@@ -69126,12 +69136,14 @@ function loadFromStorage() {
   return data ? JSON.parse(data) : [];
 }
 const state = {
-  settings: loadFromStorage()
+  settings: loadFromStorage(),
   // Массив настроек
+  calc: {}
 };
 const getters = {
-  allSettings: (state2) => state2.settings
+  allSettings: (state2) => state2.settings,
   // Получить все настройки
+  allCalc: (state2) => state2.calc
 };
 const mutations = {
   async SET_SETTINGS(state2, setting) {
@@ -69141,6 +69153,9 @@ const mutations = {
   async DELETE_SETTING(state2, index2) {
     state2.settings.splice(index2, 1);
     await saveToStorage(state2.settings);
+  },
+  async CALC_SETTING(state2, settings2) {
+    state2.calc = settings2;
   }
 };
 const actions = {
@@ -69149,6 +69164,10 @@ const actions = {
   },
   deleteSetting({ commit: commit2 }, index2) {
     commit2("DELETE_SETTING", index2);
+  },
+  calcSettings({ commit: commit2 }, settings2) {
+    console.log(settings2);
+    commit2("CALC_SETTING", settings2);
   }
 };
 const settings = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({

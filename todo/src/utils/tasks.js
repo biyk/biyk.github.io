@@ -91,7 +91,10 @@ export async function calcExecutions(store){
     let week = weekDaysWithData.size > 0 ? Math.round(week_time*100 / weekDaysWithData.size)/100 : 0;
     let month = monthDaysWithData.size > 0 ? Math.round(month_time*100 / monthDaysWithData.size)/100 : 0;
 
-    return { today, week, month }
+    let calc ={ today, week, month };
+
+    store.dispatch("settings/calcSettings", calc)
+    return calc
 
 }
 

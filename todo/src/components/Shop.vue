@@ -2,7 +2,7 @@
     <div>
         <ul v-if="products.length">
             <li v-for="product in products" :key="product['reward_id']" class="product-item">
-                <span v-if="parseInt(product['reward_cost'])">{{ product['reward_title'] }} - {{ product['reward_cost'] }} <button @click="buyProduct(product)">
+                <span v-if="parseInt(product['reward_cost'])">{{ product['reward_title'] }} - {{ parseInt(Math.round(product['reward_cost'] * calc()) ) }} <button @click="buyProduct(product)">
                     🛒
                 </button></span>
 
@@ -45,6 +45,14 @@ export default {
             });
             this.products = await itemsTable.getAll({formated:true, format: 'orm'});
         },
+        calc(){
+            let calc = this.$store.getters["settings/allCalc"];
+
+            if (calc && calc.today){
+                return calc.week / calc.today
+            }
+            return 1;
+        },
         async buyProduct(product) {
             // получить текущий баланс
             let heroTable = new Table({
@@ -53,8 +61,10 @@ export default {
             });
             let hero = await heroTable.getAll({formated: true, format: 'array'});
 
+            let reward_cost = parseInt(Math.round(product['reward_cost'] * this.calc()) )
+
             // вычесть стоимость из баланса
-            let balance = parseInt(hero.hero_money) - parseInt(product['reward_cost']);
+            let balance = parseInt(hero.hero_money) - reward_cost;
 
             // записать баланс в таблицу
             await heroTable.updateRowByCode('hero_money', {value: balance});
@@ -67,7 +77,7 @@ export default {
             await historyTable.addRow({
                 claim_date: new Date().getTime(),
                 item_id:generateUUIDv4(),
-                gold_spent: product['reward_cost'],
+                gold_spent: reward_cost,
                 reward_title: product['reward_title'],
                 reward_id: product['reward_id']
             });
@@ -89,6 +99,7 @@ export default {
         this.api = window.GoogleSheetDB || new GoogleSheetDB();
         await this.api.waitGoogle();
         await this.fetchProducts()
+
     }
 }
 </script>

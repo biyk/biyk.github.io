@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.9";
+window.version = "0.4.10";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -10453,7 +10453,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_12175de5_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_a211101e_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10482,7 +10482,7 @@ const _sfc_main$2z = {
     calc() {
       let calc = this.$store.getters["settings/allCalc"];
       if (calc && calc.today) {
-        return calc.week / calc.today;
+        return Math.max(calc.week, calc.month) / calc.today;
       }
       return calc.week;
     },
@@ -10562,7 +10562,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-12175de5"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-a211101e"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {
@@ -69175,7 +69175,6 @@ const actions = {
     commit2("DELETE_SETTING", index2);
   },
   calcSettings({ commit: commit2 }, settings2) {
-    console.log(settings2);
     commit2("CALC_SETTING", settings2);
   }
 };

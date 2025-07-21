@@ -42,7 +42,6 @@ export const actions = {
         commit('DELETE_SETTING', index)  // Вызываем мутацию для удаления
     },
     calcSettings({ commit }, settings) {
-        console.log(settings);
         commit('CALC_SETTING', settings)  // Вызываем мутацию для удаления
     },
 

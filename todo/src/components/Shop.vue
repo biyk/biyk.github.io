@@ -58,7 +58,7 @@ export default {
             let calc = this.$store.getters["settings/allCalc"];
 
             if (calc && calc.today){
-                return calc.week / calc.today
+                return Math.max(calc.week, calc.month) / calc.today
             }
             return calc.week;
         },

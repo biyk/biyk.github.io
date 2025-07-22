@@ -587,7 +587,7 @@ export class GoogleSheetDB {
         let storageTTL = await webStorage.getItem(storageTTLKey);
         let now = new Date().getTime();
         if (caching && storageData ) {
-            console.log('нужно кэшировать и есть в кэше')
+
             if (storageTTL > now){
                 console.log('кэш еще нормальный')
                 return JSON.parse(storageData);

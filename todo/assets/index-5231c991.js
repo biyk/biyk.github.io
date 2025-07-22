@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.14";
+window.version = "0.4.15";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8544,7 +8544,6 @@ const _sfc_main$2C = {
         start_date: 0,
         number_of_executions: 0
       });
-      this.task_uuid = generateUUIDv4();
       this.task_title = "";
     }
   }

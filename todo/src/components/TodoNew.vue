@@ -52,7 +52,6 @@ export default {
                 number_of_executions: 0
             })
 
-            this.task_uuid = generateUUIDv4();
             this.task_title = "";
         }
     }

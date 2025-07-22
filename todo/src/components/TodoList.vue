@@ -2,7 +2,12 @@
     <button v-if="filter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
     <button  v-if="filter==='0'" @click="setTaskCompleted">Отметить завершенные</button>
     <ul class="tasks">
-        <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.) <span style="float: right">{{log.today}} / {{log.week}} / {{log.month}}</span></li>
+        <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.) <span style="float: right"
+        ><span title="Времени сегодня">{{log.today}}</span> /
+            <span title="В среднем за неделю">{{log.week}}</span> /
+            <span title="В среднем за месяц">{{log.month}}</span>
+            (<span title="Уровень дисциплины">{{calc.averageCalc?.toFixed(2)}}</span>)
+        </span></li>
         <li
             v-for="todo in getSortedTodos()"
             :key="todo.id"
@@ -71,6 +76,9 @@ export default {
         events() {
             return this.$store.getters["events/getEvents"];
         },
+        calc(){
+            return  this.$store.getters["settings/allCalc"];
+        }
     },
     props: {
         filter: {

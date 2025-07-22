@@ -38,6 +38,7 @@ export async function calcExecutions(store){
     });
 
     let list = await table.getAll({formated: true, format: 'orm'});
+    let averageCalc = getAverageCalc(list)
 
     let today_time = 0;
     let week_time = 0;
@@ -47,7 +48,7 @@ export async function calcExecutions(store){
     let startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     let sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime(); // включая сегодня
 
-// Предыдущий месяц
+    // Предыдущий месяц
     let prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
     let prevMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
     let daysInPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
@@ -91,12 +92,77 @@ export async function calcExecutions(store){
     let week = weekDaysWithData.size > 0 ? Math.round(week_time*100 / weekDaysWithData.size)/100 : 0;
     let month = monthDaysWithData.size > 0 ? Math.round(month_time*100 / monthDaysWithData.size)/100 : 0;
 
-    let calc ={ today, week, month };
+    let calc ={ today, week, month , averageCalc};
 
     store.dispatch("settings/calcSettings", calc)
     return calc
 
 }
+
+function getAverageCalc(list) {
+    let start = 1;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const daysWorkSheet = {};
+
+    // Функция для получения ключа только с датой в формате YYYY-MM-DD
+    function getDateKey(date) {
+        return date.toISOString().split('T')[0];
+    }
+
+    // Собираем суммарное время по каждому дню
+    list.forEach(item => {
+        if (!item.execution_date || !parseInt(item.execution_time)) return;
+        let date = new Date(parseInt(item.execution_date));
+        if (isNaN(date.getTime())) {
+            console.log('Invalid Date', item);
+            return;
+        }
+        const dayKey = getDateKey(date);
+        daysWorkSheet[dayKey] = (daysWorkSheet[dayKey] || 0) + parseInt(item.execution_time);
+    });
+
+    // Генерируем все даты за последние 30 дней
+    const last30Days = [];
+    for (let i = 29; i >= 0; i--) {
+        const day = new Date(now.getTime() - i * oneDayMs);
+        const dayKey = getDateKey(day);
+        if (!(dayKey in daysWorkSheet)) {
+            daysWorkSheet[dayKey] = 0; // если не было работ, считаем 0
+        }
+        last30Days.push(dayKey);
+    }
+
+    // Проходим по каждому дню и сравниваем с предыдущими 10 днями
+    for (let i = 0; i < last30Days.length; i++) {
+        const currentDayKey = last30Days[i];
+        const currentTime = daysWorkSheet[currentDayKey];
+
+        const prev10DaysTime = [];
+        for (let j = 1; j <= 10; j++) {
+            const prevIndex = i - j;
+            if (prevIndex >= 0) {
+                const prevDayKey = last30Days[prevIndex];
+                prev10DaysTime.push(daysWorkSheet[prevDayKey]);
+            }
+        }
+
+        if (prev10DaysTime.length === 0) continue;
+
+        const prev10DaysAvg = prev10DaysTime.reduce((sum, val) => sum + val, 0) / prev10DaysTime.length;
+
+        if (currentTime <= prev10DaysAvg) {
+            start -= 0.01;
+        } else if (currentTime > prev10DaysAvg) {
+            start += 0.01;
+        }
+        //console.log(`Day: ${currentDayKey}, Current: ${currentTime}, PrevAvg: ${prev10DaysAvg.toFixed(2)}, Start: ${start.toFixed(2)}`);
+    }
+
+    return start;
+}
+
+
 
 export async function makeTaskDone(task, store, options = {}) {
 
@@ -166,7 +232,9 @@ export async function makeTaskDone(task, store, options = {}) {
     }
 
     number_of_executions++;
-    let money_reward = Math.round(task_time / 2)
+    let calc =  store.getters["settings/allCalc"];
+
+    let money_reward = Math.round(task_time  * calc.averageCalc / 2);
     const updatedTask = {
         ...task[0],
         task_date: task_date,

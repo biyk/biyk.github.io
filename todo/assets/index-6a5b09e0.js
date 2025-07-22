@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.13";
+window.version = "0.4.14";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7835,49 +7835,6 @@ function generateUUIDv4() {
     return value.toString(16);
   });
 }
-const _export_sfc$1 = (sfc, props2) => {
-  const target = sfc.__vccOpts || sfc;
-  for (const [key, val] of props2) {
-    target[key] = val;
-  }
-  return target;
-};
-const _sfc_main$2C = {
-  data() {
-    return {
-      task_title: "",
-      task_uuid: generateUUIDv4()
-    };
-  },
-  methods: {
-    addTodo: function() {
-      this.$store.dispatch("todos/addTodo", {
-        task_uuid: this.newId,
-        task_title: this.task_title
-      });
-      this.task_uuid = generateUUIDv4();
-      this.task_title = "";
-    }
-  }
-};
-function _sfc_render$w(_ctx, _cache, $props, $setup, $data, $options) {
-  return openBlock(), createElementBlock("form", null, [
-    withDirectives(createBaseVNode("input", {
-      class: "todo-input",
-      type: "text",
-      placeholder: "Enter a new task",
-      "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $data.task_title = $event)
-    }, null, 512), [
-      [vModelText, $data.task_title]
-    ]),
-    createBaseVNode("button", {
-      onClick: _cache[1] || (_cache[1] = (...args) => $options.addTodo && $options.addTodo(...args)),
-      type: "button"
-    }, "+")
-  ]);
-}
-const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2C, [["render", _sfc_render$w]]);
-const TodoList$1 = "";
 class WebStorage {
   constructor(dbName = "WebStorageDB", storeName = "keyval") {
     this.dbName = dbName;
@@ -8546,6 +8503,70 @@ function loadScriptOnce({ src, onload, async = true, defer = true }) {
   }
   document.head.appendChild(script);
 }
+const _export_sfc$1 = (sfc, props2) => {
+  const target = sfc.__vccOpts || sfc;
+  for (const [key, val] of props2) {
+    target[key] = val;
+  }
+  return target;
+};
+const _sfc_main$2C = {
+  data() {
+    return {
+      task_title: "",
+      task_uuid: generateUUIDv4()
+    };
+  },
+  methods: {
+    addTodo: async function() {
+      const api = window.GoogleSheetDB || new GoogleSheetDB();
+      await api.waitGoogle();
+      const settings2 = this.$store.getters["settings/allSettings"];
+      const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
+      let table = new Table$2({
+        spreadsheetId: spreadsheetSetting.value,
+        list: "real_life_tasks"
+      });
+      this.task_uuid = generateUUIDv4();
+      await table.addRow({
+        task_uuid: this.task_uuid,
+        task_title: this.task_title,
+        task_date: new Date().getTime(),
+        task_sort: 100,
+        task_time: 15,
+        repeat_index: 1,
+        date_mode: 1,
+        break_multiplier: 1,
+        task_color: "blue",
+        money_reward: 10,
+        repeat_mode: 6,
+        task_finish_date: 0,
+        start_date: 0,
+        number_of_executions: 0
+      });
+      this.task_uuid = generateUUIDv4();
+      this.task_title = "";
+    }
+  }
+};
+function _sfc_render$w(_ctx, _cache, $props, $setup, $data, $options) {
+  return openBlock(), createElementBlock("form", null, [
+    withDirectives(createBaseVNode("input", {
+      class: "todo-input",
+      type: "text",
+      placeholder: "Enter a new task",
+      "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $data.task_title = $event)
+    }, null, 512), [
+      [vModelText, $data.task_title]
+    ]),
+    createBaseVNode("button", {
+      onClick: _cache[1] || (_cache[1] = (...args) => $options.addTodo && $options.addTodo(...args)),
+      type: "button"
+    }, "+")
+  ]);
+}
+const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2C, [["render", _sfc_render$w]]);
+const TodoList$1 = "";
 async function listEvents(store2 = false) {
   const api = window.GoogleSheetDB || new GoogleSheetDB();
   await api.waitGoogle();

@@ -38,7 +38,8 @@ export async function calcExecutions(store){
     });
 
     let list = await table.getAll({formated: true, format: 'orm'});
-    let averageCalc = getAverageCalc(list)
+
+    let {averageCalc, prev10DaysAvg} = getAverageCalc(list)
 
     let today_time = 0;
     let week_time = 0;
@@ -92,7 +93,7 @@ export async function calcExecutions(store){
     let week = weekDaysWithData.size > 0 ? Math.round(week_time*100 / weekDaysWithData.size)/100 : 0;
     let month = monthDaysWithData.size > 0 ? Math.round(month_time*100 / monthDaysWithData.size)/100 : 0;
 
-    let calc ={ today, week, month , averageCalc};
+    let calc ={ today, week, month , averageCalc, prev10DaysAvg};
 
     store.dispatch("settings/calcSettings", calc)
     return calc
@@ -134,6 +135,7 @@ function getAverageCalc(list) {
     }
 
     // Проходим по каждому дню и сравниваем с предыдущими 10 днями
+    let prev10DaysAvg;
     for (let i = 0; i < last30Days.length; i++) {
         const currentDayKey = last30Days[i];
         const currentTime = daysWorkSheet[currentDayKey];
@@ -149,7 +151,7 @@ function getAverageCalc(list) {
 
         if (prev10DaysTime.length === 0) continue;
 
-        const prev10DaysAvg = prev10DaysTime.reduce((sum, val) => sum + val, 0) / prev10DaysTime.length;
+        prev10DaysAvg = prev10DaysTime.reduce((sum, val) => sum + val, 0) / prev10DaysTime.length;
 
         if (currentTime <= prev10DaysAvg) {
             start -= 0.01;
@@ -158,8 +160,8 @@ function getAverageCalc(list) {
         }
         //console.log(`Day: ${currentDayKey}, Current: ${currentTime}, PrevAvg: ${prev10DaysAvg.toFixed(2)}, Start: ${start.toFixed(2)}`);
     }
-
-    return start;
+    let averageCalc = start
+    return {averageCalc, prev10DaysAvg};
 }
 
 

@@ -6,7 +6,8 @@
         ><span title="Времени сегодня">{{log.today}}</span> /
             <span title="В среднем за неделю">{{log.week}}</span> /
             <span title="В среднем за месяц">{{log.month}}</span>
-            (<span title="Уровень дисциплины">{{calc.averageCalc?.toFixed(2)}}</span>)
+            (<span title="Уровень дисциплины">{{calc.averageCalc?.toFixed(2)}}</span> /
+            <span title="Проверка дисциплины">{{calc.prev10DaysAvg?.toFixed(2)}}</span>)
         </span></li>
         <li
             v-for="todo in getSortedTodos()"

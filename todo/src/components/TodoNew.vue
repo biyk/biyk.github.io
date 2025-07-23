@@ -45,7 +45,7 @@ export default {
                 date_mode: 1,
                 break_multiplier: 1,
                 task_color: 'blue',
-                money_reward: 10,
+                money_reward: 7,
                 repeat_mode: 6,
                 task_finish_date: 0,
                 start_date: 0,

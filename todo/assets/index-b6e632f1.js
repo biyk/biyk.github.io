@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.15";
+window.version = "0.4.16";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8538,7 +8538,7 @@ const _sfc_main$2C = {
         date_mode: 1,
         break_multiplier: 1,
         task_color: "blue",
-        money_reward: 10,
+        money_reward: 7,
         repeat_mode: 6,
         task_finish_date: 0,
         start_date: 0,
@@ -8702,7 +8702,7 @@ async function calcExecutions(store2) {
     list: "task_executions"
   });
   let list = await table.getAll({ formated: true, format: "orm" });
-  let averageCalc = getAverageCalc(list);
+  let { averageCalc, prev10DaysAvg } = getAverageCalc(list);
   let today_time = 0;
   let week_time = 0;
   let month_time = 0;
@@ -8737,7 +8737,7 @@ async function calcExecutions(store2) {
   let today = today_time;
   let week = weekDaysWithData.size > 0 ? Math.round(week_time * 100 / weekDaysWithData.size) / 100 : 0;
   let month = monthDaysWithData.size > 0 ? Math.round(month_time * 100 / monthDaysWithData.size) / 100 : 0;
-  let calc = { today, week, month, averageCalc };
+  let calc = { today, week, month, averageCalc, prev10DaysAvg };
   store2.dispatch("settings/calcSettings", calc);
   return calc;
 }
@@ -8769,6 +8769,7 @@ function getAverageCalc(list) {
     }
     last30Days.push(dayKey);
   }
+  let prev10DaysAvg;
   for (let i = 0; i < last30Days.length; i++) {
     const currentDayKey = last30Days[i];
     const currentTime = daysWorkSheet[currentDayKey];
@@ -8782,14 +8783,15 @@ function getAverageCalc(list) {
     }
     if (prev10DaysTime.length === 0)
       continue;
-    const prev10DaysAvg = prev10DaysTime.reduce((sum2, val) => sum2 + val, 0) / prev10DaysTime.length;
+    prev10DaysAvg = prev10DaysTime.reduce((sum2, val) => sum2 + val, 0) / prev10DaysTime.length;
     if (currentTime <= prev10DaysAvg) {
       start -= 0.01;
     } else if (currentTime > prev10DaysAvg) {
       start += 0.01;
     }
   }
-  return start;
+  let averageCalc = start;
+  return { averageCalc, prev10DaysAvg };
 }
 async function makeTaskDone(task, store2, options = {}) {
   let {
@@ -9367,36 +9369,37 @@ const _hoisted_3$2 = { title: "Времени сегодня" };
 const _hoisted_4$2 = { title: "В среднем за неделю" };
 const _hoisted_5$1 = { title: "В среднем за месяц" };
 const _hoisted_6 = { title: "Уровень дисциплины" };
-const _hoisted_7 = ["title", "onClick"];
-const _hoisted_8 = { key: 0 };
-const _hoisted_9 = { key: 1 };
-const _hoisted_10 = {
+const _hoisted_7 = { title: "Проверка дисциплины" };
+const _hoisted_8 = ["title", "onClick"];
+const _hoisted_9 = { key: 0 };
+const _hoisted_10 = { key: 1 };
+const _hoisted_11 = {
   key: 0,
   class: "editable-description"
 };
-const _hoisted_11 = ["onUpdate:modelValue"];
-const _hoisted_12 = ["onClick"];
-const _hoisted_13 = {
+const _hoisted_12 = ["onUpdate:modelValue"];
+const _hoisted_13 = ["onClick"];
+const _hoisted_14 = {
   key: 1,
   class: "buttons"
 };
-const _hoisted_14 = { style: { "margin-right": "8px" } };
-const _hoisted_15 = ["onClick"];
-const _hoisted_16 = { key: 1 };
-const _hoisted_17 = ["onClick"];
+const _hoisted_15 = { style: { "margin-right": "8px" } };
+const _hoisted_16 = ["onClick"];
+const _hoisted_17 = { key: 1 };
 const _hoisted_18 = ["onClick"];
-const _hoisted_19 = {
+const _hoisted_19 = ["onClick"];
+const _hoisted_20 = {
   key: 1,
   class: "done"
 };
-const _hoisted_20 = ["onClick"];
 const _hoisted_21 = ["onClick"];
-const _hoisted_22 = {
+const _hoisted_22 = ["onClick"];
+const _hoisted_23 = {
   key: 2,
   class: "plus"
 };
 function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
-  var _a2;
+  var _a2, _b;
   return openBlock(), createElementBlock(Fragment, null, [
     $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
       key: 0,
@@ -9417,7 +9420,9 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
           createBaseVNode("span", _hoisted_5$1, toDisplayString($data.log.month), 1),
           _cache[4] || (_cache[4] = createTextVNode(" (")),
           createBaseVNode("span", _hoisted_6, toDisplayString((_a2 = $options.calc.averageCalc) == null ? void 0 : _a2.toFixed(2)), 1),
-          _cache[5] || (_cache[5] = createTextVNode(") "))
+          _cache[5] || (_cache[5] = createTextVNode(" / ")),
+          createBaseVNode("span", _hoisted_7, toDisplayString((_b = $options.calc.prev10DaysAvg) == null ? void 0 : _b.toFixed(2)), 1),
+          _cache[6] || (_cache[6] = createTextVNode(") "))
         ])
       ]),
       (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
@@ -9431,46 +9436,46 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
             onClick: ($event) => $options.togglePopover(todo.task_uuid)
           }, [
             createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " ", 1),
-            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_8, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : parseInt(todo.task_finish_date) ? (openBlock(), createElementBlock("span", _hoisted_9, toDisplayString((todo.task_finish_date / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
-          ], 8, _hoisted_7),
-          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_10, [
+            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_9, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : parseInt(todo.task_finish_date) ? (openBlock(), createElementBlock("span", _hoisted_10, toDisplayString((todo.task_finish_date / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
+          ], 8, _hoisted_8),
+          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_11, [
             withDirectives(createBaseVNode("textarea", {
               "onUpdate:modelValue": ($event) => todo.task_description = $event,
               rows: "3",
               style: { "width": "100%", "margin-top": "8px" }
-            }, null, 8, _hoisted_11), [
+            }, null, 8, _hoisted_12), [
               [vModelText, todo.task_description]
             ]),
             createBaseVNode("button", {
               onClick: ($event) => $options.closeEditor(todo),
               style: { "margin-top": "4px" }
-            }, "✅ Сохранить", 8, _hoisted_12)
+            }, "✅ Сохранить", 8, _hoisted_13)
           ])) : createCommentVNode("", true),
-          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_13, [
-            createBaseVNode("span", _hoisted_14, [
+          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_14, [
+            createBaseVNode("span", _hoisted_15, [
               todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
                 key: 0,
                 onClick: ($event) => $options.startTask(todo)
-              }, "▶️", 8, _hoisted_15)) : (openBlock(), createElementBlock("span", _hoisted_16, [
+              }, "▶️", 8, _hoisted_16)) : (openBlock(), createElementBlock("span", _hoisted_17, [
                 createBaseVNode("button", {
                   onClick: withModifiers(($event) => $options.pauseTask(todo), ["stop"])
-                }, "⏸", 8, _hoisted_17)
+                }, "⏸", 8, _hoisted_18)
               ]))
             ]),
             todo.start_date == 0 ? (openBlock(), createElementBlock("span", {
               key: 0,
               class: "done",
               onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-            }, "✅", 8, _hoisted_18)) : (openBlock(), createElementBlock("span", _hoisted_19, [
+            }, "✅", 8, _hoisted_19)) : (openBlock(), createElementBlock("span", _hoisted_20, [
               createBaseVNode("button", {
                 onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-              }, "⏹", 8, _hoisted_20)
+              }, "⏹", 8, _hoisted_21)
             ])),
             createBaseVNode("span", {
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
-            }, "ⓧ", 8, _hoisted_21),
-            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_22, "Добавить задачу в календарь")) : createCommentVNode("", true)
+            }, "ⓧ", 8, _hoisted_22),
+            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_23, "Добавить задачу в календарь")) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))

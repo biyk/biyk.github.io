@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.16";
+window.version = "0.4.17";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8784,7 +8784,8 @@ function getAverageCalc(list) {
     if (prev10DaysTime.length === 0)
       continue;
     prev10DaysAvg = prev10DaysTime.reduce((sum2, val) => sum2 + val, 0) / prev10DaysTime.length;
-    if (currentTime <= prev10DaysAvg) {
+    let lim = 1 - 0.6180339887 / 2;
+    if (currentTime <= prev10DaysAvg * lim) {
       start -= 0.01;
     } else if (currentTime > prev10DaysAvg) {
       start += 0.01;

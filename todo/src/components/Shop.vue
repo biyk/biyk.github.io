@@ -3,7 +3,7 @@
         <ul v-if="products.length">
             <li v-for="product in products" :key="product['reward_id']" class="product-item">
                 <span v-if="parseInt(product['reward_cost'])">{{ product['reward_title'] }} - {{ cost(product) }} <button
-                    v-if="hero.hero_money > cost(product)"
+
                     @click="buyProduct(product)">🛒</button>
                 </span>
 

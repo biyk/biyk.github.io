@@ -153,7 +153,8 @@ function getAverageCalc(list) {
 
         prev10DaysAvg = prev10DaysTime.reduce((sum, val) => sum + val, 0) / prev10DaysTime.length;
 
-        if (currentTime <= prev10DaysAvg) {
+        let lim = 1 - 0.6180339887/2;
+        if (currentTime <= prev10DaysAvg * lim) {
             start -= 0.01;
         } else if (currentTime > prev10DaysAvg) {
             start += 0.01;

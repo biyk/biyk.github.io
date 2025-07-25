@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.19";
+window.version = "0.4.20";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -10547,7 +10547,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_653d6242_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_ac283472_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10637,8 +10637,9 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
           parseInt(product["reward_cost"]) ? (openBlock(), createElementBlock("span", _hoisted_2, [
             createTextVNode(toDisplayString(product["reward_title"]) + " - " + toDisplayString($options.cost(product)) + " ", 1),
             createBaseVNode("button", {
+              style: normalizeStyle({ backgroundColor: $options.hero.hero_money < $options.cost(product) ? "red" : "" }),
               onClick: ($event) => $options.buyProduct(product)
-            }, "🛒", 8, _hoisted_3)
+            }, "🛒", 12, _hoisted_3)
           ])) : createCommentVNode("", true)
         ]);
       }), 128))
@@ -10655,7 +10656,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-653d6242"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-ac283472"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

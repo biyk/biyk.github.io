@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.20";
+window.version = "0.4.21";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7724,6 +7724,69 @@ const vModelRadio = {
     }
   }
 };
+const vModelSelect = {
+  // <select multiple> value need to be deep traversed
+  deep: true,
+  created(el, { value, modifiers: { number: number4 } }, vnode) {
+    const isSetModel = isSet$2(value);
+    addEventListener(el, "change", () => {
+      const selectedVal = Array.prototype.filter.call(el.options, (o2) => o2.selected).map(
+        (o2) => number4 ? looseToNumber(getValue$2(o2)) : getValue$2(o2)
+      );
+      el[assignKey](
+        el.multiple ? isSetModel ? new Set(selectedVal) : selectedVal : selectedVal[0]
+      );
+      el._assigning = true;
+      nextTick(() => {
+        el._assigning = false;
+      });
+    });
+    el[assignKey] = getModelAssigner(vnode);
+  },
+  // set value in mounted & updated because <select> relies on its children
+  // <option>s.
+  mounted(el, { value }) {
+    setSelected(el, value);
+  },
+  beforeUpdate(el, _binding, vnode) {
+    el[assignKey] = getModelAssigner(vnode);
+  },
+  updated(el, { value }) {
+    if (!el._assigning) {
+      setSelected(el, value);
+    }
+  }
+};
+function setSelected(el, value) {
+  const isMultiple = el.multiple;
+  const isArrayValue = isArray$3(value);
+  if (isMultiple && !isArrayValue && !isSet$2(value)) {
+    return;
+  }
+  for (let i = 0, l2 = el.options.length; i < l2; i++) {
+    const option = el.options[i];
+    const optionValue = getValue$2(option);
+    if (isMultiple) {
+      if (isArrayValue) {
+        const optionType = typeof optionValue;
+        if (optionType === "string" || optionType === "number") {
+          option.selected = value.some((v2) => String(v2) === String(optionValue));
+        } else {
+          option.selected = looseIndexOf(value, optionValue) > -1;
+        }
+      } else {
+        option.selected = value.has(optionValue);
+      }
+    } else if (looseEqual(getValue$2(option), value)) {
+      if (el.selectedIndex !== i)
+        el.selectedIndex = i;
+      return;
+    }
+  }
+  if (!isMultiple && el.selectedIndex !== -1) {
+    el.selectedIndex = -1;
+  }
+}
 function getValue$2(el) {
   return "_value" in el ? el._value : el.value;
 }
@@ -9173,7 +9236,8 @@ const _sfc_main$2B = {
       total: 0,
       timer: 0,
       currentTime: 0,
-      log: {}
+      log: {},
+      selectedFilter: ""
     };
   },
   computed: {
@@ -9207,7 +9271,7 @@ const _sfc_main$2B = {
         if (todo.task_title.includes("task_title"))
           return false;
         const start = parseInt(todo.task_date);
-        switch (this.filter) {
+        switch (this.selectedFilter) {
           case "today":
             return start < today;
           case "calendar":
@@ -9294,7 +9358,7 @@ const _sfc_main$2B = {
       makeTaskDone(task, this.$store, { deleted: 1 });
     }, 1e3),
     getSortedTodos() {
-      switch (this.filter) {
+      switch (this.selectedFilter) {
         case "calendar":
           const filteredTodos = this.getFilteredTodos();
           let sortedTodos = [];
@@ -9362,6 +9426,7 @@ const _sfc_main$2B = {
       this.currentTime = new Date().getTime();
     }, 1e3);
     this.log = await calcExecutions(this.$store);
+    this.selectedFilter = this.filter;
   }
 };
 const _hoisted_1$3 = { class: "tasks" };
@@ -9402,28 +9467,39 @@ const _hoisted_23 = {
 function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
   var _a2, _b;
   return openBlock(), createElementBlock(Fragment, null, [
-    $props.filter === "calendar" ? (openBlock(), createElementBlock("button", {
+    withDirectives(createBaseVNode("select", {
+      "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $data.selectedFilter = $event)
+    }, _cache[3] || (_cache[3] = [
+      createBaseVNode("option", { value: "calendar" }, "Сейчас", -1),
+      createBaseVNode("option", { value: "today" }, "Сегодня", -1),
+      createBaseVNode("option", { value: "tomorrow" }, "Завтра", -1),
+      createBaseVNode("option", { value: "all" }, "Все", -1)
+    ]), 512), [
+      [vModelSelect, $data.selectedFilter]
+    ]),
+    _cache[9] || (_cache[9] = createBaseVNode("hr", null, null, -1)),
+    $data.selectedFilter === "calendar" ? (openBlock(), createElementBlock("button", {
       key: 0,
-      onClick: _cache[0] || (_cache[0] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
+      onClick: _cache[1] || (_cache[1] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
     }, "Заполнить календарь")) : createCommentVNode("", true),
-    $props.filter === "0" ? (openBlock(), createElementBlock("button", {
+    $data.selectedFilter === "0" ? (openBlock(), createElementBlock("button", {
       key: 1,
-      onClick: _cache[1] || (_cache[1] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
+      onClick: _cache[2] || (_cache[2] = (...args) => $options.setTaskCompleted && $options.setTaskCompleted(...args))
     }, "Отметить завершенные")) : createCommentVNode("", true),
     createBaseVNode("ul", _hoisted_1$3, [
       createBaseVNode("li", null, [
         createTextVNode(toDisplayString($options.getSortedTodos().length) + " (" + toDisplayString($options.getTotalTime()) + " ч.) ", 1),
         createBaseVNode("span", _hoisted_2$2, [
           createBaseVNode("span", _hoisted_3$2, toDisplayString($data.log.today), 1),
-          _cache[2] || (_cache[2] = createTextVNode(" / ")),
+          _cache[4] || (_cache[4] = createTextVNode(" / ")),
           createBaseVNode("span", _hoisted_4$2, toDisplayString($data.log.week), 1),
-          _cache[3] || (_cache[3] = createTextVNode(" / ")),
-          createBaseVNode("span", _hoisted_5$1, toDisplayString($data.log.month), 1),
-          _cache[4] || (_cache[4] = createTextVNode(" (")),
-          createBaseVNode("span", _hoisted_6, toDisplayString((_a2 = $options.calc.averageCalc) == null ? void 0 : _a2.toFixed(2)), 1),
           _cache[5] || (_cache[5] = createTextVNode(" / ")),
+          createBaseVNode("span", _hoisted_5$1, toDisplayString($data.log.month), 1),
+          _cache[6] || (_cache[6] = createTextVNode(" (")),
+          createBaseVNode("span", _hoisted_6, toDisplayString((_a2 = $options.calc.averageCalc) == null ? void 0 : _a2.toFixed(2)), 1),
+          _cache[7] || (_cache[7] = createTextVNode(" / ")),
           createBaseVNode("span", _hoisted_7, toDisplayString((_b = $options.calc.prev10DaysAvg) == null ? void 0 : _b.toFixed(2)), 1),
-          _cache[6] || (_cache[6] = createTextVNode(") "))
+          _cache[8] || (_cache[8] = createTextVNode(") "))
         ])
       ]),
       (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
@@ -9476,7 +9552,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
             }, "ⓧ", 8, _hoisted_22),
-            $props.filter === "all" ? (openBlock(), createElementBlock("span", _hoisted_23, "Добавить задачу в календарь")) : createCommentVNode("", true)
+            $data.selectedFilter === "all" ? (openBlock(), createElementBlock("span", _hoisted_23, "Добавить задачу в календарь")) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))
@@ -10725,24 +10801,6 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1
         }),
         createVNode(_component_el_tab_pane, {
-          label: "Активные задачи",
-          name: "today"
-        }, {
-          default: withCtx(() => [
-            createVNode(_component_TodoList, { filter: "today" })
-          ]),
-          _: 1
-        }),
-        createVNode(_component_el_tab_pane, {
-          label: "Список",
-          name: "list"
-        }, {
-          default: withCtx(() => [
-            createVNode(_component_TodoList, { filter: "all" })
-          ]),
-          _: 1
-        }),
-        createVNode(_component_el_tab_pane, {
           label: "Добавить",
           name: "new"
         }, {
@@ -10760,7 +10818,8 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
           ]),
           _: 1
         }),
-        createVNode(_component_el_tab_pane, {
+        0 ? (openBlock(), createBlock(_component_el_tab_pane, {
+          key: 0,
           label: "Персонаж",
           name: "player"
         }, {
@@ -10768,7 +10827,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
             createBaseVNode("div", null, "Тут будут данные игрока", -1)
           ])),
           _: 1
-        }),
+        })) : createCommentVNode("", true),
         createVNode(_component_el_tab_pane, {
           label: "Настройки",
           name: "settings"
@@ -40277,7 +40336,7 @@ const useSelect$2 = (props2, emit2) => {
         handleQueryChange("");
       }
     }
-    setSelected();
+    setSelected2();
     if (!isEqual$1(val, oldVal) && props2.validateEvent) {
       formItem == null ? void 0 : formItem.validate("change").catch((err) => debugWarn());
     }
@@ -40298,7 +40357,7 @@ const useSelect$2 = (props2, emit2) => {
   watch(() => states.options.entries(), () => {
     if (!isClient)
       return;
-    setSelected();
+    setSelected2();
     if (props2.defaultFirstOption && (props2.filterable || props2.remote) && filteredOptionsCount.value) {
       checkDefaultFirstOption();
     }
@@ -40343,7 +40402,7 @@ const useSelect$2 = (props2, emit2) => {
     const valueList = optionsArray.value.map((item) => item.value);
     states.hoveringIndex = getValueIndex(valueList, userCreatedOption || firstOriginOption);
   };
-  const setSelected = () => {
+  const setSelected2 = () => {
     if (!props2.multiple) {
       const value = isArray$3(props2.modelValue) ? props2.modelValue[0] : props2.modelValue;
       const option = getOption(value);
@@ -40672,7 +40731,7 @@ const useSelect$2 = (props2, emit2) => {
   useResizeObserver(tagMenuRef, updateTagTooltip);
   useResizeObserver(collapseItemRef, resetCollapseItemWidth);
   onMounted(() => {
-    setSelected();
+    setSelected2();
   });
   return {
     inputId,
@@ -40708,7 +40767,7 @@ const useSelect$2 = (props2, emit2) => {
     showNewOption,
     updateOptions: updateOptions2,
     collapseTagSize,
-    setSelected,
+    setSelected: setSelected2,
     selectDisabled,
     emptyText,
     handleCompositionStart,

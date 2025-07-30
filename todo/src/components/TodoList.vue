@@ -1,6 +1,13 @@
 <template>
-    <button v-if="filter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
-    <button  v-if="filter==='0'" @click="setTaskCompleted">Отметить завершенные</button>
+    <select v-model="selectedFilter">
+        <option value="calendar">Сейчас</option>
+        <option value="today">Сегодня</option>
+        <option value="tomorrow">Завтра</option>
+        <option value="all">Все</option>
+    </select>
+    <hr>
+    <button v-if="selectedFilter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
+    <button  v-if="selectedFilter==='0'" @click="setTaskCompleted">Отметить завершенные</button>
     <ul class="tasks">
         <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.) <span style="float: right"
         ><span title="Времени сегодня">{{log.today}}</span> /
@@ -47,7 +54,7 @@
                     <button @click.stop="toggleTodo(todo.task_uuid)">⏹</button>
                 </span>
                 <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
-                <span v-if="filter==='all'" class="plus" >Добавить задачу в календарь</span>
+                <span v-if="selectedFilter==='all'" class="plus" >Добавить задачу в календарь</span>
             </div>
         </li>
 
@@ -67,7 +74,8 @@ export default {
             total: 0,
             timer: 0,
             currentTime: 0,
-            log:{}
+            log:{},
+            selectedFilter: ''
         };
     },
     computed: {
@@ -100,7 +108,7 @@ export default {
             return this.todos.filter(todo => {
                 if (todo.task_title.includes('task_title')) return false;
                 const start = parseInt(todo.task_date);
-                switch (this.filter) {
+                switch (this.selectedFilter) {
                     case 'today':
                         return start < today;
                     case 'calendar':
@@ -184,7 +192,7 @@ export default {
             makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),
         getSortedTodos(){
-            switch (this.filter) {
+            switch (this.selectedFilter) {
                 case 'calendar':
                     // Получаем список отфильтрованных задач
                     const filteredTodos = this.getFilteredTodos();
@@ -266,6 +274,7 @@ export default {
             this.currentTime = new Date().getTime();
         }, 1000);
         this.log = await calcExecutions(this.$store);
+        this.selectedFilter = this.filter;
     }
 };
 </script>

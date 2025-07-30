@@ -5,19 +5,13 @@
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />
             </el-tab-pane>
-            <el-tab-pane label="Активные задачи" name="today">
-                <TodoList filter="today"  />
-            </el-tab-pane>
-            <el-tab-pane label="Список" name="list">
-                <TodoList filter="all" />
-            </el-tab-pane>
             <el-tab-pane label="Добавить" name="new">
                 <TodoNew />
             </el-tab-pane>
             <el-tab-pane label="Магазин" name="shop">
                 <Shop/>
             </el-tab-pane>
-            <el-tab-pane label="Персонаж" name="player">
+            <el-tab-pane label="Персонаж" name="player" v-if="0">
                 <div>Тут будут данные игрока</div>
             </el-tab-pane>
             <el-tab-pane label="Настройки" name="settings">

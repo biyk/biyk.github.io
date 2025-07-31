@@ -1,10 +1,10 @@
 <template>
-    <select v-model="selectedFilter">
-        <option value="calendar">Сейчас</option>
-        <option value="today">Сегодня</option>
-        <option value="tomorrow">Завтра</option>
-        <option value="all">Все</option>
-    </select>
+    <el-radio-group v-model="selectedFilter" class="neumorphic-radio-group">
+        <el-radio-button label="calendar" class="neumorphic-button">Сейчас</el-radio-button>
+        <el-radio-button label="today" class="neumorphic-button">Сегодня</el-radio-button>
+        <el-radio-button label="tomorrow" class="neumorphic-button">Завтра</el-radio-button>
+        <el-radio-button label="all" class="neumorphic-button">Все</el-radio-button>
+    </el-radio-group>
     <hr>
     <button v-if="selectedFilter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
     <button  v-if="selectedFilter==='0'" @click="setTaskCompleted">Отметить завершенные</button>
@@ -75,7 +75,7 @@ export default {
             timer: 0,
             currentTime: 0,
             log:{},
-            selectedFilter: ''
+            selectedFilter: 'calendar'
         };
     },
     computed: {
@@ -279,4 +279,38 @@ export default {
 };
 </script>
 
+<style scoped>
+.neumorphic-radio-group {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: #e0e0e0; /* общий фон */
+    border-radius: 20px;
+}
 
+.neumorphic-button {
+    background: #e0e0e0;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 4px 4px 8px #bebebe,
+    -4px -4px 8px #ffffff;
+}
+
+/* Активная (впуклая) кнопка */
+.el-radio-button__original-radio:checked + .neumorphic-button,
+.el-radio-button.is-active.neumorphic-button {
+    box-shadow: inset 4px 4px 8px #bebebe,
+    inset -4px -4px 8px #ffffff;
+}
+
+/* Hover эффект для большей интерактивности */
+.neumorphic-button:hover {
+    box-shadow: 2px 2px 4px #bebebe,
+    -2px -2px 4px #ffffff;
+}
+
+</style>

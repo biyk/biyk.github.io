@@ -16,7 +16,7 @@ export class ORM {
     getRaw(data = {}) {
         let result = [];
         this.columns.forEach((value, index) => {
-            console.log(index, value ,data[value])
+            //console.log(index, value ,data[value])
 
             if (value === 'value') {
                 const raw = typeof data[value] === 'object' ? JSON.stringify(data[value]) : data[value];

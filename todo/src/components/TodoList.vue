@@ -27,6 +27,8 @@
                 @click="togglePopover(todo.task_uuid)"
             >
                 ({{ todo.task_time}}) {{ todo.task_title }}
+                                <span v-if="selectedFilter==='all'" class="plus" >{{ todo.repeat_index }}</span>
+
                 <span v-if="parseInt(todo.start_date)"> {{ ((currentTime - todo.start_date) / (60*1000)).toFixed(2)}}</span>
                 <span v-else-if="parseInt(todo.task_finish_date)"> {{ ((todo.task_finish_date) / (60*1000)).toFixed(2)}}</span>
             </span>
@@ -54,7 +56,6 @@
                     <button @click.stop="toggleTodo(todo.task_uuid)">⏹</button>
                 </span>
                 <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
-                <span v-if="selectedFilter==='all'" class="plus" >Добавить задачу в календарь</span>
             </div>
         </li>
 
@@ -171,7 +172,7 @@ export default {
                 await addEvent(event);
                 //т.к. задача была не на сегодня
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
-                task[0].repeat_index = parseFloat(task[0].repeat_index) - 0.1;
+                task[0].repeat_index = parseFloat( task[0].repeat_index.toString().replace(',', '.')) - 0.1;
             }
             setTimeout(async () => {
                 await makeTaskDone(task, this.$store);
@@ -187,7 +188,7 @@ export default {
                 let eventId = exist[0].id
                 await deleteEvent(eventId)
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) - 0.1;
-                task[0].repeat_index = parseFloat(task[0].repeat_index) + 0.1;
+                task[0].repeat_index = parseFloat( task[0].repeat_index.toString().replace(',', '.')) + 0.1;
             }
             makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),

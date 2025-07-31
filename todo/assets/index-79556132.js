@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.21";
+window.version = "0.4.22";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7724,69 +7724,6 @@ const vModelRadio = {
     }
   }
 };
-const vModelSelect = {
-  // <select multiple> value need to be deep traversed
-  deep: true,
-  created(el, { value, modifiers: { number: number4 } }, vnode) {
-    const isSetModel = isSet$2(value);
-    addEventListener(el, "change", () => {
-      const selectedVal = Array.prototype.filter.call(el.options, (o2) => o2.selected).map(
-        (o2) => number4 ? looseToNumber(getValue$2(o2)) : getValue$2(o2)
-      );
-      el[assignKey](
-        el.multiple ? isSetModel ? new Set(selectedVal) : selectedVal : selectedVal[0]
-      );
-      el._assigning = true;
-      nextTick(() => {
-        el._assigning = false;
-      });
-    });
-    el[assignKey] = getModelAssigner(vnode);
-  },
-  // set value in mounted & updated because <select> relies on its children
-  // <option>s.
-  mounted(el, { value }) {
-    setSelected(el, value);
-  },
-  beforeUpdate(el, _binding, vnode) {
-    el[assignKey] = getModelAssigner(vnode);
-  },
-  updated(el, { value }) {
-    if (!el._assigning) {
-      setSelected(el, value);
-    }
-  }
-};
-function setSelected(el, value) {
-  const isMultiple = el.multiple;
-  const isArrayValue = isArray$3(value);
-  if (isMultiple && !isArrayValue && !isSet$2(value)) {
-    return;
-  }
-  for (let i = 0, l2 = el.options.length; i < l2; i++) {
-    const option = el.options[i];
-    const optionValue = getValue$2(option);
-    if (isMultiple) {
-      if (isArrayValue) {
-        const optionType = typeof optionValue;
-        if (optionType === "string" || optionType === "number") {
-          option.selected = value.some((v2) => String(v2) === String(optionValue));
-        } else {
-          option.selected = looseIndexOf(value, optionValue) > -1;
-        }
-      } else {
-        option.selected = value.has(optionValue);
-      }
-    } else if (looseEqual(getValue$2(option), value)) {
-      if (el.selectedIndex !== i)
-        el.selectedIndex = i;
-      return;
-    }
-  }
-  if (!isMultiple && el.selectedIndex !== -1) {
-    el.selectedIndex = -1;
-  }
-}
 function getValue$2(el) {
   return "_value" in el ? el._value : el.value;
 }
@@ -9229,6 +9166,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
+const TodoList_vue_vue_type_style_index_0_scoped_d7f1aa86_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9237,7 +9175,7 @@ const _sfc_main$2B = {
       timer: 0,
       currentTime: 0,
       log: {},
-      selectedFilter: ""
+      selectedFilter: "calendar"
     };
   },
   computed: {
@@ -9466,18 +9404,55 @@ const _hoisted_23 = {
 };
 function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
   var _a2, _b;
+  const _component_el_radio_button = resolveComponent("el-radio-button");
+  const _component_el_radio_group = resolveComponent("el-radio-group");
   return openBlock(), createElementBlock(Fragment, null, [
-    withDirectives(createBaseVNode("select", {
-      "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $data.selectedFilter = $event)
-    }, _cache[3] || (_cache[3] = [
-      createBaseVNode("option", { value: "calendar" }, "Сейчас", -1),
-      createBaseVNode("option", { value: "today" }, "Сегодня", -1),
-      createBaseVNode("option", { value: "tomorrow" }, "Завтра", -1),
-      createBaseVNode("option", { value: "all" }, "Все", -1)
-    ]), 512), [
-      [vModelSelect, $data.selectedFilter]
-    ]),
-    _cache[9] || (_cache[9] = createBaseVNode("hr", null, null, -1)),
+    createVNode(_component_el_radio_group, {
+      modelValue: $data.selectedFilter,
+      "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $data.selectedFilter = $event),
+      class: "neumorphic-radio-group"
+    }, {
+      default: withCtx(() => [
+        createVNode(_component_el_radio_button, {
+          label: "calendar",
+          class: "neumorphic-button"
+        }, {
+          default: withCtx(() => _cache[3] || (_cache[3] = [
+            createTextVNode("Сейчас")
+          ])),
+          _: 1
+        }),
+        createVNode(_component_el_radio_button, {
+          label: "today",
+          class: "neumorphic-button"
+        }, {
+          default: withCtx(() => _cache[4] || (_cache[4] = [
+            createTextVNode("Сегодня")
+          ])),
+          _: 1
+        }),
+        createVNode(_component_el_radio_button, {
+          label: "tomorrow",
+          class: "neumorphic-button"
+        }, {
+          default: withCtx(() => _cache[5] || (_cache[5] = [
+            createTextVNode("Завтра")
+          ])),
+          _: 1
+        }),
+        createVNode(_component_el_radio_button, {
+          label: "all",
+          class: "neumorphic-button"
+        }, {
+          default: withCtx(() => _cache[6] || (_cache[6] = [
+            createTextVNode("Все")
+          ])),
+          _: 1
+        })
+      ]),
+      _: 1
+    }, 8, ["modelValue"]),
+    _cache[12] || (_cache[12] = createBaseVNode("hr", null, null, -1)),
     $data.selectedFilter === "calendar" ? (openBlock(), createElementBlock("button", {
       key: 0,
       onClick: _cache[1] || (_cache[1] = (...args) => $options.setTaskToCalendar && $options.setTaskToCalendar(...args))
@@ -9491,15 +9466,15 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
         createTextVNode(toDisplayString($options.getSortedTodos().length) + " (" + toDisplayString($options.getTotalTime()) + " ч.) ", 1),
         createBaseVNode("span", _hoisted_2$2, [
           createBaseVNode("span", _hoisted_3$2, toDisplayString($data.log.today), 1),
-          _cache[4] || (_cache[4] = createTextVNode(" / ")),
-          createBaseVNode("span", _hoisted_4$2, toDisplayString($data.log.week), 1),
-          _cache[5] || (_cache[5] = createTextVNode(" / ")),
-          createBaseVNode("span", _hoisted_5$1, toDisplayString($data.log.month), 1),
-          _cache[6] || (_cache[6] = createTextVNode(" (")),
-          createBaseVNode("span", _hoisted_6, toDisplayString((_a2 = $options.calc.averageCalc) == null ? void 0 : _a2.toFixed(2)), 1),
           _cache[7] || (_cache[7] = createTextVNode(" / ")),
+          createBaseVNode("span", _hoisted_4$2, toDisplayString($data.log.week), 1),
+          _cache[8] || (_cache[8] = createTextVNode(" / ")),
+          createBaseVNode("span", _hoisted_5$1, toDisplayString($data.log.month), 1),
+          _cache[9] || (_cache[9] = createTextVNode(" (")),
+          createBaseVNode("span", _hoisted_6, toDisplayString((_a2 = $options.calc.averageCalc) == null ? void 0 : _a2.toFixed(2)), 1),
+          _cache[10] || (_cache[10] = createTextVNode(" / ")),
           createBaseVNode("span", _hoisted_7, toDisplayString((_b = $options.calc.prev10DaysAvg) == null ? void 0 : _b.toFixed(2)), 1),
-          _cache[8] || (_cache[8] = createTextVNode(") "))
+          _cache[11] || (_cache[11] = createTextVNode(") "))
         ])
       ]),
       (openBlock(true), createElementBlock(Fragment, null, renderList($options.getSortedTodos(), (todo) => {
@@ -9559,7 +9534,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-d7f1aa86"]]);
 const Settings_vue_vue_type_style_index_0_scoped_9ef4f987_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
@@ -40336,7 +40311,7 @@ const useSelect$2 = (props2, emit2) => {
         handleQueryChange("");
       }
     }
-    setSelected2();
+    setSelected();
     if (!isEqual$1(val, oldVal) && props2.validateEvent) {
       formItem == null ? void 0 : formItem.validate("change").catch((err) => debugWarn());
     }
@@ -40357,7 +40332,7 @@ const useSelect$2 = (props2, emit2) => {
   watch(() => states.options.entries(), () => {
     if (!isClient)
       return;
-    setSelected2();
+    setSelected();
     if (props2.defaultFirstOption && (props2.filterable || props2.remote) && filteredOptionsCount.value) {
       checkDefaultFirstOption();
     }
@@ -40402,7 +40377,7 @@ const useSelect$2 = (props2, emit2) => {
     const valueList = optionsArray.value.map((item) => item.value);
     states.hoveringIndex = getValueIndex(valueList, userCreatedOption || firstOriginOption);
   };
-  const setSelected2 = () => {
+  const setSelected = () => {
     if (!props2.multiple) {
       const value = isArray$3(props2.modelValue) ? props2.modelValue[0] : props2.modelValue;
       const option = getOption(value);
@@ -40731,7 +40706,7 @@ const useSelect$2 = (props2, emit2) => {
   useResizeObserver(tagMenuRef, updateTagTooltip);
   useResizeObserver(collapseItemRef, resetCollapseItemWidth);
   onMounted(() => {
-    setSelected2();
+    setSelected();
   });
   return {
     inputId,
@@ -40767,7 +40742,7 @@ const useSelect$2 = (props2, emit2) => {
     showNewOption,
     updateOptions: updateOptions2,
     collapseTagSize,
-    setSelected: setSelected2,
+    setSelected,
     selectDisabled,
     emptyText,
     handleCompositionStart,

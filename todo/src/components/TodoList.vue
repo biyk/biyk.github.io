@@ -55,7 +55,7 @@
                 <span v-else class="done" >
                     <button @click.stop="toggleTodo(todo.task_uuid)">⏹</button>
                 </span>
-                <span class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
+                <span v-if="selectedFilter==='calendar'" class="delete" @click.stop="deleteTodo(todo.task_uuid)">ⓧ</span>
             </div>
         </li>
 

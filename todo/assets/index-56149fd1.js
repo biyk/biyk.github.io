@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.23";
+window.version = "0.4.24";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9165,7 +9165,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_3b5ff350_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_e1a8db09_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9523,17 +9523,18 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
                 onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
               }, "⏹", 8, _hoisted_22)
             ])),
-            createBaseVNode("span", {
+            $data.selectedFilter === "calendar" ? (openBlock(), createElementBlock("span", {
+              key: 2,
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
-            }, "ⓧ", 8, _hoisted_23)
+            }, "ⓧ", 8, _hoisted_23)) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-3b5ff350"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-e1a8db09"]]);
 const Settings_vue_vue_type_style_index_0_scoped_9ef4f987_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

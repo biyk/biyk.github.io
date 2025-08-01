@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.24";
+window.version = "0.4.25";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9165,7 +9165,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_e1a8db09_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_31f89ff2_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9487,7 +9487,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
             onClick: ($event) => $options.togglePopover(todo.task_uuid)
           }, [
             createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " ", 1),
-            $data.selectedFilter === "all" ? (openBlock(), createElementBlock("span", _hoisted_9, toDisplayString(todo.repeat_index), 1)) : createCommentVNode("", true),
+            $data.selectedFilter === "all" ? (openBlock(), createElementBlock("span", _hoisted_9, "(" + toDisplayString(todo.repeat_index) + ")", 1)) : createCommentVNode("", true),
             parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_10, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : parseInt(todo.task_finish_date) ? (openBlock(), createElementBlock("span", _hoisted_11, toDisplayString((todo.task_finish_date / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
           ], 8, _hoisted_8),
           $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_12, [
@@ -9534,7 +9534,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-e1a8db09"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-31f89ff2"]]);
 const Settings_vue_vue_type_style_index_0_scoped_9ef4f987_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

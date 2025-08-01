@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.26";
+window.version = "0.4.27";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9165,7 +9165,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_7e3ed2b0_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_1b4348af_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9522,7 +9522,8 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
             $data.selectedFilter === "calendar" ? (openBlock(), createElementBlock("span", {
               key: 2,
               class: "delete",
-              onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"])
+              onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"]),
+              title: "Нет возможности, нет сил сделать"
             }, "ⓧ", 8, _hoisted_22)) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
@@ -9530,7 +9531,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-7e3ed2b0"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-1b4348af"]]);
 const Settings_vue_vue_type_style_index_0_scoped_9ef4f987_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

@@ -253,9 +253,11 @@ export class Spells {
     }
 
     async addSpell(spell) {
+        console.log(this.spells);
         const existingItem = this.spells.find(
             (inventoryItem) => {
-                return inventoryItem.link === spell.link
+                console.log(inventoryItem,spell);
+                return inventoryItem.code === spell.code
             }
         );
 

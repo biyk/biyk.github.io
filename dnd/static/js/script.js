@@ -20,7 +20,7 @@ import {
 import {SlideMenu} from './script/makrer.js'
 import {Inventory} from './script/inventory.js'
 import {Spells} from './spells.js'
-import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
+import {Drive, GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
 import {loadAmbienceRadios} from "./ambience.js";
 import {loadMaps} from "./map.js";
 import {EventDisplay, MyEvents} from "./events.js";
@@ -84,7 +84,28 @@ class MapManager {
 
         let api = window.GoogleSheetDB || new GoogleSheetDB();
         await api.waitGoogle();
-        let callbackLoadData = () => {
+        let callbackLoadData = async () => {
+            let drive = new Drive();
+            let configs = await drive.find('name = "player.json"');
+            let driveConfigId;
+            if (configs.length > 0) {
+                driveConfigId = configs[0].id;
+            } else {
+                let file = await drive.createEmptyFile('player.json');
+                let auth_code = localStorage.getItem('auth_code');
+
+                let player = {};
+                if (auth_code) {
+                    player.auth_code = auth_code
+                }
+                await drive.upload(file, JSON.stringify(player))
+                driveConfigId = file;
+            }
+            let player = await drive.download(driveConfigId);
+            if (player.auth_code) {
+                localStorage.setItem('auth_code', player.auth_code);
+            }
+
             location.reload();
         }
         let authButton = document.getElementById('auth');
@@ -102,8 +123,11 @@ class MapManager {
                 authButton.style.display = 'block';
             }
             authButton.addEventListener('click', async (e) => {
-                let auth_code = prompt('Enter auth code', localStorage.getItem('auth_code'));
-                localStorage.setItem('auth_code', auth_code);
+                let auth_code = localStorage.getItem('auth_code')
+                if (!auth_code){
+                    auth_code = prompt('Enter auth code');
+                    localStorage.setItem('auth_code', auth_code);
+                }
                 await api.handleAuthClick(callbackLoadData);
             });
         }

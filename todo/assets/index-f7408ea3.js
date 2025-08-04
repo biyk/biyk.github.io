@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.31";
+window.version = "0.4.32";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7960,7 +7960,7 @@ class WebStorage {
   }
 }
 const API_KEY = decodeURIComponent(escape(atob("QUl6YVN5QlRUcUJfclNmd3p1VElkRjFnY1E1LVVfX2ZHenJRX3pz")));
-const spreadsheetId = "13zsZqGICZKQYMCcGkhgr7pzhH1z-LWFiH0LMrI6NGLM";
+const spreadsheetId = "1-EZE8HvpQbuyKjAmkyPe6042XeN7kR62ffckDSZasMg";
 const CLIENT_ID = "21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleusercontent.com";
 const DISCOVERY_DOC_CALENDAR = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 const DISCOVERY_DOC_SHEETS = "https://sheets.googleapis.com/$discovery/rest?version=v4";

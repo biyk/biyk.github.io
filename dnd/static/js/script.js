@@ -86,7 +86,7 @@ class MapManager {
         await api.waitGoogle();
         let callbackLoadData = async () => {
             let drive = new Drive();
-            let auth_code = localStorage.getItem('auth_code');
+            let auth_code = parseInt(localStorage.getItem('auth_code'));
 
             let configs = await drive.find(`name = "player_${auth_code}.json"`);
             let driveConfigId;
@@ -114,7 +114,7 @@ class MapManager {
 
         if (authButton) {
             let expired = api.expired();
-            let auth_code = localStorage.getItem('auth_code');
+            let auth_code = parseInt(localStorage.getItem('auth_code'));
 
             if (auth_code && !expired) {
                 settingsButton.style.display = 'block';
@@ -124,7 +124,7 @@ class MapManager {
                 authButton.style.display = 'block';
             }
             authButton.addEventListener('click', async (e) => {
-                let auth_code = localStorage.getItem('auth_code')
+                let auth_code = parseInt(localStorage.getItem('auth_code'));
                 if (!auth_code){
                     auth_code = prompt('Enter auth code');
                     localStorage.setItem('auth_code', auth_code);

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.29";
+window.version = "0.4.31";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7959,12 +7959,13 @@ class WebStorage {
     return versionStr.split(".").map((part) => part.padStart(2, "0")).join("").padEnd(7, "0").slice(0, 7) * 1;
   }
 }
-const API_KEY = "AIzaSyBTTqB_rSfwzuTIdF1gcQ5-U__fGzrQ_zs";
+const API_KEY = decodeURIComponent(escape(atob("QUl6YVN5QlRUcUJfclNmd3p1VElkRjFnY1E1LVVfX2ZHenJRX3pz")));
 const spreadsheetId = "13zsZqGICZKQYMCcGkhgr7pzhH1z-LWFiH0LMrI6NGLM";
 const CLIENT_ID = "21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleusercontent.com";
 const DISCOVERY_DOC_CALENDAR = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 const DISCOVERY_DOC_SHEETS = "https://sheets.googleapis.com/$discovery/rest?version=v4";
-const SCOPES = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets";
+const DISCOVERY_DOC_DRIVE = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
+const SCOPES = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appfolder";
 class ORM {
   constructor(columns2 = []) {
     this.columns = columns2;
@@ -8302,6 +8303,83 @@ let Table$2 = class Table {
     }
   }
 };
+class Drive {
+  prom(gapiCall, argObj) {
+    return new Promise((resolve2, reject) => {
+      gapiCall(argObj).then((resp) => {
+        if (resp && (resp.status < 200 || resp.status > 299)) {
+          console.log("GAPI call returned bad status", resp);
+          reject(resp);
+        } else {
+          resolve2(resp);
+        }
+      }, (err) => {
+        console.log("GAPI call failed", err);
+        reject(err);
+      });
+    });
+  }
+  async createEmptyFile(name, mimeType) {
+    const resp = await this.prom(gapi.client.drive.files.create, {
+      resource: {
+        name,
+        // для создания папки используйте
+        // mimeType = 'application/vnd.google-apps.folder'
+        mimeType: mimeType || "text/plain",
+        // вместо 'appDataFolder' можно использовать ID папки
+        parents: ["appDataFolder"]
+      },
+      fields: "id"
+    });
+    return resp.result.id;
+  }
+  async upload(fileId2, content) {
+    return this.prom(gapi.client.request, {
+      path: `/upload/drive/v3/files/${fileId2}`,
+      method: "PATCH",
+      params: { uploadType: "media" },
+      body: typeof content === "string" ? content : JSON.stringify(content)
+    });
+  }
+  async download(fileId2) {
+    const resp = await this.prom(gapi.client.drive.files.get, {
+      fileId: fileId2,
+      alt: "media"
+    });
+    return resp.result || resp.body;
+  }
+  async find(query) {
+    let ret = [];
+    let token;
+    do {
+      const resp = await this.prom(gapi.client.drive.files.list, {
+        // вместо 'appDataFolder' можно использовать ID папки
+        spaces: "appDataFolder",
+        fields: "files(id, name), nextPageToken",
+        pageSize: 100,
+        pageToken: token,
+        orderBy: "createdTime",
+        q: query
+      });
+      ret = ret.concat(resp.result.files);
+      token = resp.result.nextPageToken;
+    } while (token);
+    return ret;
+  }
+  async deleteFile(fileId2) {
+    try {
+      await this.prom(gapi.client.drive.files.delete, {
+        fileId: fileId2
+      });
+      return true;
+    } catch (err) {
+      if (err.status === 404) {
+        return false;
+      }
+      throw err;
+    }
+  }
+}
 class GoogleSheetDB {
   constructor(options = {}) {
     this.DISCOVERY_DOC = "https://sheets.googleapis.com/$discovery/rest?version=v4";
@@ -8329,13 +8407,16 @@ class GoogleSheetDB {
       if (document.getElementById("signout_button")) {
         document.getElementById("signout_button").textContent = localStorage.getItem("gapi_token_expires") - this.getTime();
       }
+      let settingButton = document.querySelector(`[onclick="showTab('settings-tab')"]`);
       if (this.expired()) {
         console.log("нужно авторизоваться");
         document.body.dispatchEvent(new Event("doAuth"));
         clearInterval(timer);
-        document.querySelector(`[onclick="showTab('settings-tab')"]`).style.backgroundColor = "red";
+        if (settingButton)
+          settingButton.style.backgroundColor = "red";
       } else {
-        document.querySelector(`[onclick="showTab('settings-tab')"]`).style.backgroundColor = "";
+        if (settingButton)
+          settingButton.style.backgroundColor = "";
       }
     });
     window.GoogleSheetDB = this;
@@ -8386,7 +8467,7 @@ class GoogleSheetDB {
   async initializeGapiClient() {
     await gapi.client.init({
       apiKey: this.apiKey,
-      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS]
+      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS, DISCOVERY_DOC_DRIVE]
     });
     if (this.storedToken) {
       try {
@@ -8405,7 +8486,7 @@ class GoogleSheetDB {
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS],
+      discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS, DISCOVERY_DOC_DRIVE],
       callback: () => {
       }
       // пустой, определим в handleAuthClick
@@ -9535,14 +9616,15 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
   ], 64);
 }
 const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-1b4348af"]]);
-const Settings_vue_vue_type_style_index_0_scoped_9ef4f987_lang = "";
+const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
   data() {
     return {
       showForm: false,
       code: "",
-      value: ""
+      value: "",
+      driveConfigId: {}
     };
   },
   computed: {
@@ -9567,11 +9649,33 @@ const _sfc_main$2A = {
       this.code = "";
       this.value = "";
       this.showForm = false;
+      let drive = new Drive();
+      const sendSettings = this.$store.getters["settings/allSettings"];
+      this.driveConfigId && drive.upload(this.driveConfigId, JSON.stringify(sendSettings));
     },
     // Удаляем настройку по индексу
     deleteSetting(index2) {
       this.$store.dispatch("settings/deleteSetting", index2);
+      const sendSettings = this.$store.getters["settings/allSettings"];
+      let drive = new Drive();
+      this.driveConfigId && drive.upload(this.driveConfigId, JSON.stringify(sendSettings));
     }
+  },
+  async mounted() {
+    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
+    let drive = new Drive();
+    let configs = await drive.find('name = "config.json"');
+    if (configs.length > 0) {
+      console.log(configs);
+      this.driveConfigId = configs[0].id;
+    } else {
+      let file = await drive.createEmptyFile("config.json");
+      console.log(file);
+      this.driveConfigId = file;
+    }
+    let setting = await drive.download(this.driveConfigId);
+    this.$store.dispatch("settings/setSettings", setting);
   }
 };
 const _hoisted_1$2 = { class: "settings" };
@@ -9621,7 +9725,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-9ef4f987"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-f6804466"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }
@@ -69286,6 +69390,10 @@ const mutations = {
     state2.settings.push(setting);
     await saveToStorage(state2.settings);
   },
+  async NEW_SETTINGS(state2, setting) {
+    state2.settings = setting;
+    await saveToStorage(state2.settings);
+  },
   async DELETE_SETTING(state2, index2) {
     state2.settings.splice(index2, 1);
     await saveToStorage(state2.settings);
@@ -69297,6 +69405,9 @@ const mutations = {
 const actions = {
   saveSettings({ commit: commit2 }, setting) {
     commit2("SET_SETTINGS", setting);
+  },
+  setSettings({ commit: commit2 }, setting) {
+    commit2("NEW_SETTINGS", setting);
   },
   deleteSetting({ commit: commit2 }, index2) {
     commit2("DELETE_SETTING", index2);

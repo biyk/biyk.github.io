@@ -1,11 +1,12 @@
 import {WebStorage} from "./webStorage.js";
 
-export const API_KEY = 'AIzaSyBTTqB_rSfwzuTIdF1gcQ5-U__fGzrQ_zs';
+export const API_KEY = decodeURIComponent(escape(atob('QUl6YVN5QlRUcUJfclNmd3p1VElkRjFnY1E1LVVfX2ZHenJRX3pz')));
 export const spreadsheetId = '13zsZqGICZKQYMCcGkhgr7pzhH1z-LWFiH0LMrI6NGLM';
 const CLIENT_ID = '21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleusercontent.com';
 const DISCOVERY_DOC_CALENDAR = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 const DISCOVERY_DOC_SHEETS = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
-const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets';
+const DISCOVERY_DOC_DRIVE = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appfolder';
 
 
 export class ORM {
@@ -396,6 +397,94 @@ export class Table {
     }
 }
 
+export class Drive {
+     prom(gapiCall, argObj) {
+        return new Promise((resolve, reject) => {
+            gapiCall(argObj).then(resp => {
+                if (resp && (resp.status < 200 || resp.status > 299)) {
+                    console.log('GAPI call returned bad status', resp)
+                    reject(resp)
+                } else {
+                    resolve(resp)
+                }
+            }, err => {
+                console.log('GAPI call failed', err)
+                reject(err)
+            })
+        })
+    }
+    async createEmptyFile(name, mimeType) {
+        const resp = await this.prom(gapi.client.drive.files.create, {
+            resource: {
+                name: name,
+                // для создания папки используйте
+                // mimeType = 'application/vnd.google-apps.folder'
+                mimeType: mimeType || 'text/plain',
+                // вместо 'appDataFolder' можно использовать ID папки
+                parents: ['appDataFolder']
+            },
+            fields: 'id'
+        })
+        // функция возвращает строку — идентификатор нового файла
+        return resp.result.id
+    }
+    async upload(fileId, content) {
+        // функция принимает либо строку, либо объект, который можно сериализовать в JSON
+        return this.prom(gapi.client.request, {
+            path: `/upload/drive/v3/files/${fileId}`,
+            method: 'PATCH',
+            params: {uploadType: 'media'},
+            body: typeof content === 'string' ? content : JSON.stringify(content)
+        })
+    }
+
+    async download(fileId) {
+        const resp = await this.prom(gapi.client.drive.files.get, {
+            fileId: fileId,
+            alt: 'media'
+        })
+        // resp.body хранит ответ в виде строки
+        // resp.result — это попытка интерпретировать resp.body как JSON.
+        // Если она провалилась, значение resp.result будет false
+        // Т.о. функция возвращает либо объект, либо строку
+        return resp.result || resp.body
+    }
+    async find(query) {
+        let ret = []
+        let token
+        do {
+            const resp = await this.prom(gapi.client.drive.files.list, {
+                // вместо 'appDataFolder' можно использовать ID папки
+                spaces: 'appDataFolder',
+                fields: 'files(id, name), nextPageToken',
+                pageSize: 100,
+                pageToken: token,
+                orderBy: 'createdTime',
+                q: query
+            })
+            ret = ret.concat(resp.result.files)
+            token = resp.result.nextPageToken
+        } while (token)
+        // результат: массив объектов вида [{id: '...', name: '...'}],
+        // отсортированных по времени создания
+        return ret
+    }
+
+    async deleteFile(fileId) {
+        try {
+            await this.prom(gapi.client.drive.files.delete, {
+                fileId: fileId
+            })
+            return true
+        } catch (err) {
+            if (err.status === 404) {
+                return false
+            }
+            throw err
+        }
+    }
+}
+
 export class GoogleSheetDB {
     constructor(options = {}) {
         this.DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
@@ -429,14 +518,14 @@ export class GoogleSheetDB {
                 document.getElementById('signout_button').textContent =
                     localStorage.getItem('gapi_token_expires') - this.getTime();
             }
-
+            let settingButton = document.querySelector('[onclick="showTab(\'settings-tab\')"]');
             if (this.expired()) {
                 console.log('нужно авторизоваться');
                 document.body.dispatchEvent(new Event('doAuth'));
                 clearInterval(timer);
-                document.querySelector('[onclick="showTab(\'settings-tab\')"]').style.backgroundColor = 'red'
+                if (settingButton) settingButton.style.backgroundColor = 'red'
             } else {
-                document.querySelector('[onclick="showTab(\'settings-tab\')"]').style.backgroundColor = ''
+                if (settingButton) settingButton.style.backgroundColor = ''
             }
         })
         window.GoogleSheetDB = this;
@@ -501,7 +590,7 @@ export class GoogleSheetDB {
     async initializeGapiClient() {
         await gapi.client.init({
             apiKey: this.apiKey,
-            discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS],
+            discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS, DISCOVERY_DOC_DRIVE],
         });
 
         if (this.storedToken) {
@@ -523,7 +612,7 @@ export class GoogleSheetDB {
         this.tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
-            discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS],
+            discoveryDocs: [DISCOVERY_DOC_CALENDAR, DISCOVERY_DOC_SHEETS,DISCOVERY_DOC_DRIVE],
             callback: () => {
             }, // пустой, определим в handleAuthClick
         });

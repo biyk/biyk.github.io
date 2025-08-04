@@ -25,6 +25,10 @@ export const mutations = {
         state.settings.push(setting)  // Добавляем новую настройку в массив
         await saveToStorage(state.settings)
     },
+    async NEW_SETTINGS(state, setting) {
+        state.settings = setting  // Добавляем новую настройку в массив
+        await saveToStorage(state.settings)
+    },
     async DELETE_SETTING(state, index) {
         state.settings.splice(index, 1)  // Удаляем настройку по индексу
         await saveToStorage(state.settings)
@@ -38,6 +42,10 @@ export const actions = {
     saveSettings({ commit }, setting) {
         commit('SET_SETTINGS', setting)  // Вызываем мутацию для сохранения
     },
+    setSettings({ commit }, setting) {
+        commit('NEW_SETTINGS', setting)  // Вызываем мутацию для сохранения
+    },
+
     deleteSetting({ commit }, index) {
         commit('DELETE_SETTING', index)  // Вызываем мутацию для удаления
     },

@@ -9,7 +9,7 @@ export async function loadMaps() {
     let keysTable = new Table({
         list: 'KEYS'
     });
-    let keys = await keysTable.getAll({formated: true, caching: true});
+    let keys = await keysTable.getAll({formated: true, caching: 10});
     let mapsTable = new Table({
         spreadsheetId: keys.maps
     });

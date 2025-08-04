@@ -272,7 +272,7 @@ export class Table {
     }
 
     async getAll(options = {}) {
-        let {caching, formated, range, spreadsheetId, format='array'} = options;
+        let {caching=10, formated, range, spreadsheetId, format='array'} = options;
         range = range || this.list;
         spreadsheetId = spreadsheetId || this.spreadsheetId;
         let response = await this.api.fetchSheetValues({range, spreadsheetId, caching});
@@ -678,10 +678,10 @@ export class GoogleSheetDB {
         let storageData = await webStorage.getItem(storageKey);
         let storageTTL = await webStorage.getItem(storageTTLKey);
         let now = new Date().getTime();
-        if (caching && storageData ) {
 
+        if (caching && storageData ) {
             if (storageTTL > now){
-                console.log('кэш еще нормальный')
+                console.log(storageKey + ' кэш еще нормальный')
                 return JSON.parse(storageData);
             }
         }

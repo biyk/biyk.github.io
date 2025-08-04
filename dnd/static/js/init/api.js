@@ -46,12 +46,12 @@ export async function infoCharacter(name) {
         list: 'KEYS',
         spreadsheetId: spreadsheetId
     });
-    let keys = await keysTable.getAll({formated: true, caching: true});
+    let keys = await keysTable.getAll({formated: true, caching: 10});
     let beastTable = new Table({
         list: 'BEASTS',
         spreadsheetId: keys.external
     });
-    const data = await beastTable.getAll({caching: true});
+    const data = await beastTable.getAll({caching: 10});
     let _data = new ORM(data[0]);
 
     const result = data.filter(item => {

@@ -41,9 +41,9 @@ if (window.location.host.includes('chatgpt.com')){
 
         try {
             const textarea = document.getElementById('prompt-textarea');
-            let textToInject = localStorage.getItem('my') || 'я тучка?'
+            let textToInject = localStorage.getItem('my')
 
-            if (textarea) {
+            if (textarea && textToInject) {
                 clearInterval(interval);
                 console.log("INJECTED: Элементы найдены! Выполняем действия.");
                 let PROMPT = `Ты — мастер Подземелий и Драконов, помогающий придумать сюжетные повороты и развивать приключение. Тебе предоставлены четыре блока информации:

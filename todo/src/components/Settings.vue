@@ -37,6 +37,7 @@
 
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
+import {GoogleSheetDB, Drive} from "../../../dnd/static/js/db/google.js";
 
 export default {
     name: 'Settings',
@@ -45,6 +46,7 @@ export default {
             showForm: false,
             code: '',
             value: '',
+            driveConfigId: {}
         }
     },
     computed: {
@@ -74,12 +76,34 @@ export default {
             this.code = ''
             this.value = ''
             this.showForm = false
+            let drive = new Drive();
+            const sendSettings = this.$store.getters["settings/allSettings"];
+            this.driveConfigId && drive.upload(this.driveConfigId, JSON.stringify(sendSettings))
         },
         // Удаляем настройку по индексу
         deleteSetting(index) {
             this.$store.dispatch("settings/deleteSetting", index)
+            const sendSettings = this.$store.getters["settings/allSettings"];
+            let drive = new Drive();
+            this.driveConfigId && drive.upload(this.driveConfigId, JSON.stringify(sendSettings))
         },
     },
+    async mounted() {
+        const api = window.GoogleSheetDB || new GoogleSheetDB();
+        await api.waitGoogle();
+        let drive = new Drive();
+        let configs = await drive.find('name = "config.json"');
+        if (configs.length > 0) {
+            console.log(configs);
+            this.driveConfigId = configs[0].id;
+        } else {
+            let file = await drive.createEmptyFile('config.json');
+            console.log(file);
+            this.driveConfigId = file;
+        }
+        let setting = await drive.download(this.driveConfigId);
+        this.$store.dispatch("settings/setSettings", setting)
+    }
 }
 </script>
 

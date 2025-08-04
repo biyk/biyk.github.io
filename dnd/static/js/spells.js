@@ -196,7 +196,7 @@ export class Spells {
             let api = window.GoogleSheetDB || new GoogleSheetDB();
             await api.waitGoogle();
             await this.getPlayersSheet();
-            let {resourses, skills, spells} = await this.playerTable.getAll({formated: true});
+            let {resourses, skills, spells} = await this.playerTable?.getAll({formated: true}) || {};
             this.resourses = resourses || [];
             this.skills = skills || [];
             this.spells = spells || [];
@@ -323,16 +323,20 @@ export class Spells {
         });
         let keys = await keysTable.getAll({caching: true, formated:true});
         this.playersSheet = keys.players;
-        let playerTable = new Table({
-            list: localStorage.getItem('auth_code'),
-            spreadsheetId: this.playersSheet
-        });
-        try {
-            await playerTable.createList();
-        } catch (e) {
-            console.error(e);
+        let auth_code = localStorage.getItem('auth_code');
+        if (auth_code) {
+            let playerTable = new Table({
+                list: localStorage.getItem('auth_code'),
+                spreadsheetId: this.playersSheet
+            });
+            try {
+                await playerTable.createList();
+            } catch (e) {
+                console.error(e);
+            }
+            this.playerTable = playerTable;
         }
-        this.playerTable = playerTable;
+
     }
 }
 

@@ -434,6 +434,9 @@ export class GoogleSheetDB {
                 console.log('нужно авторизоваться');
                 document.body.dispatchEvent(new Event('doAuth'));
                 clearInterval(timer);
+                document.querySelector('[onclick="showTab(\'settings-tab\')"]').style.backgroundColor = 'red'
+            } else {
+                document.querySelector('[onclick="showTab(\'settings-tab\')"]').style.backgroundColor = ''
             }
         })
         window.GoogleSheetDB = this;

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.28";
+window.version = "0.4.29";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8333,6 +8333,9 @@ class GoogleSheetDB {
         console.log("нужно авторизоваться");
         document.body.dispatchEvent(new Event("doAuth"));
         clearInterval(timer);
+        document.querySelector(`[onclick="showTab('settings-tab')"]`).style.backgroundColor = "red";
+      } else {
+        document.querySelector(`[onclick="showTab('settings-tab')"]`).style.backgroundColor = "";
       }
     });
     window.GoogleSheetDB = this;

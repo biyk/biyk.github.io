@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.34";
+window.version = "0.4.35";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8195,7 +8195,7 @@ let Table$2 = class Table {
     return await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2 });
   }
   async getAll(options = {}) {
-    let { caching, formated, range: range3, spreadsheetId: spreadsheetId2, format: format2 = "array" } = options;
+    let { caching = 10, formated, range: range3, spreadsheetId: spreadsheetId2, format: format2 = "array" } = options;
     range3 = range3 || this.list;
     spreadsheetId2 = spreadsheetId2 || this.spreadsheetId;
     let response = await this.api.fetchSheetValues({ range: range3, spreadsheetId: spreadsheetId2, caching });
@@ -8545,7 +8545,7 @@ class GoogleSheetDB {
     let now2 = new Date().getTime();
     if (caching && storageData) {
       if (storageTTL > now2) {
-        console.log("кэш еще нормальный");
+        console.log(storageKey + " кэш еще нормальный");
         return JSON.parse(storageData);
       }
     }

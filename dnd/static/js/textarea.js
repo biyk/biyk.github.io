@@ -1,4 +1,5 @@
 const textarea = document.getElementById('dynamic-text');
+const aiData = document.getElementById('dynamic-ai');
 import {Table, spreadsheetId, GoogleSheetDB, API_KEY} from "./db/google.js";
 
 
@@ -19,15 +20,22 @@ function debounce(func, delay) {
 }
 
 // Функция отправки данных
-async function sendData() {
-    await table.updateRow(2,{text: textarea.value});
+async function sendData(i) {
+    let text = {
+        2: textarea.value,
+        3: aiData.value,
+    }[i]
+    await table.updateRow(i, { text });
 }
+const debounseTimer = 1500
+// Обернутые версии с заданным индексом
+const debouncedSendData2 = debounce(() => sendData(2), debounseTimer);
+const debouncedSendData3 = debounce(() => sendData(3), debounseTimer);
 
-// Создаем обертку sendData с дебаунсом на 500 мс
-const debouncedSendData = debounce(sendData, 500);
+// Подписка на события
+textarea.addEventListener('input', debouncedSendData2);
+aiData.addEventListener('input', debouncedSendData3);
 
-// Вызываем debouncedSendData при каждом событии 'input'
-textarea.addEventListener('input', debouncedSendData);
 
 // Функция для загрузки данных при старте
 async function loadData() {
@@ -39,6 +47,9 @@ async function loadData() {
 
     let values = await table.getRow(2);
     textarea.value = values;
+
+    values = await table.getRow(3);
+    aiData.value = values;
 }
 
 

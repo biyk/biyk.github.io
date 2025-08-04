@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Отправить в ChatGPT",
+  "version": "1.0.4",
+  "description": "Расширение для отправки текста в ChatGPT",
+  "permissions": [
+    "scripting",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*"
+  ]
+}

@@ -86,13 +86,14 @@ class MapManager {
         await api.waitGoogle();
         let callbackLoadData = async () => {
             let drive = new Drive();
-            let configs = await drive.find('name = "player.json"');
+            let auth_code = localStorage.getItem('auth_code');
+
+            let configs = await drive.find(`name = "player_${auth_code}.json"`);
             let driveConfigId;
             if (configs.length > 0) {
                 driveConfigId = configs[0].id;
             } else {
-                let file = await drive.createEmptyFile('player.json');
-                let auth_code = localStorage.getItem('auth_code');
+                let file = await drive.createEmptyFile(`player_${auth_code}.json`);
 
                 let player = {};
                 if (auth_code) {

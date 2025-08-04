@@ -77,12 +77,12 @@ export class Spells {
             list: 'KEYS',
             spreadsheetId: spreadsheetId
         });
-        let keys = await keysTable.getAll({formated: true, caching: true});
+        let keys = await keysTable.getAll({formated: true, caching: 10});
         let spellTable = new Table({
             list: 'SPELLS',
             spreadsheetId: keys.external
         });
-        const data = await spellTable.getAll({caching: true});
+        const data = await spellTable.getAll({caching: 10});
         let _data = new ORM(data[0]);
 
         const result = data.filter(item => {
@@ -216,12 +216,12 @@ export class Spells {
                             list: 'KEYS',
                             spreadsheetId: spreadsheetId
                         });
-                        let keys = await keysTable.getAll({formated: true, caching: true});
+                        let keys = await keysTable.getAll({formated: true, caching: 10});
                         let spellTable = new Table({
                             list: 'SPELLS',
                             spreadsheetId: keys.external
                         });
-                        const data = await spellTable.getAll({caching: true});
+                        const data = await spellTable.getAll({caching: 10});
 
                         const result = data.filter(item => {
                             let _data = new ORM(data[0]);
@@ -323,7 +323,7 @@ export class Spells {
             list: 'KEYS',
             spreadsheetId: spreadsheetId
         });
-        let keys = await keysTable.getAll({caching: true, formated:true});
+        let keys = await keysTable.getAll({caching: 10, formated:true});
         this.playersSheet = keys.players;
         let auth_code = localStorage.getItem('auth_code');
         if (auth_code) {

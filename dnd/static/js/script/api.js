@@ -53,7 +53,7 @@ export async function getInit() {
 // Функция для получения конфигурации карты по имени
 export async function getConfig() {
     let mapTable = await getMapTable();
-    return await mapTable.getAll({caching: true, formated: true});
+    return await mapTable.getAll({caching: 10, formated: true});
 }
 
 export async function sendData(type = 'polygons') {
@@ -159,12 +159,12 @@ export async function getMapTable(map = null) {
         list: 'CONFIG',
         spreadsheetId: spreadsheetId
     });
-    let config = await configTable.getAll({caching: true, formated: true});
+    let config = await configTable.getAll({caching: 10, formated: true});
     let keysTable = new Table({
         list: 'KEYS',
         spreadsheetId: spreadsheetId
     });
-    let keys = await keysTable.getAll({caching: true, formated: true});
+    let keys = await keysTable.getAll({caching: 10, formated: true});
     return new Table({
         list: map || config.map,
         spreadsheetId: keys.maps
@@ -176,7 +176,7 @@ export async function getPlayerTable() {
         list: 'KEYS',
         spreadsheetId: spreadsheetId
     });
-    let keys = await keysTable.getAll({caching: true, formated: true});
+    let keys = await keysTable.getAll({caching: 10, formated: true});
     return new Table({
         list: localStorage.getItem('auth_code'),
         spreadsheetId: keys.players

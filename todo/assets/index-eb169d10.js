@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.36";
+window.version = "0.4.37";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8785,7 +8785,7 @@ async function calcExecutions(store2) {
     list: "task_executions"
   });
   let list = await table.getAll({ formated: true, format: "orm" });
-  let { averageCalc, prev10DaysAvg } = getAverageCalc(list);
+  let { averageCalc, prevAvg } = getAverageCalc(list);
   let today_time = 0;
   let week_time = 0;
   let month_time = 0;
@@ -8820,11 +8820,12 @@ async function calcExecutions(store2) {
   let today = today_time;
   let week = weekDaysWithData.size > 0 ? Math.round(week_time * 100 / weekDaysWithData.size) / 100 : 0;
   let month = monthDaysWithData.size > 0 ? Math.round(month_time * 100 / monthDaysWithData.size) / 100 : 0;
-  let calc = { today, week, month, averageCalc, prev10DaysAvg };
+  let calc = { today, week, month, averageCalc, prevAvg };
   store2.dispatch("settings/calcSettings", calc);
   return calc;
 }
 function getAverageCalc(list) {
+  let totalDays = 30;
   let start = 1;
   const oneDayMs = 24 * 60 * 60 * 1e3;
   const now2 = new Date();
@@ -8843,39 +8844,36 @@ function getAverageCalc(list) {
     const dayKey = getDateKey(date4);
     daysWorkSheet[dayKey] = (daysWorkSheet[dayKey] || 0) + parseInt(item.execution_time);
   });
-  const last30Days = [];
-  for (let i = 29; i >= 0; i--) {
+  const dayKeys = [];
+  for (let i = totalDays - 1; i >= 0; i--) {
     const day = new Date(now2.getTime() - i * oneDayMs);
     const dayKey = getDateKey(day);
     if (!(dayKey in daysWorkSheet)) {
       daysWorkSheet[dayKey] = 0;
     }
-    last30Days.push(dayKey);
+    dayKeys.push(dayKey);
   }
-  let prev10DaysAvg;
-  for (let i = 0; i < last30Days.length; i++) {
-    const currentDayKey = last30Days[i];
+  let cumulativeSum = 0;
+  let cumulativeCount = 0;
+  let prevAvg = null;
+  for (let i = 0; i < dayKeys.length; i++) {
+    const currentDayKey = dayKeys[i];
     const currentTime = daysWorkSheet[currentDayKey];
-    const prev10DaysTime = [];
-    for (let j = 1; j <= 10; j++) {
-      const prevIndex = i - j;
-      if (prevIndex >= 0) {
-        const prevDayKey = last30Days[prevIndex];
-        prev10DaysTime.push(daysWorkSheet[prevDayKey]);
+    if (i > 0) {
+      prevAvg = cumulativeSum / cumulativeCount;
+      let lim = 1 - 0.6180339887 / 2;
+      if (currentTime <= prevAvg * lim) {
+        start -= 0.01;
+      } else if (currentTime > prevAvg) {
+        start += 0.01;
       }
+      console.log(`Day: ${currentDayKey}, Current: ${currentTime}, PrevAvg: ${prevAvg.toFixed(2)}, Start: ${start.toFixed(2)}`);
     }
-    if (prev10DaysTime.length === 0)
-      continue;
-    prev10DaysAvg = prev10DaysTime.reduce((sum2, val) => sum2 + val, 0) / prev10DaysTime.length;
-    let lim = 1 - 0.6180339887 / 2;
-    if (currentTime <= prev10DaysAvg * lim) {
-      start -= 0.01;
-    } else if (currentTime > prev10DaysAvg) {
-      start += 0.01;
-    }
+    cumulativeSum += currentTime;
+    cumulativeCount++;
   }
-  let averageCalc = start;
-  return { averageCalc, prev10DaysAvg };
+  const averageCalc = start;
+  return { averageCalc, prevAvg };
 }
 async function makeTaskDone(task, store2, options = {}) {
   let {
@@ -9249,7 +9247,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_1b4348af_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_910b2f54_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9552,7 +9550,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
           _cache[9] || (_cache[9] = createTextVNode(" (")),
           createBaseVNode("span", _hoisted_6, toDisplayString((_a2 = $options.calc.averageCalc) == null ? void 0 : _a2.toFixed(2)), 1),
           _cache[10] || (_cache[10] = createTextVNode(" / ")),
-          createBaseVNode("span", _hoisted_7, toDisplayString((_b = $options.calc.prev10DaysAvg) == null ? void 0 : _b.toFixed(2)), 1),
+          createBaseVNode("span", _hoisted_7, toDisplayString((_b = $options.calc.prevAvg) == null ? void 0 : _b.toFixed(2)), 1),
           _cache[11] || (_cache[11] = createTextVNode(") "))
         ])
       ]),
@@ -9615,7 +9613,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-1b4348af"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-910b2f54"]]);
 const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

@@ -39,7 +39,7 @@ export async function calcExecutions(store){
 
     let list = await table.getAll({formated: true, format: 'orm'});
 
-    let {averageCalc, prev10DaysAvg} = getAverageCalc(list)
+    let {averageCalc, prevAvg} = getAverageCalc(list)
 
     let today_time = 0;
     let week_time = 0;
@@ -93,7 +93,7 @@ export async function calcExecutions(store){
     let week = weekDaysWithData.size > 0 ? Math.round(week_time*100 / weekDaysWithData.size)/100 : 0;
     let month = monthDaysWithData.size > 0 ? Math.round(month_time*100 / monthDaysWithData.size)/100 : 0;
 
-    let calc ={ today, week, month , averageCalc, prev10DaysAvg};
+    let calc ={ today, week, month , averageCalc, prevAvg};
 
     store.dispatch("settings/calcSettings", calc)
     return calc
@@ -101,12 +101,12 @@ export async function calcExecutions(store){
 }
 
 function getAverageCalc(list) {
+    let totalDays = 30;
     let start = 1;
     const oneDayMs = 24 * 60 * 60 * 1000;
     const now = new Date();
     const daysWorkSheet = {};
 
-    // Функция для получения ключа только с датой в формате YYYY-MM-DD
     function getDateKey(date) {
         return date.toISOString().split('T')[0];
     }
@@ -123,47 +123,47 @@ function getAverageCalc(list) {
         daysWorkSheet[dayKey] = (daysWorkSheet[dayKey] || 0) + parseInt(item.execution_time);
     });
 
-    // Генерируем все даты за последние 30 дней
-    const last30Days = [];
-    for (let i = 29; i >= 0; i--) {
+    // Генерируем даты за указанный период (по умолчанию 30 дней)
+    const dayKeys = [];
+    for (let i = totalDays - 1; i >= 0; i--) {
         const day = new Date(now.getTime() - i * oneDayMs);
         const dayKey = getDateKey(day);
         if (!(dayKey in daysWorkSheet)) {
-            daysWorkSheet[dayKey] = 0; // если не было работ, считаем 0
+            daysWorkSheet[dayKey] = 0;
         }
-        last30Days.push(dayKey);
+        dayKeys.push(dayKey);
     }
 
-    // Проходим по каждому дню и сравниваем с предыдущими 10 днями
-    let prev10DaysAvg;
-    for (let i = 0; i < last30Days.length; i++) {
-        const currentDayKey = last30Days[i];
+    let cumulativeSum = 0;
+    let cumulativeCount = 0;
+    let prevAvg = null;
+
+    for (let i = 0; i < dayKeys.length; i++) {
+        const currentDayKey = dayKeys[i];
         const currentTime = daysWorkSheet[currentDayKey];
 
-        const prev10DaysTime = [];
-        for (let j = 1; j <= 10; j++) {
-            const prevIndex = i - j;
-            if (prevIndex >= 0) {
-                const prevDayKey = last30Days[prevIndex];
-                prev10DaysTime.push(daysWorkSheet[prevDayKey]);
+        if (i > 0) {
+            prevAvg = cumulativeSum / cumulativeCount;
+
+            let lim = 1 - 0.6180339887 / 2;
+            if (currentTime <= prevAvg * lim) {
+                start -= 0.01;
+            } else if (currentTime > prevAvg) {
+                start += 0.01;
             }
+            console.log(`Day: ${currentDayKey}, Current: ${currentTime}, PrevAvg: ${prevAvg.toFixed(2)}, Start: ${start.toFixed(2)}`);
+
         }
 
-        if (prev10DaysTime.length === 0) continue;
-
-        prev10DaysAvg = prev10DaysTime.reduce((sum, val) => sum + val, 0) / prev10DaysTime.length;
-
-        let lim = 1 - 0.6180339887/2;
-        if (currentTime <= prev10DaysAvg * lim) {
-            start -= 0.01;
-        } else if (currentTime > prev10DaysAvg) {
-            start += 0.01;
-        }
-        //console.log(`Day: ${currentDayKey}, Current: ${currentTime}, PrevAvg: ${prev10DaysAvg.toFixed(2)}, Start: ${start.toFixed(2)}`);
+        // обновляем накопительное среднее
+        cumulativeSum += currentTime;
+        cumulativeCount++;
     }
-    let averageCalc = start
-    return {averageCalc, prev10DaysAvg};
+
+    const averageCalc = start;
+    return { averageCalc, prevAvg };
 }
+
 
 
 

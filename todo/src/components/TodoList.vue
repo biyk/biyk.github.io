@@ -111,7 +111,7 @@ export default {
                 const start = parseInt(todo.task_date);
                 switch (this.selectedFilter) {
                     case 'today':
-                        return start < today;
+                        return start < end_today;
                     case 'calendar':
                         const calendarEvents = this.events;
                         const hasMatchingEvent = calendarEvents?.some(
@@ -119,7 +119,7 @@ export default {
                         );
                         return start < end_today && hasMatchingEvent;
                     case 'tomorrow':
-                        return start > today && start < tomorrow;
+                        return start > end_today && start < tomorrow;
                     default:
                         return true;
                 }

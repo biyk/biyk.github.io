@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.39";
+window.version = "0.4.40";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9247,7 +9247,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_910b2f54_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_f3602ec5_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9283,7 +9283,7 @@ const _sfc_main$2B = {
     taskSort,
     getFilteredTodos() {
       const now2 = new Date();
-      const today = new Date().getTime();
+      new Date().getTime();
       const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       const end_today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 0, 1).getTime();
       return this.todos.filter((todo) => {
@@ -9292,7 +9292,7 @@ const _sfc_main$2B = {
         const start = parseInt(todo.task_date);
         switch (this.selectedFilter) {
           case "today":
-            return start < today;
+            return start < end_today;
           case "calendar":
             const calendarEvents = this.events;
             const hasMatchingEvent = calendarEvents == null ? void 0 : calendarEvents.some(
@@ -9303,7 +9303,7 @@ const _sfc_main$2B = {
             );
             return start < end_today && hasMatchingEvent;
           case "tomorrow":
-            return start > today && start < tomorrow;
+            return start > end_today && start < tomorrow;
           default:
             return true;
         }
@@ -9613,7 +9613,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-910b2f54"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-f3602ec5"]]);
 const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

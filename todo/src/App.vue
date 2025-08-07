@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <h1>{{hero.hero_name}} {{hero.hero_money.toFixed(0)}} ({{ currentTime }})</h1>
+        <h1>{{hero.hero_name}} {{parseFloat(hero.hero_money).toFixed(0)}} ({{ currentTime }})</h1>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />

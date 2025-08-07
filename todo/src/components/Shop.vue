@@ -74,7 +74,7 @@ export default {
             let reward_cost = parseInt(Math.round(product['reward_cost'] * this.calc()) )
 
             // вычесть стоимость из баланса
-            let balance = parseInt(hero.hero_money) - reward_cost;
+            let balance = parseFloat(hero.hero_money) - reward_cost;
 
             // записать баланс в таблицу
             await heroTable.updateRowByCode('hero_money', {value: balance});

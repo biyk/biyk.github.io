@@ -237,7 +237,7 @@ export async function makeTaskDone(task, store, options = {}) {
     number_of_executions++;
     let calc =  store.getters["settings/allCalc"];
 
-    let money_reward = Math.round(task_time  * calc.averageCalc / 2);
+    let money_reward = task_time  * calc.averageCalc / 2;
     const updatedTask = {
         ...task[0],
         task_date: task_date,
@@ -256,7 +256,7 @@ export async function makeTaskDone(task, store, options = {}) {
     if (deleted || repeat_mode === '5') return;
     let hero = {...store.getters["hero/getHero"]}; // создаем копию объекта
 
-    hero.hero_money = parseInt(hero.hero_money) + money_reward;
+    hero.hero_money = parseFloat(hero.hero_money) + money_reward;
 
     store.dispatch("hero/updateHero", hero);
 

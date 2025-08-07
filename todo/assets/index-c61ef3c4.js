@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.37";
+window.version = "0.4.38";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8936,7 +8936,7 @@ async function makeTaskDone(task, store2, options = {}) {
   }
   number_of_executions++;
   let calc = store2.getters["settings/allCalc"];
-  let money_reward = Math.round(task_time * calc.averageCalc / 2);
+  let money_reward = task_time * calc.averageCalc / 2;
   const updatedTask = {
     ...task[0],
     task_date,
@@ -8952,7 +8952,7 @@ async function makeTaskDone(task, store2, options = {}) {
   if (deleted || repeat_mode === "5")
     return;
   let hero2 = { ...store2.getters["hero/getHero"] };
-  hero2.hero_money = parseInt(hero2.hero_money) + money_reward;
+  hero2.hero_money = parseFloat(hero2.hero_money) + money_reward;
   store2.dispatch("hero/updateHero", hero2);
   await logExecuteTask(updatedTask, store2);
 }
@@ -10700,7 +10700,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_ac283472_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_f34ad266_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10740,7 +10740,7 @@ const _sfc_main$2z = {
       });
       let hero2 = await heroTable.getAll({ formated: true, format: "array" });
       let reward_cost = parseInt(Math.round(product["reward_cost"] * this.calc()));
-      let balance = parseInt(hero2.hero_money) - reward_cost;
+      let balance = parseFloat(hero2.hero_money) - reward_cost;
       await heroTable.updateRowByCode("hero_money", { value: balance });
       let historyTable = new Table$2({
         spreadsheetId: this.spreadsheetId,
@@ -10809,7 +10809,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-ac283472"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-f34ad266"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {
@@ -10862,7 +10862,7 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
-    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString($options.hero.hero_money) + " (" + toDisplayString($data.currentTime) + ")", 1),
+    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString($options.hero.hero_money.toFixed(0)) + " (" + toDisplayString($data.currentTime) + ")", 1),
     createVNode(_component_el_tabs, {
       modelValue: $setup.activeTab,
       "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.activeTab = $event)

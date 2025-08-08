@@ -1,4 +1,5 @@
 import {getRandomColor} from "./script/helpers.js";
+import {GoogleSheetDB, ORM, spreadsheetId, Table} from "./db/google.js";
 
 export function drowMarker(data) {
     console.log(data);
@@ -112,6 +113,7 @@ export function initializeMarkerMenu(){
     sidebar.classList.add('marker-menu', 'side-menu');
     this.menu = sidebar;
     const list = document.createElement('ul');
+    
     // Создаем кнопки для каждой иконки
     this.points.forEach((data,id) => {
         let icon = data.settings.selectedIcon
@@ -158,6 +160,8 @@ export function initializeMarkerMenu(){
         });
         list.appendChild(point_div);
     });
+    
+    // Форма добавления нового маркера
     let adding = document.createElement('div');
     let add_input = document.createElement('input');
     let add_name = document.createElement('input');
@@ -189,6 +193,30 @@ export function initializeMarkerMenu(){
     adding.appendChild(add_number);
     adding.appendChild(add_color);
     list.appendChild(adding);
+    
+    // Форма добавления маркеров из других карт
+    let addFromMapsDiv = document.createElement('div');
+    addFromMapsDiv.innerHTML = `
+        <h4>Добавить маркер из другой карты</h4>
+        <div class="map-selection">
+            <label>Выберите карту: 
+                <select id="marker-map-select">
+                    <option value="">Выберите карту...</option>
+                </select>
+            </label>
+        </div>
+        <div class="marker-selection" id="marker-selection" style="display: none;">
+            <label>Выберите маркер: 
+                <select id="marker-select">
+                    <option value="">Выберите маркер...</option>
+                </select>
+            </label>
+            <button id="add-marker-from-map-button" class="add-button">[+] Добавить</button>
+        </div>
+    `;
+    list.appendChild(addFromMapsDiv);
+    
     sidebar.appendChild(list);
     document.body.appendChild(sidebar);
 }
+

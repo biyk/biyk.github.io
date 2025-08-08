@@ -31,3 +31,50 @@
     font-weight: bold;
     top: -4px;
 }
+
+/* Стили для формы добавления маркеров из других карт */
+.marker-menu h4 {
+    margin: 10px 0 5px 0;
+    color: #2c3e50;
+    font-size: 14px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.marker-menu .map-selection, .marker-menu .marker-selection {
+    margin-bottom: 10px;
+}
+
+.marker-menu .map-selection label, .marker-menu .marker-selection label {
+    display: block;
+    margin-bottom: 3px;
+    font-weight: bold;
+    color: #333;
+    font-size: 12px;
+}
+
+.marker-menu .map-selection select, .marker-menu .marker-selection select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background-color: white;
+    font-size: 12px;
+}
+
+.marker-menu .add-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: bold;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.marker-menu .add-button:hover {
+    background-color: #218838;
+}

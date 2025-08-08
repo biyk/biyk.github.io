@@ -1,3 +1,5 @@
+
+
 .marker-menu button {
     margin: 5px;
     background-color: #f0f0f0;
@@ -17,6 +19,83 @@
 .custom-marker {
     font-size: 24px;
     color: red;
+}
+
+/* Стили для выделенных маркеров */
+.selected-marker {
+    border: 3px solid #0066cc !important;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 102, 204, 0.5);
+    transform: scale(1.1);
+    transition: all 0.2s ease;
+}
+
+/* Стили для режима выделения */
+.selection-mode {
+    cursor: crosshair !important;
+}
+
+.selection-mode .custom-marker {
+    cursor: pointer;
+}
+
+/* UI выделения */
+.selection-ui {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    min-width: 250px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.selection-ui .selection-info {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.selection-ui .selection-info span {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.selection-ui .selection-info #selection-counter {
+    font-weight: bold;
+    color: #0066cc;
+    font-size: 16px;
+}
+
+.selection-ui .selection-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.selection-ui .selection-controls button {
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.selection-ui .selection-controls button:hover {
+    background: #0052a3;
+}
+
+.selection-ui .selection-controls button#delete-selected {
+    background: #dc3545;
+}
+
+.selection-ui .selection-controls button#delete-selected:hover {
+    background: #c82333;
 }
 
 .marker-menu button.point-button {

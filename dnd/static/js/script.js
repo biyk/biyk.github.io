@@ -8,7 +8,7 @@ import {
     updateInfoBar
 } from './script/helpers.js';
 import {checkTab} from './tabs.js';
-import {createMarkers, drowMarker, initializeMarkerMenu, updateMarkers} from './marker.js';
+import {createMarkers, drowMarker, initializeMarkerMenu, updateMarkers, initializeSelectionMode} from './marker.js';
 import {Settings} from './settings.js';
 import {
     createMainPolygon,
@@ -75,6 +75,9 @@ class MapManager {
         this.Spells = new Spells();
         await loadAmbienceRadios.call(this);
         await loadMaps.call(this);
+        
+        // Инициализируем режим выделения маркеров
+        initializeSelectionMode();
 
         this.checkConfig();
     }

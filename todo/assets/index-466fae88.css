@@ -114,14 +114,14 @@
         /*content: "\2002";*/
     }
 }
-.neumorphic-radio-group[data-v-f3602ec5] {
+.neumorphic-radio-group[data-v-4f1b3b0d] {
     display: flex;
     gap: 10px;
     padding: 10px;
     background: #e0e0e0; /* общий фон */
     border-radius: 20px;
 }
-.neumorphic-button[data-v-f3602ec5] {
+.neumorphic-button[data-v-4f1b3b0d] {
     background: #e0e0e0;
     border: none;
     border-radius: 12px;
@@ -134,14 +134,14 @@
 }
 
 /* Активная (впуклая) кнопка */
-.el-radio-button__original-radio:checked + .neumorphic-button[data-v-f3602ec5],
-.el-radio-button.is-active.neumorphic-button[data-v-f3602ec5] {
+.el-radio-button__original-radio:checked + .neumorphic-button[data-v-4f1b3b0d],
+.el-radio-button.is-active.neumorphic-button[data-v-4f1b3b0d] {
     box-shadow: inset 4px 4px 8px #bebebe,
     inset -4px -4px 8px #ffffff;
 }
 
 /* Hover эффект для большей интерактивности */
-.neumorphic-button[data-v-f3602ec5]:hover {
+.neumorphic-button[data-v-4f1b3b0d]:hover {
     box-shadow: 2px 2px 4px #bebebe,
     -2px -2px 4px #ffffff;
 }
@@ -217,11 +217,11 @@ h1 {
     margin: 0 auto;
 }
 
-.product-item[data-v-f34ad266] {
+.product-item[data-v-02ce2ff3] {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
 }
-.cart[data-v-f34ad266] {
+.cart[data-v-02ce2ff3] {
     margin-top: 20px;
 }

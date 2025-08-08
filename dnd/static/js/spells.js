@@ -5,8 +5,6 @@ import {GoogleSheetDB, ORM, spreadsheetId, Table} from "./db/google.js";
 
 export class Spells {
     constructor() {
-        const el = id => document.getElementById(id);
-        this.apiUrl = '/api/data/spells/json';
         this.auth_code = localStorage.getItem('auth_code');
         this.playersSheet = '';
         this.initEventListeners();
@@ -115,7 +113,7 @@ export class Spells {
     initializeSlesslMenu() {
         let inventoryButton = document.getElementById('spells-button');
         if (inventoryButton) {
-            inventoryButton.addEventListener('click', (e) => {
+            inventoryButton.addEventListener('click', () => {
                 this.toggleSlideMenu();
             });
         }
@@ -192,7 +190,7 @@ export class Spells {
     }
 
     async initEventListeners() {
-        document.body.addEventListener('ready_spells', async (e) => {
+        document.body.addEventListener('ready_spells', async () => {
             let api = window.GoogleSheetDB || new GoogleSheetDB();
             await api.waitGoogle();
             await this.getPlayersSheet();

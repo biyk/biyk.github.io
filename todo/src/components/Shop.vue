@@ -26,9 +26,8 @@
 <script>
 
 
-import {GoogleSheetDB, ORM, spreadsheetId, Table} from "../../../dnd/static/js/db/google.js";
+import {GoogleSheetDB, Table} from "../../../dnd/static/js/db/google.js";
 import {generateUUIDv4} from "@/utils/uuid.js";
-import { useStore } from 'vuex'
 
 export default {
     name: 'ProductList',

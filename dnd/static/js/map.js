@@ -1,4 +1,4 @@
-import {GoogleSheetDB, spreadsheetId, Table} from "./db/google.js";
+import {GoogleSheetDB, Table} from "./db/google.js";
 import {getMapTable} from "./script/api.js";
 
 export async function loadMaps() {

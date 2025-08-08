@@ -63,15 +63,35 @@ export function createMarkers(config){
 
 export function updateMarkers(config){
     config.markers.forEach(markerData => {
-        let id = markerData.settings.id;
-        let marker = this.points.get(id);
-        let show = markerData.settings.show
-        marker.settings.show = show;
-        marker.setLatLng([
-            markerData.settings.latlng.lat,
-            markerData.settings.latlng.lng,
-        ])
-        marker._icon.style.opacity = show ? 1 : (window.admin_mode) ? 0.5: 0;
+        try {
+            let id = markerData.settings.id;
+            let marker = this.points.get(id);
+            
+            // Если маркер не существует, создаем его
+            if (!marker) {
+                this.drowMarker({
+                    id: markerData.settings.id,
+                    selectedIcon: markerData.settings.selectedIcon,
+                    latlng: markerData.settings.latlng,
+                    backgroundColor: markerData.settings.backgroundColor,
+                    show: markerData.settings.show,
+                    style: markerData.settings.style,
+                    text: markerData.settings.text,
+                });
+                return; // Выходим, так как маркер только что создан
+            }
+            
+            let show = markerData.settings.show
+            marker.settings.show = show;
+            marker.setLatLng([
+                markerData.settings.latlng.lat,
+                markerData.settings.latlng.lng,
+            ])
+            marker._icon.style.opacity = show ? 1 : (window.admin_mode) ? 0.5: 0;
+        } catch (error) {
+            console.log(markerData,error);
+        }
+  
     });
 }
 

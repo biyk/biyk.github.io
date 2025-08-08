@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.40";
+window.version = "0.4.41";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9247,7 +9247,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_f3602ec5_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_4f1b3b0d_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9283,7 +9283,6 @@ const _sfc_main$2B = {
     taskSort,
     getFilteredTodos() {
       const now2 = new Date();
-      new Date().getTime();
       const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       const end_today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 0, 1).getTime();
       return this.todos.filter((todo) => {
@@ -9613,7 +9612,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-f3602ec5"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-4f1b3b0d"]]);
 const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
@@ -10700,7 +10699,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_f34ad266_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_02ce2ff3_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10809,7 +10808,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-f34ad266"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-02ce2ff3"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

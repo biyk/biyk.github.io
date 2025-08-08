@@ -409,8 +409,9 @@
             <button class="toggle-form-button prev">Назад</button>
             <!-- Контейнер для персонажей -->
             <div id="characters-container"></div>
-            <!-- Кнопка открытия формы добавления персонажа -->
+            <!-- Кнопки открытия форм добавления персонажа -->
             <button class="toggle-form-button add">Добавить персонажа</button>
+            <button class="toggle-form-button add-from-maps">Добавить из другой карты</button>
             <input type="text" id="npc-input" placeholder="Type to search NPCs...">
             <ul id="npc-list"></ul>
             <!-- Форма добавления нового персонажа -->
@@ -425,6 +426,26 @@
                 <label>количество: <input type="number" id="new-count"  value="1"/></label>
                 <label>владелец: <select id="new-parent" ><option selected value="">Не выбрано</option></select></label>
                 <button id="add-character-button">Добавить</button>
+            </div>
+            
+            <!-- Форма добавления персонажей из других карт -->
+            <div class="add-from-maps-form" id="add-from-maps-form">
+                <h3>Добавить персонажа из другой карты</h3>
+                <div class="map-selection">
+                    <label>Выберите карту: 
+                        <select id="map-select">
+                            <option value="">Выберите карту...</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="character-selection" id="character-selection" style="display: none;">
+                    <label>Выберите персонажа: 
+                        <select id="character-select">
+                            <option value="">Выберите персонажа...</option>
+                        </select>
+                    </label>
+                    <button id="add-character-from-map-button" class="add-button">[+] Добавить</button>
+                </div>
             </div>
         </div>
     </div>

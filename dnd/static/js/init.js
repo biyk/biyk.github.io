@@ -1,7 +1,7 @@
 import {calculateEncounterData, debounce, createEditableSpan} from './init/func.js';
 import {displayInfoBlocks, displayCurrentAndNextTurn, fillEditForm} from './init/display.js';
 import {loadInitiativeData, sendInit, infoCharacter} from './init/api.js';
-import {ORM, spreadsheetId, Table} from "./db/google.js";
+import {GoogleSheetDB, ORM, spreadsheetId, Table} from "./db/google.js";
 
 class InitiativeManager {
     constructor() {
@@ -250,7 +250,14 @@ class InitiativeManager {
             document.querySelector(".toggle-form-button.next").addEventListener("click", this.nextTurn.bind(this));
             document.querySelector(".toggle-form-button.prev").addEventListener("click", this.prevTurn.bind(this));
             document.querySelector(".toggle-form-button.add").addEventListener("click", this.toggleAddCharacterForm.bind(this)); // Новый обработчик
+            document.querySelector(".toggle-form-button.add-from-maps").addEventListener("click", this.toggleAddFromMapsForm.bind(this)); // Обработчик для формы добавления из карт
             document.getElementById('add-character-button').addEventListener("click", this.addCharacter.bind(this)); // Обработчик добавления персонажа
+            document.getElementById('add-character-from-map-button').addEventListener("click", this.addCharacterFromMap.bind(this)); // Обработчик добавления персонажа из карты
+            
+            // Обработчик изменения выбора карты
+            document.getElementById('map-select').addEventListener("change", (e) => {
+                this.loadCharactersFromMap(e.target.value);
+            });
 
             // Изменяем обработчик для списка монстров
             document.getElementById('npc-input').addEventListener(
@@ -320,6 +327,149 @@ class InitiativeManager {
             select.appendChild(option);
         });
 
+    }
+
+    // Метод для переключения формы добавления персонажей из других карт
+    toggleAddFromMapsForm() {
+        const form = document.getElementById('add-from-maps-form');
+        const addForm = document.getElementById('add-character-form');
+        
+        if (form.style.display === 'block') {
+            form.style.display = 'none';
+        } else {
+            form.style.display = 'block';
+            addForm.style.display = 'none';
+            this.loadMapsList();
+        }
+    }
+
+    // Метод для загрузки списка карт
+    async loadMapsList() {
+        try {
+            const mapSelect = document.getElementById('map-select');
+            mapSelect.innerHTML = '<option value="">Выберите карту...</option>';
+            
+            let api = window.GoogleSheetDB || new GoogleSheetDB();
+            await api.waitGoogle();
+            
+            let keysTable = new Table({
+                list: 'KEYS',
+                spreadsheetId: spreadsheetId
+            });
+            let keys = await keysTable.getAll({formated: true, caching: 10});
+            
+            let mapsTable = new Table({
+                list: 'MAPS',
+                spreadsheetId: keys.maps
+            });
+            
+            let lists = await mapsTable.getLists();
+            
+            lists.forEach((item) => {
+                let title = item.properties.title;
+                let option = document.createElement('option');
+                option.value = title;
+                option.textContent = title;
+                mapSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка при загрузке списка карт:', error);
+        }
+    }
+
+    // Метод для загрузки персонажей из выбранной карты
+    async loadCharactersFromMap(mapName) {
+        try {
+            const characterSelect = document.getElementById('character-select');
+            const characterSelection = document.getElementById('character-selection');
+            
+            if (!mapName) {
+                characterSelection.style.display = 'none';
+                return;
+            }
+            
+            characterSelect.innerHTML = '<option value="">Выберите персонажа...</option>';
+            
+            let api = window.GoogleSheetDB || new GoogleSheetDB();
+            await api.waitGoogle();
+            
+            let keysTable = new Table({
+                list: 'KEYS',
+                spreadsheetId: spreadsheetId
+            });
+            let keys = await keysTable.getAll({formated: true, caching: 10});
+            
+            let mapTable = new Table({
+                list: mapName,
+                spreadsheetId: keys.maps
+            });
+            
+            let data = await mapTable.getAll({formated: true});
+            let init = data.init;
+            
+            if (init && init.all && init.all.length > 0) {
+                init.all.forEach((character) => {
+                    let option = document.createElement('option');
+                    option.value = JSON.stringify(character);
+                    option.textContent = `${character.name} (Init: ${character.init}, HP: ${character.hp_now}/${character.hp_max})`;
+                    characterSelect.appendChild(option);
+                });
+                characterSelection.style.display = 'block';
+            } else {
+                characterSelection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке персонажей из карты:', error);
+            characterSelection.style.display = 'none';
+        }
+    }
+
+    // Метод для добавления персонажа из другой карты
+    async addCharacterFromMap() {
+        const characterSelect = document.getElementById('character-select');
+        const selectedValue = characterSelect.value;
+        
+        if (!selectedValue) {
+            alert('Пожалуйста, выберите персонажа');
+            return;
+        }
+        
+        try {
+            const character = JSON.parse(selectedValue);
+            
+            // Генерируем уникальную инициативу
+            let init = character.init;
+            while (!this.isUniqueInitiative(init)) {
+                init = (parseFloat(init) + 0.1).toFixed(1);
+            }
+            
+            // Создаем нового персонажа с уникальной инициативой
+            const newCharacter = {
+                init: init,
+                name: character.name,
+                cd: character.cd,
+                hp_now: character.hp_now,
+                hp_max: character.hp_max,
+                exp: character.exp,
+                parent_name: character.parent_name || '',
+                surprise: character.surprise || "false",
+                npc: character.npc || "false"
+            };
+            
+            this.charactersData.push(newCharacter);
+            
+            // Очищаем форму
+            characterSelect.value = '';
+            document.getElementById('character-selection').style.display = 'none';
+            document.getElementById('add-from-maps-form').style.display = 'none';
+            
+            await this.displayCharactersAndSendInit();
+            
+            console.log('Персонаж добавлен из другой карты:', newCharacter);
+        } catch (error) {
+            console.error('Ошибка при добавлении персонажа:', error);
+            alert('Ошибка при добавлении персонажа');
+        }
     }
 }
 

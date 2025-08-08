@@ -345,16 +345,28 @@ class MapManager {
             }
             if (this.selectedIcon) {
                 // Размещаем маркер с выбранной иконкой
-                this.drowMarker({
+                let markerData = {
                     latlng: e.latlng,
                     selectedIcon: this.selectedIcon
-                })
-                // Сбрасываем выбранную иконку
+                };
+                
+                // Если есть дополнительные данные маркера (из импорта), добавляем их
+                if (this.selectedMarkerData) {
+                    markerData.backgroundColor = this.selectedMarkerData.backgroundColor;
+                    markerData.text = this.selectedMarkerData.text;
+                    markerData.style = this.selectedMarkerData.style;
+                    markerData.show = this.selectedMarkerData.show;
+                }
+                
+                this.drowMarker(markerData);
+                
+                // Сбрасываем выбранную иконку и данные маркера
                 this.selectedIcon = null;
+                this.selectedMarkerData = null;
                 document.querySelector('.marker-menu').style.display = 'block'; // Показываем сайдбар
 
                 this.setPolygonClickability(true);
-                await this.sendData('polygons');
+                await this.sendData('markers');
             }
 
         });
@@ -366,8 +378,24 @@ class MapManager {
             markerButton.addEventListener('click', (e) => {
                 const sidebar = document.querySelector('.marker-menu');
                 sidebar.style.right = sidebar.style.right === '0px' ? '-33%' : '0px';
+                // Загружаем список карт при открытии меню маркеров
+                this.loadMapsList();
             })
         }
+
+        // Добавляем обработчики событий для новой функциональности маркеров
+        // Используем делегирование событий, так как элементы создаются динамически
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'marker-map-select') {
+                this.loadMarkersFromMap(e.target.value);
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'add-marker-from-map-button') {
+                this.addMarkerFromMap();
+            }
+        });
 
 
         document.body.addEventListener('update_config', async (e) => {
@@ -466,7 +494,131 @@ class MapManager {
 
     initializeMarkerMenu() {
         initializeMarkerMenu.call(this)
+        // Загружаем список карт при инициализации меню маркеров
+        this.loadMapsList();
+    }
 
+    // Метод для загрузки списка карт
+    async loadMapsList() {
+        try {
+            const mapSelect = document.getElementById('marker-map-select');
+            if (!mapSelect) return;
+            
+            mapSelect.innerHTML = '<option value="">Выберите карту...</option>';
+            
+            let api = window.GoogleSheetDB || new GoogleSheetDB();
+            await api.waitGoogle();
+            
+            let keysTable = new Table({
+                list: 'KEYS',
+                spreadsheetId: spreadsheetId
+            });
+            let keys = await keysTable.getAll({formated: true, caching: 10});
+            
+            let mapsTable = new Table({
+                list: 'MAPS',
+                spreadsheetId: keys.maps
+            });
+            
+            let lists = await mapsTable.getLists();
+            
+            lists.forEach((item) => {
+                let title = item.properties.title;
+                let option = document.createElement('option');
+                option.value = title;
+                option.textContent = title;
+                mapSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка при загрузке списка карт:', error);
+        }
+    }
+
+    // Метод для загрузки маркеров из выбранной карты
+    async loadMarkersFromMap(mapName) {
+        try {
+            const markerSelect = document.getElementById('marker-select');
+            const markerSelection = document.getElementById('marker-selection');
+            
+            if (!mapName) {
+                markerSelection.style.display = 'none';
+                return;
+            }
+            
+            markerSelect.innerHTML = '<option value="">Выберите маркер...</option>';
+            
+            let api = window.GoogleSheetDB || new GoogleSheetDB();
+            await api.waitGoogle();
+            
+            let keysTable = new Table({
+                list: 'KEYS',
+                spreadsheetId: spreadsheetId
+            });
+            let keys = await keysTable.getAll({formated: true, caching: 10});
+            
+            let mapTable = new Table({
+                list: mapName,
+                spreadsheetId: keys.maps
+            });
+            
+            let data = await mapTable.getAll({formated: true});
+            let markers = data.markers;
+            
+            if (markers && markers.length > 0) {
+                markers.forEach((markerData) => {
+                    let settings = markerData.settings;
+                    let option = document.createElement('option');
+                    option.value = JSON.stringify(settings);
+                    option.textContent = `${settings.selectedIcon.emoji} ${settings.selectedIcon.name || 'Маркер'} (${settings.selectedIcon.number || '№'})`;
+                    markerSelect.appendChild(option);
+                });
+                markerSelection.style.display = 'block';
+            } else {
+                markerSelection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке маркеров из карты:', error);
+            document.getElementById('marker-selection').style.display = 'none';
+        }
+    }
+
+    // Метод для добавления маркера из другой карты
+    async addMarkerFromMap() {
+        const markerSelect = document.getElementById('marker-select');
+        const selectedValue = markerSelect.value;
+        
+        if (!selectedValue) {
+            alert('Пожалуйста, выберите маркер');
+            return;
+        }
+        
+        try {
+            const markerSettings = JSON.parse(selectedValue);
+            
+            // Создаем новый маркер с теми же настройками
+            const newMarker = {
+                selectedIcon: markerSettings.selectedIcon,
+                backgroundColor: markerSettings.backgroundColor,
+                text: markerSettings.text || '',
+                style: markerSettings.style || '',
+                show: true
+            };
+            
+            // Устанавливаем выбранную иконку для размещения
+            this.selectedIcon = newMarker.selectedIcon;
+            this.selectedMarkerData = newMarker;
+            
+            // Скрываем меню маркеров
+            document.querySelector('.marker-menu').style.display = 'none';
+            
+            // Отключаем кликабельность полигонов для размещения маркера
+            this.setPolygonClickability(false);
+            
+            console.log('Маркер выбран для размещения:', newMarker);
+        } catch (error) {
+            console.error('Ошибка при добавлении маркера:', error);
+            alert('Ошибка при добавлении маркера');
+        }
     }
 
     // Функция для расчета расстояния, добавления маркеров, линии и сетки

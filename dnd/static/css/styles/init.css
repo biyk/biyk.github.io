@@ -92,6 +92,56 @@ body {
 .add-character-form button:hover {
     background-color: #45a049;
 }
+
+/* Стили для формы добавления персонажей из других карт */
+.add-from-maps-form {
+    display: none;
+    background-color: #e8f5e8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    border: 1px solid #4caf50;
+}
+
+.add-from-maps-form h3 {
+    margin-top: 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.map-selection, .character-selection {
+    margin-bottom: 15px;
+}
+
+.map-selection label, .character-selection label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.map-selection select, .character-selection select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.add-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: bold;
+}
+
+.add-button:hover {
+    background-color: #218838;
+}
 .toggle-form-button {
     background-color: #007bff;
     color: white;

@@ -62,6 +62,18 @@ export function createMarkers(config){
 }
 
 export function updateMarkers(config){
+    // Создаем Set с ID маркеров из конфигурации для быстрого поиска
+    const configMarkerIds = new Set(config.markers.map(markerData => markerData.settings.id));
+    
+    // Удаляем маркеры, которых нет в конфигурации
+    this.points.forEach((marker, id) => {
+        if (!configMarkerIds.has(id)) {
+            marker.remove(); // Удаляем маркер с карты
+            this.points.delete(id); // Удаляем из коллекции
+        }
+    });
+    
+    // Обновляем или создаем маркеры из конфигурации
     config.markers.forEach(markerData => {
         try {
             let id = markerData.settings.id;

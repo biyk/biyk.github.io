@@ -446,6 +446,8 @@ class MapManager {
         if (marker) {
             window.mapManager.map.removeLayer(marker);
             this.points.delete(index);
+            // Отправляем событие обновления конфигурации после удаления маркера
+            this.Listner.dispatchEvent(new CustomEvent('update_config', {detail: {type: 'markers'}}));
         }
     }
 

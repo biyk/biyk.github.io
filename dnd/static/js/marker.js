@@ -1,6 +1,12 @@
 import {getRandomColor} from "./script/helpers.js";
 import {GoogleSheetDB, ORM, spreadsheetId, Table} from "./db/google.js";
 
+// Глобальные переменные для выделения маркеров
+let selectionMode = false;
+let selectedMarkers = new Set();
+let isDraggingSelection = false;
+let dragOffset = null;
+
 export function drowMarker(data) {
     console.log(data);
     let id = data.id  || new Date().getTime();
@@ -35,14 +41,198 @@ export function drowMarker(data) {
         show: !!data.show,
         id: id,
     }
+    
+    // Добавляем обработчики для выделения
     marker.on('dragend', (e) => {
-        document.body.dispatchEvent(new CustomEvent('update_config', {detail: {type: 'markers'}}));
+        if (!isDraggingSelection) {
+            document.body.dispatchEvent(new CustomEvent('update_config', {detail: {type: 'markers'}}));
+        }
     })
+    
+    // Обработчик клика для выделения/снятия выделения
+    marker.on('click', (e) => {
+        if (selectionMode) {
+            e.originalEvent.stopPropagation();
+            toggleMarkerSelection(id, marker);
+        }
+    });
+    
+    // Обработчик начала перетаскивания для выделенных маркеров
+    marker.on('dragstart', (e) => {
+        if (selectedMarkers.has(id) && selectedMarkers.size > 1) {
+            isDraggingSelection = true;
+            const markerLatLng = marker.getLatLng();
+            dragOffset = {
+                lat: markerLatLng.lat,
+                lng: markerLatLng.lng
+            };
+        }
+    });
+    
+    // Обработчик окончания перетаскивания для выделенных маркеров
+    marker.on('dragend', (e) => {
+        if (isDraggingSelection) {
+            isDraggingSelection = false;
+            dragOffset = null;
+            // Сохраняем изменения всех выделенных маркеров
+            selectedMarkers.forEach(markerId => {
+                const selectedMarker = window.mapManager.points.get(markerId);
+                if (selectedMarker) {
+                    selectedMarker.settings.latlng = selectedMarker.getLatLng();
+                }
+            });
+            document.body.dispatchEvent(new CustomEvent('update_config', {detail: {type: 'markers'}}));
+        }
+    });
+    
+    // Обработчик перетаскивания для выделенных маркеров
+    marker.on('drag', (e) => {
+        if (isDraggingSelection && selectedMarkers.size > 1) {
+            const currentLatLng = marker.getLatLng();
+            const deltaLat = currentLatLng.lat - dragOffset.lat;
+            const deltaLng = currentLatLng.lng - dragOffset.lng;
+            
+            // Перемещаем все выделенные маркеры
+            selectedMarkers.forEach(markerId => {
+                if (markerId !== id) {
+                    const otherMarker = window.mapManager.points.get(markerId);
+                    if (otherMarker) {
+                        const otherLatLng = otherMarker.getLatLng();
+                        otherMarker.setLatLng([
+                            otherLatLng.lat + deltaLat,
+                            otherLatLng.lng + deltaLng
+                        ]);
+                    }
+                }
+            });
+            
+            dragOffset = {
+                lat: currentLatLng.lat,
+                lng: currentLatLng.lng
+            };
+        }
+    });
+    
     marker.on('popupopen', (e) => {
         let popup = marker._popup._contentNode.getElementsByTagName('textarea')[0];
         popup.style.height = popup.scrollHeight + 'px'
     })
     this.points.set(id, marker);
+}
+
+// Функция переключения выделения маркера
+function toggleMarkerSelection(id, marker) {
+    if (selectedMarkers.has(id)) {
+        selectedMarkers.delete(id);
+        marker._icon.classList.remove('selected-marker');
+    } else {
+        selectedMarkers.add(id);
+        marker._icon.classList.add('selected-marker');
+    }
+    updateSelectionDisplay();
+}
+
+// Функция обновления отображения выделения
+function updateSelectionDisplay() {
+    // Обновляем счетчик выделенных маркеров
+    const selectionCounter = document.getElementById('selection-counter');
+    if (selectionCounter) {
+        selectionCounter.textContent = selectedMarkers.size;
+    }
+}
+
+// Функция очистки выделения
+function clearSelection() {
+    selectedMarkers.forEach(id => {
+        const marker = window.mapManager.points.get(id);
+        if (marker) {
+            marker._icon.classList.remove('selected-marker');
+        }
+    });
+    selectedMarkers.clear();
+    updateSelectionDisplay();
+}
+
+// Функция инициализации режима выделения
+export function initializeSelectionMode() {
+    // Добавляем обработчики клавиатуры
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Control' || e.key === 'Ctrl') {
+            selectionMode = true;
+            document.body.classList.add('selection-mode');
+            showSelectionUI();
+            
+            // Закрываем все открытые попапы при входе в режим выделения
+            window.mapManager.points.forEach((marker) => {
+                if (marker.isPopupOpen()) {
+                    marker.closePopup();
+                }
+            });
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'Control' || e.key === 'Ctrl') {
+            selectionMode = false;
+            document.body.classList.remove('selection-mode');
+            hideSelectionUI();
+            clearSelection();
+        }
+    });
+    
+    // Обработчик клика по карте для снятия выделения
+    window.mapManager.map.on('click', (e) => {
+        if (selectionMode && !e.originalEvent.target.closest('.custom-marker')) {
+            clearSelection();
+        }
+    });
+}
+
+// Функция показа UI выделения
+function showSelectionUI() {
+    let ui = document.getElementById('selection-ui');
+    if (!ui) {
+        ui = document.createElement('div');
+        ui.id = 'selection-ui';
+        ui.className = 'selection-ui';
+        ui.innerHTML = `
+            <div class="selection-info">
+                <span>Режим выделения активен</span>
+                <span id="selection-counter">0</span> маркеров выделено
+            </div>
+            <div class="selection-controls">
+                <button id="clear-selection">Очистить выделение</button>
+                <button id="delete-selected">Удалить выделенные</button>
+            </div>
+        `;
+        document.body.appendChild(ui);
+        
+        // Обработчики кнопок
+        document.getElementById('clear-selection').addEventListener('click', clearSelection);
+        document.getElementById('delete-selected').addEventListener('click', deleteSelectedMarkers);
+    }
+    ui.style.display = 'block';
+}
+
+// Функция скрытия UI выделения
+function hideSelectionUI() {
+    const ui = document.getElementById('selection-ui');
+    if (ui) {
+        ui.style.display = 'none';
+    }
+}
+
+// Функция удаления выделенных маркеров
+function deleteSelectedMarkers() {
+    if (selectedMarkers.size === 0) return;
+    
+    if (confirm(`Удалить ${selectedMarkers.size} выделенных маркеров?`)) {
+        selectedMarkers.forEach(id => {
+            window.mapManager.removeMarker(id);
+        });
+        selectedMarkers.clear();
+        updateSelectionDisplay();
+    }
 }
 
 export function createMarkers(config){

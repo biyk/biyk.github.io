@@ -45,7 +45,7 @@ export default {
     },
     methods: {
         cost (product){
-            return parseInt(Math.round(product['reward_cost'] * this.calc()) )
+            return Math.min(parseInt(Math.round(product['reward_cost'] * this.calc()) ), 2)
         },
         async fetchProducts() {
             let itemsTable = new Table({

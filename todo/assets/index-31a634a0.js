@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.50";
+window.version = "0.4.51";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -10825,9 +10825,12 @@ function startTaskAgent(store2) {
   if (intervalId)
     return;
   intervalId = setInterval(async () => {
-    store2.dispatch("todos/initTodos");
-    store2.getters["todos/getTodos"];
-    await listEvents(store2);
+    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    if (!api.expired()) {
+      store2.dispatch("todos/initTodos");
+      store2.getters["todos/getTodos"];
+      await listEvents(store2);
+    }
   }, 60 * 1e3);
 }
 function stopTaskAgent() {

@@ -27,7 +27,7 @@
                 @click="togglePopover(todo.task_uuid)"
             >
                 ({{ todo.task_time}}) {{ todo.task_title }}
-                <span >({{ todo.repeat_index }})</span>
+                <span class="task-repeat_index">({{ parseFloat(todo.repeat_index.toString().replace(',', '.')).toFixed(2) }})</span>
 
                 <span v-if="parseInt(todo.start_date)"> {{ ((currentTime - todo.start_date) / (60*1000)).toFixed(2)}}</span>
                 <span v-else-if="parseInt(todo.task_finish_date)"> {{ ((todo.task_finish_date) / (60*1000)).toFixed(2)}}</span>

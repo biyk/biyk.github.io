@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.53";
+window.version = "0.4.54";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9387,7 +9387,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_4f1b3b0d_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_2402e766_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9595,29 +9595,30 @@ const _hoisted_5$1 = { title: "В среднем за месяц" };
 const _hoisted_6 = { title: "Уровень дисциплины" };
 const _hoisted_7 = { title: "Проверка дисциплины" };
 const _hoisted_8 = ["title", "onClick"];
-const _hoisted_9 = { key: 0 };
-const _hoisted_10 = { key: 1 };
-const _hoisted_11 = {
+const _hoisted_9 = { class: "task-repeat_index" };
+const _hoisted_10 = { key: 0 };
+const _hoisted_11 = { key: 1 };
+const _hoisted_12 = {
   key: 0,
   class: "editable-description"
 };
-const _hoisted_12 = ["onUpdate:modelValue"];
-const _hoisted_13 = ["onClick"];
-const _hoisted_14 = {
+const _hoisted_13 = ["onUpdate:modelValue"];
+const _hoisted_14 = ["onClick"];
+const _hoisted_15 = {
   key: 1,
   class: "buttons"
 };
-const _hoisted_15 = { style: { "margin-right": "8px" } };
-const _hoisted_16 = ["onClick"];
-const _hoisted_17 = { key: 1 };
-const _hoisted_18 = ["onClick"];
+const _hoisted_16 = { style: { "margin-right": "8px" } };
+const _hoisted_17 = ["onClick"];
+const _hoisted_18 = { key: 1 };
 const _hoisted_19 = ["onClick"];
-const _hoisted_20 = {
+const _hoisted_20 = ["onClick"];
+const _hoisted_21 = {
   key: 1,
   class: "done"
 };
-const _hoisted_21 = ["onClick"];
 const _hoisted_22 = ["onClick"];
+const _hoisted_23 = ["onClick"];
 function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
   var _a2, _b;
   const _component_el_radio_button = resolveComponent("el-radio-button");
@@ -9704,55 +9705,55 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
             onClick: ($event) => $options.togglePopover(todo.task_uuid)
           }, [
             createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " ", 1),
-            createBaseVNode("span", null, "(" + toDisplayString(todo.repeat_index) + ")", 1),
-            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_9, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : parseInt(todo.task_finish_date) ? (openBlock(), createElementBlock("span", _hoisted_10, toDisplayString((todo.task_finish_date / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
+            createBaseVNode("span", _hoisted_9, "(" + toDisplayString(parseFloat(todo.repeat_index.toString().replace(",", ".")).toFixed(2)) + ")", 1),
+            parseInt(todo.start_date) ? (openBlock(), createElementBlock("span", _hoisted_10, toDisplayString((($data.currentTime - todo.start_date) / (60 * 1e3)).toFixed(2)), 1)) : parseInt(todo.task_finish_date) ? (openBlock(), createElementBlock("span", _hoisted_11, toDisplayString((todo.task_finish_date / (60 * 1e3)).toFixed(2)), 1)) : createCommentVNode("", true)
           ], 8, _hoisted_8),
-          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_11, [
+          $data.visiblePopover === todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_12, [
             withDirectives(createBaseVNode("textarea", {
               "onUpdate:modelValue": ($event) => todo.task_description = $event,
               rows: "3",
               style: { "width": "100%", "margin-top": "8px" }
-            }, null, 8, _hoisted_12), [
+            }, null, 8, _hoisted_13), [
               [vModelText, todo.task_description]
             ]),
             createBaseVNode("button", {
               onClick: ($event) => $options.closeEditor(todo),
               style: { "margin-top": "4px" }
-            }, "✅ Сохранить", 8, _hoisted_13)
+            }, "✅ Сохранить", 8, _hoisted_14)
           ])) : createCommentVNode("", true),
-          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_14, [
-            createBaseVNode("span", _hoisted_15, [
+          $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_15, [
+            createBaseVNode("span", _hoisted_16, [
               todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
                 key: 0,
                 onClick: ($event) => $options.startTask(todo)
-              }, "▶️", 8, _hoisted_16)) : (openBlock(), createElementBlock("span", _hoisted_17, [
+              }, "▶️", 8, _hoisted_17)) : (openBlock(), createElementBlock("span", _hoisted_18, [
                 createBaseVNode("button", {
                   onClick: withModifiers(($event) => $options.pauseTask(todo), ["stop"])
-                }, "⏸", 8, _hoisted_18)
+                }, "⏸", 8, _hoisted_19)
               ]))
             ]),
             todo.start_date == 0 ? (openBlock(), createElementBlock("span", {
               key: 0,
               class: "done",
               onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-            }, "✅", 8, _hoisted_19)) : (openBlock(), createElementBlock("span", _hoisted_20, [
+            }, "✅", 8, _hoisted_20)) : (openBlock(), createElementBlock("span", _hoisted_21, [
               createBaseVNode("button", {
                 onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
-              }, "⏹", 8, _hoisted_21)
+              }, "⏹", 8, _hoisted_22)
             ])),
             $data.selectedFilter === "calendar" ? (openBlock(), createElementBlock("span", {
               key: 2,
               class: "delete",
               onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"]),
               title: "Нет возможности, нет сил сделать"
-            }, "ⓧ", 8, _hoisted_22)) : createCommentVNode("", true)
+            }, "ⓧ", 8, _hoisted_23)) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ], 2);
       }), 128))
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-4f1b3b0d"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-2402e766"]]);
 const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

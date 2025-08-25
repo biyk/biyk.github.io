@@ -350,7 +350,9 @@ export async function setTaskToCalendar() {
             const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
             const event = makeEvent(task, slot, endDate);
 
+            console.groupCollapsed('add Events');
             await addEvent(event);
+            console.groupEnd();
             //добавляем задачу в список today_tasks
 
             // обновление или удаление слота

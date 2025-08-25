@@ -138,6 +138,7 @@ function getAverageCalc(list) {
     let cumulativeCount = 0;
     let prevAvg = null;
 
+    console.groupCollapsed('averageCalc')
     for (let i = 0; i < dayKeys.length; i++) {
         const currentDayKey = dayKeys[i];
         const currentTime = daysWorkSheet[currentDayKey];
@@ -159,6 +160,7 @@ function getAverageCalc(list) {
         cumulativeSum += currentTime;
         cumulativeCount++;
     }
+    console.groupEnd();
 
     const averageCalc = start;
     return { averageCalc, prevAvg };

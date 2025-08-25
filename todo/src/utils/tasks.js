@@ -180,9 +180,14 @@ export async function makeTaskDone(task, store, options = {}) {
     } = task[0];
     let {deleted} = options;
     repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
-    repeat_index = Math.max(repeat_index, 1);//Нормализация даты
-    const now = new Date();
 
+    const now = new Date();
+    task_date = parseInt(task_date)
+    //разница между запланированной датой и реальной - настоящий индекс выполнения
+    let repeat_real = (repeat_index +Math.abs(now.getTime() - task_date)/(1000*60*60*24)) / 2;
+
+
+    repeat_index = Math.max(repeat_real, 1);//Нормализация индекса. должен быть больше 1
 
     switch (repeat_mode) {
         case '0':

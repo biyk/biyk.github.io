@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.57";
+window.version = "0.4.58";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9021,7 +9021,7 @@ async function makeTaskDone(task, store2, options = {}) {
   repeat_index = parseFloat(repeat_index.toString().replace(",", "."));
   const now2 = new Date();
   task_date = parseInt(task_date);
-  let repeat_real = (repeat_index + Math.abs(now2.getTime() - task_date) / (1e3 * 60 * 60 * 24)) / 2;
+  let repeat_real = repeat_index + (now2.getTime() - task_date) / (1e3 * 60 * 60 * 24) / 2;
   repeat_index = Math.max(repeat_real, 1);
   switch (repeat_mode) {
     case "0":

@@ -110,14 +110,17 @@ export default {
                 if (todo.task_title.includes('task_title')) return false;
                 const start = parseInt(todo.task_date);
                 switch (this.selectedFilter) {
-                    case 'today':
-                        return start < end_today;
                     case 'calendar':
                         const calendarEvents = this.events;
-                        const hasMatchingEvent = calendarEvents?.some(
+                        const matchingEvent = calendarEvents?.find(
                             event => event.description?.includes(todo.task_uuid)
                         );
-                        return start < end_today && hasMatchingEvent;
+
+                        let event_start = matchingEvent ? new Date(matchingEvent.start.dateTime).getTime() : null;
+                        matchingEvent && console.log();
+                        return (start < end_today && matchingEvent) || (matchingEvent && event_start > now.getTime());
+                    case 'today':
+                        return start < end_today;
                     case 'tomorrow':
                         return start > end_today && start < tomorrow;
                     default:

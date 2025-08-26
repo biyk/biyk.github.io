@@ -37,7 +37,6 @@ export function makeEvent(task, slot,endDate) {
     return {
         summary: task.task_title,
         description: task.task_uuid,
-        colorId:7,
         start: {
             dateTime: slot.start,
             timeZone: 'Europe/Samara',

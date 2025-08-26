@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.61";
+window.version = "0.4.62";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8810,7 +8810,6 @@ function makeEvent(task, slot, endDate) {
   return {
     summary: task.task_title,
     description: task.task_uuid,
-    colorId: 7,
     start: {
       dateTime: slot.start,
       timeZone: "Europe/Samara"
@@ -9383,7 +9382,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_6bb9321f_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_9bfd556a_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9418,6 +9417,7 @@ const _sfc_main$2B = {
     taskDate,
     taskSort,
     getFilteredTodos() {
+      const task_done_color = "7";
       const now2 = new Date();
       const tomorrow = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 23, 59, 0, 0).getTime();
       const end_today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 0, 1).getTime();
@@ -9434,9 +9434,7 @@ const _sfc_main$2B = {
                 return (_a2 = event2.description) == null ? void 0 : _a2.includes(todo.task_uuid);
               }
             );
-            let event_start = matchingEvent ? new Date(matchingEvent.start.dateTime).getTime() : null;
-            matchingEvent && console.log();
-            return start < end_today && matchingEvent || matchingEvent && event_start > now2.getTime();
+            return start < end_today || (matchingEvent == null ? void 0 : matchingEvent.colorId) !== task_done_color;
           case "today":
             return start < end_today;
           case "tomorrow":
@@ -9465,10 +9463,11 @@ const _sfc_main$2B = {
       }
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1e3);
+      const task_done_color = "7";
       const event2 = {
         summary: task[0].task_title,
         description: task[0].task_uuid,
-        colorId: 7,
+        colorId: task_done_color,
         start: {
           dateTime: startDate.toISOString(),
           timeZone: "Europe/Samara"
@@ -9751,7 +9750,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-6bb9321f"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-9bfd556a"]]);
 const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

@@ -102,6 +102,7 @@ export default {
         taskDate,
         taskSort,
         getFilteredTodos() {
+            const task_done_color = '7';
             const now = new Date();
             //const today = new Date().getTime();
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 0, 0).getTime();
@@ -116,9 +117,7 @@ export default {
                             event => event.description?.includes(todo.task_uuid)
                         );
 
-                        let event_start = matchingEvent ? new Date(matchingEvent.start.dateTime).getTime() : null;
-                        matchingEvent && console.log();
-                        return (start < end_today && matchingEvent) || (matchingEvent && event_start > now.getTime());
+                        return (start < end_today || matchingEvent?.colorId !== task_done_color);
                     case 'today':
                         return start < end_today;
                     case 'tomorrow':
@@ -150,10 +149,11 @@ export default {
             }
             const endDate = new Date();
             const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1000);
+            const task_done_color = '7';
             const event = {
                 summary: task[0].task_title,
                 description: task[0].task_uuid,
-                colorId: 7,
+                colorId: task_done_color,
                 start: {
                     dateTime: startDate.toISOString(),
                     timeZone: 'Europe/Samara',

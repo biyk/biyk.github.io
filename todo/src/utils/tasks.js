@@ -325,6 +325,7 @@ export async function setTaskToCalendar() {
     let freeSlots = getFreeSlots(today_events);
 
     async function scheduleTasks() {
+        console.groupCollapsed('add Events');
         for (const task of today_tasks) {
             let duration = task.task_time;
             if (!duration || duration === '0') continue;
@@ -350,9 +351,8 @@ export async function setTaskToCalendar() {
             const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1000);
             const event = makeEvent(task, slot, endDate);
 
-            console.groupCollapsed('add Events');
+
             await addEvent(event);
-            console.groupEnd();
             //добавляем задачу в список today_tasks
 
             // обновление или удаление слота
@@ -366,6 +366,8 @@ export async function setTaskToCalendar() {
                 freeSlots[slotIndex].duration = updatedDuration;
             }
         }
+        console.groupEnd();
+
     }
 
     await scheduleTasks();

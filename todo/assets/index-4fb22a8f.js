@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.58";
+window.version = "0.4.59";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9129,6 +9129,7 @@ async function setTaskToCalendar() {
   });
   let freeSlots = getFreeSlots(today_events);
   async function scheduleTasks() {
+    console.groupCollapsed("add Events");
     for (const task of today_tasks) {
       let duration = task.task_time;
       if (!duration || duration === "0")
@@ -9153,9 +9154,7 @@ async function setTaskToCalendar() {
       }
       const endDate = new Date(new Date(slot.start).getTime() + duration * 60 * 1e3);
       const event2 = makeEvent(task, slot, endDate);
-      console.groupCollapsed("add Events");
       await addEvent(event2);
-      console.groupEnd();
       const updatedDuration = slot.duration - duration;
       if (updatedDuration < 15) {
         freeSlots.splice(slotIndex, 1);
@@ -9164,6 +9163,7 @@ async function setTaskToCalendar() {
         freeSlots[slotIndex].duration = updatedDuration;
       }
     }
+    console.groupEnd();
   }
   await scheduleTasks();
   await listEvents(this.$store);

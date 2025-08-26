@@ -146,7 +146,7 @@ function getAverageCalc(list) {
         if (i > 0) {
             prevAvg = cumulativeSum / cumulativeCount;
 
-            let lim = 1 - 0.6180339887 / 2;
+            let lim = 0.6180339887;
             if (currentTime <= prevAvg * lim) {
                 start -= 0.01;
             } else if (currentTime > prevAvg) {

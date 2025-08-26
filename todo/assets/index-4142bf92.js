@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.59";
+window.version = "0.4.60";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8992,7 +8992,7 @@ function getAverageCalc(list) {
     const currentTime = daysWorkSheet[currentDayKey];
     if (i > 0) {
       prevAvg = cumulativeSum / cumulativeCount;
-      let lim = 1 - 0.6180339887 / 2;
+      let lim = 0.6180339887;
       if (currentTime <= prevAvg * lim) {
         start -= 0.01;
       } else if (currentTime > prevAvg) {

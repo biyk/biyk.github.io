@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.65";
+window.version = "0.4.66";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9382,7 +9382,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_e1f5ecf1_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_5b1e113b_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9490,6 +9490,7 @@ const _sfc_main$2B = {
         await addEvent(event);
         task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
         task[0].repeat_index = parseFloat(task[0].repeat_index.toString().replace(",", ".")) - 0.1;
+        task[0].task_sort = parseFloat(task[0].task_sort.toString().replace(",", ".")) - 0.02;
       }
       setTimeout(async () => {
         await makeTaskDone(task, this.$store);
@@ -9722,6 +9723,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
             createBaseVNode("span", _hoisted_16, [
               todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
                 key: 0,
+                class: "start",
                 onClick: ($event) => $options.startTask(todo)
               }, "▶️", 8, _hoisted_17)) : (openBlock(), createElementBlock("span", _hoisted_18, [
                 createBaseVNode("button", {
@@ -9750,7 +9752,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-e1f5ecf1"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-5b1e113b"]]);
 const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

@@ -10,6 +10,7 @@
     border-radius: 5px;
     color: #34495e;
     font-weight: bold;
+    width: 500px;
 }
 
 .task.red {
@@ -49,7 +50,11 @@
 
 .tasks .buttons{
     float: right;
+    position: relative;
+}
 
+.task.blue .buttons {
+    background: #424ee8;
 }
 
 .done {
@@ -59,6 +64,9 @@
     text-align: center;
     cursor: pointer;
 
+}
+.start {
+    cursor: pointer;
 }
 
 .delete {
@@ -76,6 +84,7 @@
 
 .task-description {
     cursor: pointer;
+    position: absolute;
 }
 
 @media screen and (max-width: 576px) {

@@ -20,6 +20,7 @@
     border-radius: 5px;
     color: #34495e;
     font-weight: bold;
+    width: 500px;
 }
 
 .task.red {
@@ -59,7 +60,11 @@
 
 .tasks .buttons{
     float: right;
+    position: relative;
+}
 
+.task.blue .buttons {
+    background: #424ee8;
 }
 
 .done {
@@ -69,6 +74,9 @@
     text-align: center;
     cursor: pointer;
 
+}
+.start {
+    cursor: pointer;
 }
 
 .delete {
@@ -86,6 +94,7 @@
 
 .task-description {
     cursor: pointer;
+    position: absolute;
 }
 
 @media screen and (max-width: 576px) {
@@ -114,14 +123,14 @@
         /*content: "\2002";*/
     }
 }
-.neumorphic-radio-group[data-v-e1f5ecf1] {
+.neumorphic-radio-group[data-v-5b1e113b] {
     display: flex;
     gap: 10px;
     padding: 10px;
     background: #e0e0e0; /* общий фон */
     border-radius: 20px;
 }
-.neumorphic-button[data-v-e1f5ecf1] {
+.neumorphic-button[data-v-5b1e113b] {
     background: #e0e0e0;
     border: none;
     border-radius: 12px;
@@ -134,14 +143,14 @@
 }
 
 /* Активная (впуклая) кнопка */
-.el-radio-button__original-radio:checked + .neumorphic-button[data-v-e1f5ecf1],
-.el-radio-button.is-active.neumorphic-button[data-v-e1f5ecf1] {
+.el-radio-button__original-radio:checked + .neumorphic-button[data-v-5b1e113b],
+.el-radio-button.is-active.neumorphic-button[data-v-5b1e113b] {
     box-shadow: inset 4px 4px 8px #bebebe,
     inset -4px -4px 8px #ffffff;
 }
 
 /* Hover эффект для большей интерактивности */
-.neumorphic-button[data-v-e1f5ecf1]:hover {
+.neumorphic-button[data-v-5b1e113b]:hover {
     box-shadow: 2px 2px 4px #bebebe,
     -2px -2px 4px #ffffff;
 }

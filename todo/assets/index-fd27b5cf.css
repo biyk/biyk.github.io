@@ -49,7 +49,7 @@
 .task:hover {
 }
 
-.completed {
+.completed .task-description{
     text-decoration: line-through;
     color: #41b883;
 }

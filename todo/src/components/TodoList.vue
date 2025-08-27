@@ -187,6 +187,7 @@ export default {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
             let list = await listEvents(this.$store);
             let exist = list.filter(event => event.description?.includes(task_uuid));
+            task[0].completed = true;
             if(exist.length){
                 let eventId = exist[0].id
                 await deleteEvent(eventId)

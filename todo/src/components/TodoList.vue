@@ -1,9 +1,9 @@
 <template>
     <el-radio-group v-model="selectedFilter" class="neumorphic-radio-group">
-        <el-radio-button label="calendar" class="neumorphic-button">Сейчас</el-radio-button>
-        <el-radio-button label="today" class="neumorphic-button">Сегодня</el-radio-button>
-        <el-radio-button label="tomorrow" class="neumorphic-button">Завтра</el-radio-button>
-        <el-radio-button label="all" class="neumorphic-button">Все</el-radio-button>
+        <el-radio-button value="calendar" class="neumorphic-button">Сейчас</el-radio-button>
+        <el-radio-button value="today" class="neumorphic-button">Сегодня</el-radio-button>
+        <el-radio-button value="tomorrow" class="neumorphic-button">Завтра</el-radio-button>
+        <el-radio-button value="all" class="neumorphic-button">Все</el-radio-button>
     </el-radio-group>
     <hr>
     <button v-if="selectedFilter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
@@ -136,6 +136,7 @@ export default {
         async toggleTodo(task_uuid) {
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
             let start_date = parseInt(task[0].start_date)
+            task[0].completed = true;
             if (start_date) {
                 const now = Date.now();
                 const durationMs = now - start_date;
@@ -145,7 +146,6 @@ export default {
                 const newAverage = Math.ceil((previous + minutesSpent) / 2);
                 task[0].task_time = newAverage;
                 task[0].start_date = 0;
-                task[0].completed = true;
             }
             const endDate = new Date();
             const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1000);

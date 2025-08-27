@@ -46,7 +46,7 @@
             <div v-if="visiblePopover !== todo.task_uuid" class="buttons">
                 <!-- Кнопки Старт / Стоп -->
                 <span style="margin-right: 8px;">
-                    <button v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
+                    <button class="start" v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
                     <span v-else>
                       <button @click.stop="pauseTask(todo)">⏸</button>
                     </span>
@@ -176,6 +176,7 @@ export default {
                 //т.к. задача была не на сегодня
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
                 task[0].repeat_index = parseFloat( task[0].repeat_index.toString().replace(',', '.')) - 0.1;
+                task[0].task_sort = parseFloat( task[0].task_sort.toString().replace(',', '.')) - 0.02;
             }
             setTimeout(async () => {
                 await makeTaskDone(task, this.$store);

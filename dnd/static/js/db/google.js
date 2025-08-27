@@ -6,7 +6,7 @@ const CLIENT_ID = '21469279904-9vlmm4i93mg88h6qb4ocd2vvs612ai4u.apps.googleuserc
 const DISCOVERY_DOC_CALENDAR = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 const DISCOVERY_DOC_SHEETS = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
 const DISCOVERY_DOC_DRIVE = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appfolder';
+const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 
 
 export class ORM {
@@ -413,6 +413,174 @@ export class Drive {
             })
         })
     }
+
+    // ===== Helpers for regular Drive (not appDataFolder) =====
+    async findFolderByName(name, parentId = 'root') {
+        const queryParts = [
+            `mimeType = 'application/vnd.google-apps.folder'`,
+            `name = '${name.replace(/'/g, "\\'")}'`,
+            `trashed = false`,
+        ];
+        if (parentId) {
+            queryParts.push(`'${parentId}' in parents`);
+        }
+        const q = queryParts.join(' and ');
+        const resp = await this.prom(gapi.client.drive.files.list, {
+            spaces: 'drive',
+            fields: 'files(id, name)',
+            pageSize: 10,
+            q,
+        });
+        return (resp.result.files && resp.result.files[0]) ? resp.result.files[0] : null;
+    }
+
+    async createFolder(name, parentId = 'root') {
+        const resp = await this.prom(gapi.client.drive.files.create, {
+            resource: {
+                name,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: parentId ? [parentId] : undefined,
+            },
+            fields: 'id, name'
+        });
+        return resp.result;
+    }
+
+    async ensureFolderPath(pathSegments = []) {
+        let currentParent = 'root';
+        let lastFolder = null;
+        for (const segment of pathSegments) {
+            let folder = await this.findFolderByName(segment, currentParent);
+            if (!folder) {
+                folder = await this.createFolder(segment, currentParent);
+            }
+            currentParent = folder.id;
+            lastFolder = folder;
+        }
+        return lastFolder; // {id, name}
+    }
+
+    async moveFileToFolder(fileId, folderId) {
+        // Get current parents
+        const file = await this.prom(gapi.client.drive.files.get, {
+            fileId,
+            fields: 'parents'
+        });
+        const previousParents = (file.result.parents || []).join(',');
+        const resp = await this.prom(gapi.client.drive.files.update, {
+            fileId,
+            addParents: folderId,
+            removeParents: previousParents,
+            fields: 'id, parents'
+        });
+        return resp.result;
+    }
+
+    /**
+     * Создает бэкап Google таблицы с датой и временем в названии
+     * @param {string} spreadsheetId - ID таблицы для бэкапа
+     * @returns {Promise<string>} - ID созданного бэкапа
+     */
+    async createSpreadsheetBackup(spreadsheetId) {
+        try {
+            // Получаем информацию об оригинальной таблице
+            const originalSpreadsheet = await this.prom(gapi.client.sheets.spreadsheets.get, {
+                spreadsheetId: spreadsheetId,
+                fields: 'properties.title,sheets.properties.title'
+            });
+
+            const originalTitle = originalSpreadsheet.result.properties.title;
+            const sheets = originalSpreadsheet.result.sheets;
+            
+            // Создаем название бэкапа с датой и временем
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 19).replace(/:/g, '-');
+            const backupTitle = `${originalTitle}_BACKUP_${dateStr}`;
+            
+            console.log(`Создание бэкапа: ${backupTitle}`);
+            
+            // Создаем новую таблицу для бэкапа
+            const newSpreadsheet = await this.prom(gapi.client.sheets.spreadsheets.create, {
+                properties: {
+                    title: backupTitle
+                }
+            });
+            
+            const backupSpreadsheetId = newSpreadsheet.result.spreadsheetId;
+            console.log(`Бэкап создан с ID: ${backupSpreadsheetId}`);
+
+            // Перемещаем файл в папку dndapp/backups
+            const backupsFolder = await this.ensureFolderPath(['dndapp', 'backups']);
+            if (backupsFolder && backupsFolder.id) {
+                await this.moveFileToFolder(backupSpreadsheetId, backupsFolder.id);
+                console.log('Бэкап перемещен в папку dndapp/backups');
+            } else {
+                console.warn('Не удалось обеспечить папку dndapp/backups');
+            }
+            
+            // Получаем текущие листы в бэкапе (по умолчанию есть один)
+            const backupMeta = await this.prom(gapi.client.sheets.spreadsheets.get, {
+                spreadsheetId: backupSpreadsheetId,
+                fields: 'sheets.properties.sheetId,sheets.properties.title'
+            });
+            const backupSheetMap = {};
+            (backupMeta.result.sheets || []).forEach(s => {
+                backupSheetMap[s.properties.title] = s.properties.sheetId;
+            });
+
+            // Копируем все листы из оригинальной таблицы
+            for (const sheet of sheets) {
+                const sheetTitle = sheet.properties.title;
+                
+                // Получаем данные листа
+                const sheetData = await this.prom(gapi.client.sheets.spreadsheets.values.get, {
+                    spreadsheetId: spreadsheetId,
+                    range: sheetTitle
+                });
+                
+                if (sheetData.result.values && sheetData.result.values.length > 0) {
+                    // Убеждаемся, что лист существует в бэкапе
+                    if (!backupSheetMap[sheetTitle]) {
+                        const addResp = await this.prom(gapi.client.sheets.spreadsheets.batchUpdate, {
+                            spreadsheetId: backupSpreadsheetId,
+                            resource: {
+                                requests: [
+                                    {
+                                        addSheet: {
+                                            properties: {
+                                                title: sheetTitle
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        });
+                        const newSheetId = addResp.result.replies[0].addSheet.properties.sheetId;
+                        backupSheetMap[sheetTitle] = newSheetId;
+                    }
+                    
+                    // Заполняем лист данными
+                    await this.prom(gapi.client.sheets.spreadsheets.values.update, {
+                        spreadsheetId: backupSpreadsheetId,
+                        range: `${sheetTitle}!A1`,
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: sheetData.result.values
+                        }
+                    });
+                    
+                    console.log(`Лист "${sheetTitle}" скопирован`);
+                }
+            }
+            
+            console.log(`Бэкап "${backupTitle}" успешно создан`);
+            return backupSpreadsheetId;
+            
+        } catch (error) {
+            console.error('Ошибка при создании бэкапа:', error);
+            throw error;
+        }
+    }
     async createEmptyFile(name, mimeType) {
         const resp = await this.prom(gapi.client.drive.files.create, {
             resource: {
@@ -681,7 +849,7 @@ export class GoogleSheetDB {
 
         if (caching && storageData ) {
             if (storageTTL > now){
-                console.log(storageKey + ' кэш еще нормальный')
+                //console.info(storageKey + ' кэш еще нормальный')
                 return JSON.parse(storageData);
             }
         }

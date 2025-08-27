@@ -4,13 +4,21 @@ import {tab} from "./test/tab.js";
 import {location} from "./test/location.js";
 import {npc} from "./test/npc.js";
 import {map} from "./test/map.js";
-const sleeper = 200;
+import {backup} from "./test/backup.js";
+import {createBackupBeforeTests} from "./test/backupRunner.js";
+const sleeper = 2000;
 
 // Объект с функциями
-const tests = { empty, tab, init, location, npc, map};
+const tests = { empty, tab, init, location, npc, map, backup};
+
+// createBackupBeforeTests перенесен в ./test/backupRunner.js
 
 export async function test(testing = 'all') {
+
+    // Создаем бэкап перед запуском тестов
+    await createBackupBeforeTests();
     console.log("=== Начало тестирования ===");
+
     if (testing === 'all') {
         await empty(sleeper);
         await tab(sleeper);
@@ -24,7 +32,14 @@ export async function test(testing = 'all') {
     } else {
         console.error(`Function "${testing}" does not exist.`);
     }
-     console.info("=== Тестирование завершено ===");
+    
+    console.info("=== Тестирование завершено ===");
 }
 
+/**
+ * Экспортируем функцию создания бэкапа для использования отдельно
+ */
+export {createBackupBeforeTests as createBackup};
+
 window.test = test;
+window.createBackup = createBackupBeforeTests;

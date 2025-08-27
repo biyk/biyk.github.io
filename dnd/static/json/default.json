@@ -1,10 +1,10 @@
 {
   "image": "image",
-  "width": 16875,
-  "height": 13750,
-  "maxLevel": 7,
+  "width": 4000,
+  "height": 8140,
+  "maxLevel": 5,
   "minLevel": 0,
-  "orgLevel": 7,
+  "orgLevel": 5,
   "polygons": [],
   "mapState": {
     "center": {

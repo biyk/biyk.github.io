@@ -7,13 +7,16 @@ async function checkData(data) {
     await api.waitGoogle();
     let mapTable = await getMapTable();
     let exist = await mapTable.exist();
-    if (!exist){
-        await mapTable.createList()
-    }
     const response = await fetch(`static/json/default.json`);
+
     let result = null;
     if (response.ok) {
         result = await response.json();
+
+        if (!exist){
+            await mapTable.createList()
+        }
+        result.image = mapTable.list;
         for (let code in result) {
             if (!data[code]) {
                 if (typeof result[code] == 'object') {

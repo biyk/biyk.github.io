@@ -8,7 +8,7 @@ let isDraggingSelection = false;
 let dragOffset = null;
 
 export function drowMarker(data) {
-    console.log(data);
+    //console.log(data);
     let id = data.id  || new Date().getTime();
     const marker = L.marker(data.latlng, {
         icon: L.divIcon({
@@ -21,7 +21,7 @@ export function drowMarker(data) {
     let backgroundColor = data.backgroundColor || data.selectedIcon.backgroundColor || getRandomColor();
     let text = data.text ?? '';
     let style = data.style ?? '';
-    console.log(data);
+    //console.log(data);
     if (window.admin_mode){
         marker.bindPopup(`
                <button onclick="window.mapManager.removeMarker(${id})">Remove</button>

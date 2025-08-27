@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.62";
+window.version = "0.4.63";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9382,7 +9382,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_9bfd556a_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_065d83a6_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9451,6 +9451,7 @@ const _sfc_main$2B = {
     async toggleTodo(task_uuid) {
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       let start_date = parseInt(task[0].start_date);
+      task[0].completed = true;
       if (start_date) {
         const now2 = Date.now();
         const durationMs = now2 - start_date;
@@ -9459,7 +9460,6 @@ const _sfc_main$2B = {
         const newAverage = Math.ceil((previous + minutesSpent) / 2);
         task[0].task_time = newAverage;
         task[0].start_date = 0;
-        task[0].completed = true;
       }
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1e3);
@@ -9628,7 +9628,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     }, {
       default: withCtx(() => [
         createVNode(_component_el_radio_button, {
-          label: "calendar",
+          value: "calendar",
           class: "neumorphic-button"
         }, {
           default: withCtx(() => _cache[3] || (_cache[3] = [
@@ -9637,7 +9637,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1
         }),
         createVNode(_component_el_radio_button, {
-          label: "today",
+          value: "today",
           class: "neumorphic-button"
         }, {
           default: withCtx(() => _cache[4] || (_cache[4] = [
@@ -9646,7 +9646,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1
         }),
         createVNode(_component_el_radio_button, {
-          label: "tomorrow",
+          value: "tomorrow",
           class: "neumorphic-button"
         }, {
           default: withCtx(() => _cache[5] || (_cache[5] = [
@@ -9655,7 +9655,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1
         }),
         createVNode(_component_el_radio_button, {
-          label: "all",
+          value: "all",
           class: "neumorphic-button"
         }, {
           default: withCtx(() => _cache[6] || (_cache[6] = [
@@ -9750,7 +9750,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-9bfd556a"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-065d83a6"]]);
 const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

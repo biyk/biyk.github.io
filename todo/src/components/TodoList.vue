@@ -189,12 +189,11 @@ export default {
             let exist = list.filter(event => event.description?.includes(task_uuid));
             task[0].completed = true;
             if(exist.length){
-                let eventId = exist[0].id
-                await deleteEvent(eventId)
+                await deleteEvent(exist[0])
                 task[0].break_multiplier = parseFloat(task[0].break_multiplier) - 0.1;
                 task[0].repeat_index = parseFloat( task[0].repeat_index.toString().replace(',', '.')) + 0.1;
             }
-            makeTaskDone(task, this.$store, {deleted: 1});
+            await makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),
         getSortedTodos(){
             switch (this.selectedFilter) {

@@ -58,11 +58,11 @@ export async function updateEvent(event) {
 
 }
 
-export async function deleteEvent(eventId) {
+export async function deleteEvent(event) {
     try {
         await gapi.client.calendar.events.delete({
             calendarId: 'primary',
-            eventId: eventId
+            eventId: event.id
         });
         console.log('Событие удалено:', event.summary);
     } catch (error) {

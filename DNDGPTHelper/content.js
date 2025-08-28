@@ -1,3 +1,4 @@
+console.groupCollapsed('plugin')
 console.log('Content script loaded!');
 
 function initializeScript() {
@@ -20,6 +21,7 @@ function initializeScript() {
     } else {
         console.log('One or both elements not found.');
     }
+    console.groupEnd();
 }
 
 // Проверяем, если DOM уже загружен

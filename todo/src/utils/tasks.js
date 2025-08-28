@@ -167,8 +167,6 @@ function getAverageCalc(list) {
 }
 
 
-
-
 export async function makeTaskDone(task, store, options = {}) {
 
     let {
@@ -178,18 +176,18 @@ export async function makeTaskDone(task, store, options = {}) {
         task_date,
         task_time,
         break_multiplier,
-        number_of_executions
+        number_of_executions,
+        last_execution
     } = task[0];
     let {deleted} = options;
     repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
 
     const now = new Date();
-    task_date = parseInt(task_date)
+    task_date = last_execution ? parseInt(last_execution) : parseInt(task_date);
     //разница между запланированной датой и реальной - настоящий индекс выполнения
     let repeat_real = repeat_index  + ((now.getTime() - task_date)/(1000*60*60*24)) / 2;
-
-
-    repeat_index = Math.max(repeat_real, 1);//Нормализация индекса. должен быть больше 1
+    console.info(`repeat_index: ${repeat_index} repeat_real: ${repeat_real} `)
+    repeat_index = Math.max(repeat_real, 1);//Нормализация индекса. Должен быть больше 1
 
     switch (repeat_mode) {
         case '0':
@@ -245,6 +243,7 @@ export async function makeTaskDone(task, store, options = {}) {
     let calc =  store.getters["settings/allCalc"];
 
     let money_reward = task_time  * calc.averageCalc / 2;
+    last_execution = now.getTime();
     const updatedTask = {
         ...task[0],
         task_date: task_date,
@@ -254,7 +253,7 @@ export async function makeTaskDone(task, store, options = {}) {
         break_multiplier: break_multiplier,
         task_finish_date: 0,
         number_of_executions: number_of_executions,
-        last_execution:now.getTime()
+        last_execution:last_execution
     };
 
     console.log(updatedTask)

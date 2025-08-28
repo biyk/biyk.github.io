@@ -122,6 +122,10 @@
     .task:before {
         /*content: "\2002";*/
     }
+
+    .buttons .start,.done,.delete {
+        font-size: x-large;
+    }
 }
 .neumorphic-radio-group[data-v-5b1e113b] {
     display: flex;

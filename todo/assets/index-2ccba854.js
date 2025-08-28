@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.72";
+window.version = "0.4.73";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9757,7 +9757,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
   ], 64);
 }
 const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-5b1e113b"]]);
-const Settings_vue_vue_type_style_index_0_scoped_f6804466_lang = "";
+const Settings_vue_vue_type_style_index_0_scoped_9d0df381_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
   data() {
@@ -9808,11 +9808,9 @@ const _sfc_main$2A = {
     let drive = new Drive();
     let configs = await drive.find('name = "config.json"');
     if (configs.length > 0) {
-      console.log(configs);
       this.driveConfigId = configs[0].id;
     } else {
       let file = await drive.createEmptyFile("config.json");
-      console.log(file);
       this.driveConfigId = file;
     }
     let setting = await drive.download(this.driveConfigId);
@@ -9866,7 +9864,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-f6804466"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-9d0df381"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }

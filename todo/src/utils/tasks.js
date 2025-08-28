@@ -237,13 +237,15 @@ export async function makeTaskDone(task, store, options = {}) {
     }
     if (deleted) {
         task_date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0).getTime();
+    } else {
+        last_execution = now.getTime();
     }
 
     number_of_executions++;
     let calc =  store.getters["settings/allCalc"];
 
     let money_reward = task_time  * calc.averageCalc / 2;
-    last_execution = now.getTime();
+
     const updatedTask = {
         ...task[0],
         task_date: task_date,

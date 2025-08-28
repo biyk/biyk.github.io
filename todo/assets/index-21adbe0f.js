@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.74";
+window.version = "0.4.75";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9066,11 +9066,12 @@ async function makeTaskDone(task, store2, options = {}) {
   }
   if (deleted) {
     task_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();
+  } else {
+    last_execution = now2.getTime();
   }
   number_of_executions++;
   let calc = store2.getters["settings/allCalc"];
   let money_reward = task_time * calc.averageCalc / 2;
-  last_execution = now2.getTime();
   const updatedTask = {
     ...task[0],
     task_date,

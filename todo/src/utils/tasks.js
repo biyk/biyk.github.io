@@ -186,7 +186,16 @@ export async function makeTaskDone(task, store, options = {}) {
     task_date = last_execution ? parseInt(last_execution) : parseInt(task_date);
     //разница между запланированной датой и реальной - настоящий индекс выполнения
     let repeat_real = repeat_index  + ((now.getTime() - task_date)/(1000*60*60*24)) / 2;
-    console.info(`repeat_index: ${repeat_index} repeat_real: ${repeat_real} `)
+
+    if (1){
+        console.groupCollapsed('repeat_index')
+        console.info(`repeat_index: ${repeat_index} `)
+        console.info(`назначенная дата: ${new Date(task_date)}`)
+        console.info(`дата выполнения: ${new Date(last_execution)}`)
+        console.info(`repeat_real: ${repeat_real} `)
+        console.groupEnd()
+    }
+
     repeat_index = Math.max(repeat_real, 1);//Нормализация индекса. Должен быть больше 1
 
     switch (repeat_mode) {

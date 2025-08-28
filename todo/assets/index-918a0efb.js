@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.73";
+window.version = "0.4.74";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8030,7 +8030,6 @@ let Table$2 = class Table {
           //values: [["Engine", "$100", "1", "3/20/2016"]],
         }
       });
-      console.log(res);
     } catch (e) {
       console.error(e);
     } finally {
@@ -8114,7 +8113,6 @@ let Table$2 = class Table {
         values: [rawValue]
       }
     }).then((response) => {
-      console.log("Value updated successfully:", response);
     }).catch((err) => {
       console.log("Value update failed:", err);
     });

@@ -92,7 +92,7 @@ export class Table {
                     //values: [["Engine", "$100", "1", "3/20/2016"]],
                 }
             });
-            console.log(res);
+            //console.log(res);
         } catch (e) {
             console.error(e)
         } finally {
@@ -190,7 +190,7 @@ export class Table {
                 values: [rawValue]
             }
         }).then((response) => {
-            console.log('Value updated successfully:', response);
+            //console.log('Value updated successfully:', response);
         }).catch((err) => {
             console.log('Value update failed:', err);
         });

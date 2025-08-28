@@ -253,7 +253,8 @@ export async function makeTaskDone(task, store, options = {}) {
         money_reward: money_reward,
         break_multiplier: break_multiplier,
         task_finish_date: 0,
-        number_of_executions: number_of_executions
+        number_of_executions: number_of_executions,
+        last_execution:now.getTime()
     };
 
     console.log(updatedTask)

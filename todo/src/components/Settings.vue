@@ -94,11 +94,11 @@ export default {
         let drive = new Drive();
         let configs = await drive.find('name = "config.json"');
         if (configs.length > 0) {
-            console.log(configs);
+            //console.log(configs);
             this.driveConfigId = configs[0].id;
         } else {
             let file = await drive.createEmptyFile('config.json');
-            console.log(file);
+            //console.log(file);
             this.driveConfigId = file;
         }
         let setting = await drive.download(this.driveConfigId);

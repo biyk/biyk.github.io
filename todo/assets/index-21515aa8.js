@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.75";
+window.version = "0.4.76";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9020,7 +9020,14 @@ async function makeTaskDone(task, store2, options = {}) {
   const now2 = new Date();
   task_date = last_execution ? parseInt(last_execution) : parseInt(task_date);
   let repeat_real = repeat_index + (now2.getTime() - task_date) / (1e3 * 60 * 60 * 24) / 2;
-  console.info(`repeat_index: ${repeat_index} repeat_real: ${repeat_real} `);
+  {
+    console.groupCollapsed("repeat_index");
+    console.info(`repeat_index: ${repeat_index} `);
+    console.info(`назначенная дата: ${new Date(task_date)}`);
+    console.info(`дата выполнения: ${new Date(last_execution)}`);
+    console.info(`repeat_real: ${repeat_real} `);
+    console.groupEnd();
+  }
   repeat_index = Math.max(repeat_real, 1);
   switch (repeat_mode) {
     case "0":

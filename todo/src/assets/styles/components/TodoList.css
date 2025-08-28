@@ -112,4 +112,8 @@
     .task:before {
         /*content: "\2002";*/
     }
+
+    .buttons .start,.done,.delete {
+        font-size: x-large;
+    }
 }

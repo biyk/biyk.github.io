@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.71";
+window.version = "0.4.72";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9014,13 +9014,15 @@ async function makeTaskDone(task, store2, options = {}) {
     task_date,
     task_time,
     break_multiplier,
-    number_of_executions
+    number_of_executions,
+    last_execution
   } = task[0];
   let { deleted } = options;
   repeat_index = parseFloat(repeat_index.toString().replace(",", "."));
   const now2 = new Date();
-  task_date = parseInt(task_date);
+  task_date = last_execution ? parseInt(last_execution) : parseInt(task_date);
   let repeat_real = repeat_index + (now2.getTime() - task_date) / (1e3 * 60 * 60 * 24) / 2;
+  console.info(`repeat_index: ${repeat_index} repeat_real: ${repeat_real} `);
   repeat_index = Math.max(repeat_real, 1);
   switch (repeat_mode) {
     case "0":
@@ -9070,6 +9072,7 @@ async function makeTaskDone(task, store2, options = {}) {
   number_of_executions++;
   let calc = store2.getters["settings/allCalc"];
   let money_reward = task_time * calc.averageCalc / 2;
+  last_execution = now2.getTime();
   const updatedTask = {
     ...task[0],
     task_date,
@@ -9079,7 +9082,7 @@ async function makeTaskDone(task, store2, options = {}) {
     break_multiplier,
     task_finish_date: 0,
     number_of_executions,
-    last_execution: now2.getTime()
+    last_execution
   };
   console.log(updatedTask);
   store2.dispatch("todos/updateTodo", updatedTask);

@@ -48,7 +48,7 @@
                 <span style="margin-right: 8px;">
                     <button class="start" v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
                     <span v-else>
-                      <button @click.stop="pauseTask(todo)">⏸</button>
+                      <button  class="pause" @click.stop="pauseTask(todo)">⏸</button>
                     </span>
                 </span>
                 <span  v-if="todo.start_date == 0" class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>

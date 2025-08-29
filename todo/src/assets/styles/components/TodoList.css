@@ -92,8 +92,7 @@
         width: 100vw;
     }
     .task-description {
-        display: inline-block;
-        position: absolute;
+        position: relative;
     }
 
     .tasks {
@@ -113,7 +112,20 @@
         /*content: "\2002";*/
     }
 
-    .buttons .start,.done,.delete {
+    .buttons .start {
+        font-size: x-large;
+    }
+
+    .buttons .pause {
+        font-size: x-large;
+    }
+    .buttons .done button{
+        font-size: x-large;
+    }
+    .buttons .done{
+        font-size: x-large;
+    }
+    .buttons .delete {
         font-size: x-large;
     }
 }

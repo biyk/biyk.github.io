@@ -191,7 +191,7 @@ export async function makeTaskDone(task, store, options = {}) {
         console.groupCollapsed('repeat_index')
         console.info(`repeat_index: ${repeat_index} `)
         console.info(`назначенная дата: ${new Date(task_date)}`)
-        console.info(`дата выполнения: ${new Date(last_execution)}`)
+        console.info(`дата выполнения: ${new Date(parseInt(last_execution))}`)
         console.info(`repeat_real: ${repeat_real} `)
         console.groupEnd()
     }

@@ -102,8 +102,7 @@
         width: 100vw;
     }
     .task-description {
-        display: inline-block;
-        position: absolute;
+        position: relative;
     }
 
     .tasks {
@@ -123,18 +122,31 @@
         /*content: "\2002";*/
     }
 
-    .buttons .start,.done,.delete {
+    .buttons .start {
+        font-size: x-large;
+    }
+
+    .buttons .pause {
+        font-size: x-large;
+    }
+    .buttons .done button{
+        font-size: x-large;
+    }
+    .buttons .done{
+        font-size: x-large;
+    }
+    .buttons .delete {
         font-size: x-large;
     }
 }
-.neumorphic-radio-group[data-v-5b1e113b] {
+.neumorphic-radio-group[data-v-2c7484ef] {
     display: flex;
     gap: 10px;
     padding: 10px;
     background: #e0e0e0; /* общий фон */
     border-radius: 20px;
 }
-.neumorphic-button[data-v-5b1e113b] {
+.neumorphic-button[data-v-2c7484ef] {
     background: #e0e0e0;
     border: none;
     border-radius: 12px;
@@ -147,14 +159,14 @@
 }
 
 /* Активная (впуклая) кнопка */
-.el-radio-button__original-radio:checked + .neumorphic-button[data-v-5b1e113b],
-.el-radio-button.is-active.neumorphic-button[data-v-5b1e113b] {
+.el-radio-button__original-radio:checked + .neumorphic-button[data-v-2c7484ef],
+.el-radio-button.is-active.neumorphic-button[data-v-2c7484ef] {
     box-shadow: inset 4px 4px 8px #bebebe,
     inset -4px -4px 8px #ffffff;
 }
 
 /* Hover эффект для большей интерактивности */
-.neumorphic-button[data-v-5b1e113b]:hover {
+.neumorphic-button[data-v-2c7484ef]:hover {
     box-shadow: 2px 2px 4px #bebebe,
     -2px -2px 4px #ffffff;
 }

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.78";
+window.version = "0.4.79";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9024,7 +9024,7 @@ async function makeTaskDone(task, store2, options = {}) {
     console.groupCollapsed("repeat_index");
     console.info(`repeat_index: ${repeat_index} `);
     console.info(`назначенная дата: ${new Date(task_date)}`);
-    console.info(`дата выполнения: ${new Date(last_execution)}`);
+    console.info(`дата выполнения: ${new Date(parseInt(last_execution))}`);
     console.info(`repeat_real: ${repeat_real} `);
     console.groupEnd();
   }
@@ -9392,7 +9392,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_5b1e113b_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_2c7484ef_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9737,6 +9737,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
                 onClick: ($event) => $options.startTask(todo)
               }, "▶️", 8, _hoisted_17)) : (openBlock(), createElementBlock("span", _hoisted_18, [
                 createBaseVNode("button", {
+                  class: "pause",
                   onClick: withModifiers(($event) => $options.pauseTask(todo), ["stop"])
                 }, "⏸", 8, _hoisted_19)
               ]))
@@ -9762,7 +9763,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-5b1e113b"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-2c7484ef"]]);
 const Settings_vue_vue_type_style_index_0_scoped_9d0df381_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

@@ -23,7 +23,8 @@
         >
             <span
                 class="task-description"
-                :title="taskDate(todo.task_date)"
+                :title="'task_date: ' + taskDate(todo.task_date) + ', last_execution: ' + taskDate(todo.last_execution)
+                 + ', repeat: ' + ((new Date().getTime() - todo.last_execution)/(24 * 60 * 60 * 1000)).toFixed(2)"
                 @click="togglePopover(todo.task_uuid)"
             >
                 ({{ todo.task_time}}) {{ todo.task_title }}

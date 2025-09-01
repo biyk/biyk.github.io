@@ -32,12 +32,13 @@
                 </li>
             </ul>
         </div>
+        <button @click="this.customScript()">customScript</button>
     </div>
 </template>
 
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
-import {GoogleSheetDB, Drive} from "../../../dnd/static/js/db/google.js";
+import {GoogleSheetDB, Drive, Table} from "../../../dnd/static/js/db/google.js";
 
 export default {
     name: 'Settings',
@@ -87,6 +88,50 @@ export default {
             let drive = new Drive();
             this.driveConfigId && drive.upload(this.driveConfigId, JSON.stringify(sendSettings))
         },
+        async customScript() {
+            const settings = this.$store.getters["settings/allSettings"];
+            const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+
+            const table = new Table({
+                spreadsheetId: spreadsheetSetting.value,
+                list: "task_executions"
+            });
+
+            const list_done = await table.getAll({ formated: true, format: 'orm' });
+
+            const table_tasks = new Table({
+                spreadsheetId: spreadsheetSetting.value,
+                list: "real_life_tasks"
+            });
+
+            const list_all = await table_tasks.getAll({ formated: true, format: 'orm' });
+
+            for (const item of list_all) {
+                if (1) {
+                    console.log('проверяем задачу ', item.task_title);
+
+                    let execution_date = null;
+
+                    for (const item_done of list_done) {
+                        if (item.task_uuid === item_done.task_id) {
+                            execution_date = item_done.execution_date;
+                        }
+                    }
+
+                    if (parseInt(item.last_execution) !== parseInt(execution_date)) {
+                        const updatedTask = {
+                            ...item,
+                            last_execution: execution_date
+                        };
+
+                        console.log('обновляю задачу ', updatedTask, new Date(parseInt(execution_date)));
+
+                        await table_tasks.updateRowByCode(updatedTask.task_title, updatedTask);
+                    }
+                }
+            }
+        }
+
     },
     async mounted() {
         const api = window.GoogleSheetDB || new GoogleSheetDB();

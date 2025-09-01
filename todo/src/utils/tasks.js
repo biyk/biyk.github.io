@@ -259,17 +259,7 @@ export async function makeTaskDone(task, store, options = {}) {
         last_execution:last_execution
     };
 
-    if (1){
-        console.groupCollapsed('repeat_index')
-        console.log('task_before', task[0])
-        console.info(`repeat_index: ${repeat_index} `)
-        console.info(`дата следующего выполнения: ${new Date(task_date)}`)
-        console.info(`дата последнего выполнения: ${new Date(parseInt(last_execution))}`)
-        console.info(`repeat_real: ${(now.getTime() - task_date4calc)/(1000*60*60*24)} `)
-
-        console.log('updatedTask', updatedTask)
-        console.groupEnd()
-    }
+    console.log('updatedTask', updatedTask)
 
     store.dispatch("todos/updateTodo", updatedTask);
 

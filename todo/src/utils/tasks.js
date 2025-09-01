@@ -189,6 +189,7 @@ export async function makeTaskDone(task, store, options = {}) {
 
     if (1){
         console.groupCollapsed('repeat_index')
+        console.info(`task: ${task[0]} `)
         console.info(`repeat_index: ${repeat_index} `)
         console.info(`назначенная дата: ${new Date(task_date)}`)
         console.info(`дата выполнения: ${new Date(parseInt(last_execution))}`)

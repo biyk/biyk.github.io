@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.84";
+window.version = "0.4.85";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9082,16 +9082,7 @@ async function makeTaskDone(task, store2, options = {}) {
     number_of_executions,
     last_execution
   };
-  {
-    console.groupCollapsed("repeat_index");
-    console.log("task_before", task[0]);
-    console.info(`repeat_index: ${repeat_index} `);
-    console.info(`дата следующего выполнения: ${new Date(task_date)}`);
-    console.info(`дата последнего выполнения: ${new Date(parseInt(last_execution))}`);
-    console.info(`repeat_real: ${(now2.getTime() - task_date4calc) / (1e3 * 60 * 60 * 24)} `);
-    console.log("updatedTask", updatedTask);
-    console.groupEnd();
-  }
+  console.log("updatedTask", updatedTask);
   store2.dispatch("todos/updateTodo", updatedTask);
   if (deleted || repeat_mode === "5")
     return;

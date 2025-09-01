@@ -183,19 +183,10 @@ export async function makeTaskDone(task, store, options = {}) {
     repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
 
     const now = new Date();
-    task_date = last_execution ? parseInt(last_execution) : parseInt(task_date);
+    let task_date4calc = last_execution ? parseInt(last_execution) : parseInt(task_date);
     //разница между запланированной датой и реальной - настоящий индекс выполнения
-    let repeat_real = repeat_index  + ((now.getTime() - task_date)/(1000*60*60*24)) / 2;
+    let repeat_real = (repeat_index  + (now.getTime() - task_date4calc)/(1000*60*60*24)) / 2;
 
-    if (1){
-        console.groupCollapsed('repeat_index')
-        console.info(`task: ${task[0]} `)
-        console.info(`repeat_index: ${repeat_index} `)
-        console.info(`назначенная дата: ${new Date(task_date)}`)
-        console.info(`дата выполнения: ${new Date(parseInt(last_execution))}`)
-        console.info(`repeat_real: ${repeat_real} `)
-        console.groupEnd()
-    }
 
     repeat_index = Math.max(repeat_real, 1);//Нормализация индекса. Должен быть больше 1
 
@@ -268,7 +259,18 @@ export async function makeTaskDone(task, store, options = {}) {
         last_execution:last_execution
     };
 
-    console.log(updatedTask)
+    if (1){
+        console.groupCollapsed('repeat_index')
+        console.log('task_before', task[0])
+        console.info(`repeat_index: ${repeat_index} `)
+        console.info(`дата следующего выполнения: ${new Date(task_date)}`)
+        console.info(`дата последнего выполнения: ${new Date(parseInt(last_execution))}`)
+        console.info(`repeat_real: ${(now.getTime() - task_date4calc)/(1000*60*60*24)} `)
+
+        console.log('updatedTask', updatedTask)
+        console.groupEnd()
+    }
+
     store.dispatch("todos/updateTodo", updatedTask);
 
 

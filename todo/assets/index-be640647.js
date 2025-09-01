@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.83";
+window.version = "0.4.84";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9018,17 +9018,8 @@ async function makeTaskDone(task, store2, options = {}) {
   let { deleted } = options;
   repeat_index = parseFloat(repeat_index.toString().replace(",", "."));
   const now2 = new Date();
-  task_date = last_execution ? parseInt(last_execution) : parseInt(task_date);
-  let repeat_real = repeat_index + (now2.getTime() - task_date) / (1e3 * 60 * 60 * 24) / 2;
-  {
-    console.groupCollapsed("repeat_index");
-    console.info(`task: ${task[0]} `);
-    console.info(`repeat_index: ${repeat_index} `);
-    console.info(`назначенная дата: ${new Date(task_date)}`);
-    console.info(`дата выполнения: ${new Date(parseInt(last_execution))}`);
-    console.info(`repeat_real: ${repeat_real} `);
-    console.groupEnd();
-  }
+  let task_date4calc = last_execution ? parseInt(last_execution) : parseInt(task_date);
+  let repeat_real = (repeat_index + (now2.getTime() - task_date4calc) / (1e3 * 60 * 60 * 24)) / 2;
   repeat_index = Math.max(repeat_real, 1);
   switch (repeat_mode) {
     case "0":
@@ -9091,7 +9082,16 @@ async function makeTaskDone(task, store2, options = {}) {
     number_of_executions,
     last_execution
   };
-  console.log(updatedTask);
+  {
+    console.groupCollapsed("repeat_index");
+    console.log("task_before", task[0]);
+    console.info(`repeat_index: ${repeat_index} `);
+    console.info(`дата следующего выполнения: ${new Date(task_date)}`);
+    console.info(`дата последнего выполнения: ${new Date(parseInt(last_execution))}`);
+    console.info(`repeat_real: ${(now2.getTime() - task_date4calc) / (1e3 * 60 * 60 * 24)} `);
+    console.log("updatedTask", updatedTask);
+    console.groupEnd();
+  }
   store2.dispatch("todos/updateTodo", updatedTask);
   if (deleted || repeat_mode === "5")
     return;
@@ -9393,7 +9393,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_2c7484ef_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_fdc80590_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9710,7 +9710,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
         }, [
           createBaseVNode("span", {
             class: "task-description",
-            title: $options.taskDate(todo.task_date),
+            title: "task_date: " + $options.taskDate(todo.task_date) + ", last_execution: " + $options.taskDate(todo.last_execution) + ", repeat: " + ((new Date().getTime() - todo.last_execution) / (24 * 60 * 60 * 1e3)).toFixed(2),
             onClick: ($event) => $options.togglePopover(todo.task_uuid)
           }, [
             createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " ", 1),
@@ -9764,8 +9764,8 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-2c7484ef"]]);
-const Settings_vue_vue_type_style_index_0_scoped_9d0df381_lang = "";
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-fdc80590"]]);
+const Settings_vue_vue_type_style_index_0_scoped_15649261_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
   data() {
@@ -9808,6 +9808,39 @@ const _sfc_main$2A = {
       const sendSettings = this.$store.getters["settings/allSettings"];
       let drive = new Drive();
       this.driveConfigId && drive.upload(this.driveConfigId, JSON.stringify(sendSettings));
+    },
+    async customScript() {
+      const settings2 = this.$store.getters["settings/allSettings"];
+      const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
+      const table = new Table$2({
+        spreadsheetId: spreadsheetSetting.value,
+        list: "task_executions"
+      });
+      const list_done = await table.getAll({ formated: true, format: "orm" });
+      const table_tasks = new Table$2({
+        spreadsheetId: spreadsheetSetting.value,
+        list: "real_life_tasks"
+      });
+      const list_all = await table_tasks.getAll({ formated: true, format: "orm" });
+      for (const item of list_all) {
+        {
+          console.log("проверяем задачу ", item.task_title);
+          let execution_date = null;
+          for (const item_done of list_done) {
+            if (item.task_uuid === item_done.task_id) {
+              execution_date = item_done.execution_date;
+            }
+          }
+          if (parseInt(item.last_execution) !== parseInt(execution_date)) {
+            const updatedTask = {
+              ...item,
+              last_execution: execution_date
+            };
+            console.log("обновляю задачу ", updatedTask, new Date(parseInt(execution_date)));
+            await table_tasks.updateRowByCode(updatedTask.task_title, updatedTask);
+          }
+        }
+      }
     }
   },
   async mounted() {
@@ -9834,7 +9867,7 @@ const _hoisted_3$1 = { key: 1 };
 const _hoisted_4$1 = ["onClick"];
 function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock("div", _hoisted_1$2, [
-    _cache[5] || (_cache[5] = createBaseVNode("h2", null, "Настройки", -1)),
+    _cache[6] || (_cache[6] = createBaseVNode("h2", null, "Настройки", -1)),
     createBaseVNode("button", {
       onClick: _cache[0] || (_cache[0] = ($event) => $data.showForm = !$data.showForm)
     }, toDisplayString($data.showForm ? "Отмена" : "Добавить"), 1),
@@ -9858,7 +9891,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
       }, "Сохранить")
     ])) : createCommentVNode("", true),
     $options.settings.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_3$1, [
-      _cache[4] || (_cache[4] = createBaseVNode("h3", null, "Сохранённые настройки:", -1)),
+      _cache[5] || (_cache[5] = createBaseVNode("h3", null, "Сохранённые настройки:", -1)),
       createBaseVNode("ul", null, [
         (openBlock(true), createElementBlock(Fragment, null, renderList($options.settings, (setting, index2) => {
           return openBlock(), createElementBlock("li", { key: index2 }, [
@@ -9869,10 +9902,13 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
           ]);
         }), 128))
       ])
-    ])) : createCommentVNode("", true)
+    ])) : createCommentVNode("", true),
+    createBaseVNode("button", {
+      onClick: _cache[4] || (_cache[4] = ($event) => this.customScript())
+    }, "customScript")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-9d0df381"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-15649261"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }

@@ -139,14 +139,14 @@
         font-size: x-large;
     }
 }
-.neumorphic-radio-group[data-v-2c7484ef] {
+.neumorphic-radio-group[data-v-fdc80590] {
     display: flex;
     gap: 10px;
     padding: 10px;
     background: #e0e0e0; /* общий фон */
     border-radius: 20px;
 }
-.neumorphic-button[data-v-2c7484ef] {
+.neumorphic-button[data-v-fdc80590] {
     background: #e0e0e0;
     border: none;
     border-radius: 12px;
@@ -159,45 +159,45 @@
 }
 
 /* Активная (впуклая) кнопка */
-.el-radio-button__original-radio:checked + .neumorphic-button[data-v-2c7484ef],
-.el-radio-button.is-active.neumorphic-button[data-v-2c7484ef] {
+.el-radio-button__original-radio:checked + .neumorphic-button[data-v-fdc80590],
+.el-radio-button.is-active.neumorphic-button[data-v-fdc80590] {
     box-shadow: inset 4px 4px 8px #bebebe,
     inset -4px -4px 8px #ffffff;
 }
 
 /* Hover эффект для большей интерактивности */
-.neumorphic-button[data-v-2c7484ef]:hover {
+.neumorphic-button[data-v-fdc80590]:hover {
     box-shadow: 2px 2px 4px #bebebe,
     -2px -2px 4px #ffffff;
 }
 
 
-.settings[data-v-9d0df381] {
+.settings[data-v-15649261] {
     margin-top: 1rem;
 }
-.form[data-v-9d0df381] {
+.form[data-v-15649261] {
     margin-top: 1rem;
 }
-input[data-v-9d0df381] {
+input[data-v-15649261] {
     display: inline-block;
     margin-right: 0.5rem;
     padding: 0.5rem;
     width: 150px;
 }
-button[data-v-9d0df381] {
+button[data-v-15649261] {
     padding: 0.5rem 1rem;
     margin-left: 1rem;
 }
-ul[data-v-9d0df381] {
+ul[data-v-15649261] {
     list-style-type: none;
     padding: 0;
 }
-li[data-v-9d0df381] {
+li[data-v-15649261] {
     display: flex;
     align-items: center;
     margin-bottom: 0.5rem;
 }
-li button[data-v-9d0df381] {
+li button[data-v-15649261] {
     margin-left: 10px;
     padding: 0.2rem 0.5rem;
 }

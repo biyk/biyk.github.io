@@ -39,7 +39,7 @@ export async function calcExecutions(store){
 
     let list = await table.getAll({formated: true, format: 'orm'});
 
-    let {averageCalc, prevAvg} = getAverageCalc(list)
+    let {averageCalc, prevAvg, today_points} = getAverageCalc(list)
 
     let today_time = 0;
     let week_time = 0;
@@ -93,7 +93,7 @@ export async function calcExecutions(store){
     let week = weekDaysWithData.size > 0 ? Math.round(week_time*100 / weekDaysWithData.size)/100 : 0;
     let month = monthDaysWithData.size > 0 ? Math.round(month_time*100 / monthDaysWithData.size)/100 : 0;
 
-    let calc ={ today, week, month , averageCalc, prevAvg};
+    let calc ={ today, week, month , averageCalc, prevAvg, today_points};
 
     store.dispatch("settings/calcSettings", calc)
     return calc
@@ -106,6 +106,7 @@ function getAverageCalc(list) {
     const oneDayMs = 24 * 60 * 60 * 1000;
     const now = new Date();
     const daysWorkSheet = {};
+    let day_points = {};
 
     function getDateKey(date) {
         return date.toISOString().split('T')[0];
@@ -121,6 +122,7 @@ function getAverageCalc(list) {
         }
         const dayKey = getDateKey(date);
         daysWorkSheet[dayKey] = (daysWorkSheet[dayKey] || 0) + parseInt(item.execution_time);
+        day_points[dayKey] = (day_points[dayKey] || 0) +  parseFloat(item.gained_gold.toString().replace(',', '.'))
     });
 
     // Генерируем даты за указанный период (по умолчанию 30 дней)
@@ -161,9 +163,9 @@ function getAverageCalc(list) {
         cumulativeCount++;
     }
     console.groupEnd();
-
+    let today_points = day_points[new Date().toISOString().split('T')[0]]
     const averageCalc = start;
-    return { averageCalc, prevAvg };
+    return { averageCalc, prevAvg, today_points };
 }
 
 

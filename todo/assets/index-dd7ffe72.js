@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.85";
+window.version = "0.4.86";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8912,7 +8912,7 @@ async function calcExecutions(store2) {
     list: "task_executions"
   });
   let list = await table.getAll({ formated: true, format: "orm" });
-  let { averageCalc, prevAvg } = getAverageCalc(list);
+  let { averageCalc, prevAvg, today_points } = getAverageCalc(list);
   let today_time = 0;
   let week_time = 0;
   let month_time = 0;
@@ -8947,7 +8947,7 @@ async function calcExecutions(store2) {
   let today = today_time;
   let week = weekDaysWithData.size > 0 ? Math.round(week_time * 100 / weekDaysWithData.size) / 100 : 0;
   let month = monthDaysWithData.size > 0 ? Math.round(month_time * 100 / monthDaysWithData.size) / 100 : 0;
-  let calc = { today, week, month, averageCalc, prevAvg };
+  let calc = { today, week, month, averageCalc, prevAvg, today_points };
   store2.dispatch("settings/calcSettings", calc);
   return calc;
 }
@@ -8957,6 +8957,7 @@ function getAverageCalc(list) {
   const oneDayMs = 24 * 60 * 60 * 1e3;
   const now2 = new Date();
   const daysWorkSheet = {};
+  let day_points = {};
   function getDateKey(date4) {
     return date4.toISOString().split("T")[0];
   }
@@ -8970,6 +8971,7 @@ function getAverageCalc(list) {
     }
     const dayKey = getDateKey(date4);
     daysWorkSheet[dayKey] = (daysWorkSheet[dayKey] || 0) + parseInt(item.execution_time);
+    day_points[dayKey] = (day_points[dayKey] || 0) + parseFloat(item.gained_gold.toString().replace(",", "."));
   });
   const dayKeys = [];
   for (let i = totalDays - 1; i >= 0; i--) {
@@ -9001,8 +9003,9 @@ function getAverageCalc(list) {
     cumulativeCount++;
   }
   console.groupEnd();
+  let today_points = day_points[new Date().toISOString().split("T")[0]];
   const averageCalc = start;
-  return { averageCalc, prevAvg };
+  return { averageCalc, prevAvg, today_points };
 }
 async function makeTaskDone(task, store2, options = {}) {
   let {
@@ -9588,7 +9591,7 @@ const _sfc_main$2B = {
   }
 };
 const _hoisted_1$3 = { class: "tasks" };
-const _hoisted_2$2 = { style: { "float": "right" } };
+const _hoisted_2$3 = { style: { "float": "right" } };
 const _hoisted_3$2 = { title: "Времени сегодня" };
 const _hoisted_4$2 = { title: "В среднем за неделю" };
 const _hoisted_5$1 = { title: "В среднем за месяц" };
@@ -9681,7 +9684,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     createBaseVNode("ul", _hoisted_1$3, [
       createBaseVNode("li", null, [
         createTextVNode(toDisplayString($options.getSortedTodos().length) + " (" + toDisplayString($options.getTotalTime()) + " ч.) ", 1),
-        createBaseVNode("span", _hoisted_2$2, [
+        createBaseVNode("span", _hoisted_2$3, [
           createBaseVNode("span", _hoisted_3$2, toDisplayString($data.log.today), 1),
           _cache[7] || (_cache[7] = createTextVNode(" / ")),
           createBaseVNode("span", _hoisted_4$2, toDisplayString($data.log.week), 1),
@@ -9850,7 +9853,7 @@ const _sfc_main$2A = {
   }
 };
 const _hoisted_1$2 = { class: "settings" };
-const _hoisted_2$1 = {
+const _hoisted_2$2 = {
   key: 0,
   class: "form"
 };
@@ -9862,7 +9865,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
     createBaseVNode("button", {
       onClick: _cache[0] || (_cache[0] = ($event) => $data.showForm = !$data.showForm)
     }, toDisplayString($data.showForm ? "Отмена" : "Добавить"), 1),
-    $data.showForm ? (openBlock(), createElementBlock("div", _hoisted_2$1, [
+    $data.showForm ? (openBlock(), createElementBlock("div", _hoisted_2$2, [
       withDirectives(createBaseVNode("input", {
         "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => $data.code = $event),
         placeholder: "Код (code)",
@@ -10953,7 +10956,7 @@ const _sfc_main$2z = {
   }
 };
 const _hoisted_1$1 = { key: 0 };
-const _hoisted_2 = { key: 0 };
+const _hoisted_2$1 = { key: 0 };
 const _hoisted_3 = ["onClick"];
 const _hoisted_4 = { key: 1 };
 const _hoisted_5 = {
@@ -10968,7 +10971,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
           key: product["reward_id"],
           class: "product-item"
         }, [
-          parseInt(product["reward_cost"]) ? (openBlock(), createElementBlock("span", _hoisted_2, [
+          parseInt(product["reward_cost"]) ? (openBlock(), createElementBlock("span", _hoisted_2$1, [
             createTextVNode(toDisplayString(product["reward_title"]) + " - " + toDisplayString($options.cost(product)) + " ", 1),
             createBaseVNode("button", {
               style: normalizeStyle({ backgroundColor: $options.hero.hero_money < $options.cost(product) ? "red" : "" }),
@@ -10995,7 +10998,8 @@ const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {
     return {
-      currentTime: new Date().toLocaleString()
+      currentTime: new Date().toLocaleString(),
+      log: {}
     };
   },
   components: {
@@ -11027,14 +11031,16 @@ const _sfc_main$2y = {
     });
     return { activeTab };
   },
-  mounted() {
+  async mounted() {
     this.$store.dispatch("hero/initHero");
     this.timer = setInterval(() => {
       this.currentTime = new Date().toLocaleString();
     }, 1e3);
+    this.log = await calcExecutions(this.$store);
   }
 };
 const _hoisted_1 = { class: "container" };
+const _hoisted_2 = ["title"];
 function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_TodoList = resolveComponent("TodoList");
   const _component_el_tab_pane = resolveComponent("el-tab-pane");
@@ -11043,7 +11049,9 @@ function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_Settings = resolveComponent("Settings");
   const _component_el_tabs = resolveComponent("el-tabs");
   return openBlock(), createElementBlock("div", _hoisted_1, [
-    createBaseVNode("h1", null, toDisplayString($options.hero.hero_name) + " " + toDisplayString(parseFloat($options.hero.hero_money).toFixed(0)) + " (" + toDisplayString($data.currentTime) + ")", 1),
+    createBaseVNode("h1", {
+      title: $data.log.today_points
+    }, toDisplayString($options.hero.hero_name) + " " + toDisplayString(parseFloat($options.hero.hero_money).toFixed(0)) + " (" + toDisplayString($data.currentTime) + ")", 9, _hoisted_2),
     createVNode(_component_el_tabs, {
       modelValue: $setup.activeTab,
       "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.activeTab = $event)

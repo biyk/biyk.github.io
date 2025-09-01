@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <h1>{{hero.hero_name}} {{parseFloat(hero.hero_money).toFixed(0)}} ({{ currentTime }})</h1>
+        <h1 :title="log.today_points">{{hero.hero_name}} {{parseFloat(hero.hero_money).toFixed(0)}} ({{ currentTime }})</h1>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />
@@ -31,12 +31,14 @@ import { useStore } from 'vuex'
 import 'element-plus/dist/index.css'
 import './assets/styles/App.css'
 import { startTaskAgent, stopTaskAgent } from "@/agents/taskAgent.js"
-import Shop from "@/components/Shop.vue";  // ← 🔥
+import Shop from "@/components/Shop.vue";
+import {calcExecutions} from "@/utils/tasks.js";  // ← 🔥
 
 export default {
     data() {
         return {
             currentTime: new Date().toLocaleString(),
+            log:{}
         };
     },
     components: {
@@ -72,13 +74,13 @@ export default {
 
         return { activeTab };
     },
-    mounted() {
+    async mounted() {
         this.$store.dispatch("hero/initHero");
         this.timer = setInterval(() => {
             this.currentTime = new Date().toLocaleString();
         }, 1000);
+        this.log = await calcExecutions(this.$store);
     }
-
 }
 </script>
 

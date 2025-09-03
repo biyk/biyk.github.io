@@ -92,43 +92,39 @@ export default {
             const settings = this.$store.getters["settings/allSettings"];
             const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
 
-            const table = new Table({
+            let itemsTable = new Table({
                 spreadsheetId: spreadsheetSetting.value,
-                list: "task_executions"
+                list: 'real_life_rewards',
             });
 
-            const list_done = await table.getAll({ formated: true, format: 'orm' });
+            let products = await itemsTable.getAll({formated:true, format: 'orm'});
 
-            const table_tasks = new Table({
+
+            let historyTable = new Table({
                 spreadsheetId: spreadsheetSetting.value,
-                list: "real_life_tasks"
+                list: 'rewards_history',
             });
 
-            const list_all = await table_tasks.getAll({ formated: true, format: 'orm' });
+            const rewards_log = await historyTable.getAll({ formated: true, format: 'orm' });
 
-            for (const item of list_all) {
-                if (1) {
-                    console.log('проверяем задачу ', item.task_title);
 
-                    let execution_date = null;
+            console.log(products)
 
-                    for (const item_done of list_done) {
-                        if (item.task_uuid === item_done.task_id) {
-                            execution_date = item_done.execution_date;
-                        }
-                    }
-
-                    if (parseInt(item.last_execution) !== parseInt(execution_date)) {
-                        const updatedTask = {
-                            ...item,
-                            last_execution: execution_date
-                        };
-
-                        console.log('обновляю задачу ', updatedTask, new Date(parseInt(execution_date)));
-
-                        await table_tasks.updateRowByCode(updatedTask.task_title, updatedTask);
+            for (const product of products) {
+                console.log('проверяем товар ', product.reward_title);
+                let gold_spent = 0;
+                let count_spent = 0;
+                let gold = [];
+                for (const reward of rewards_log) {
+                    if (reward.reward_id == product.reward_id){
+                        gold_spent+=parseInt(reward.gold_spent);
+                        count_spent++;
+                        gold.push(reward.gold_spent)
                     }
                 }
+                console.log('покупки', gold);
+                console.log('куплено раз', count_spent);
+                console.log('средняя цена', gold_spent/count_spent);
             }
         }
 

@@ -24,7 +24,7 @@
             <span
                 class="task-description"
                 :title="'task_date: ' + taskDate(todo.task_date) + ', last_execution: ' + taskDate(todo.last_execution)
-                 + ', repeat: ' + ((new Date().getTime() - todo.last_execution)/(24 * 60 * 60 * 1000)).toFixed(2)"
+                 + ', repeat: ' + repeat(todo)"
                 @click="togglePopover(todo.task_uuid)"
             >
                 ({{ todo.task_time}}) {{ todo.task_title }}
@@ -128,7 +128,9 @@ export default {
                 }
             });
         },
-
+        repeat(todo){
+            return ((new Date().getTime() - todo.last_execution)/(24 * 60 * 60 * 1000)).toFixed(2)
+        },
         closeEditor(todo) {
             this.visiblePopover = null;
             this.$store.dispatch("todos/updateTodo", { ...todo }); // принудительное сохранение
@@ -240,6 +242,13 @@ export default {
 
                     // Возвращаем отсортированные задачи
                     return sortedTodos;
+                case 'all':
+                    return this.getFilteredTodos().sort((a, b) => {
+                        let sort = function (todo) {
+                            return parseFloat(todo.repeat_index.toString().replace(',', '.'))
+                        }
+                        return this.repeat(b)/sort(b) - this.repeat(a)/sort(a)
+                    });
                 case 'today':
                 case 'tomorrow':
                 default:

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.86";
+window.version = "0.4.87";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9387,7 +9387,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_fdc80590_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_85d23a60_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9448,6 +9448,9 @@ const _sfc_main$2B = {
             return true;
         }
       });
+    },
+    repeat(todo) {
+      return ((new Date().getTime() - todo.last_execution) / (24 * 60 * 60 * 1e3)).toFixed(2);
     },
     closeEditor(todo) {
       this.visiblePopover = null;
@@ -9547,6 +9550,13 @@ const _sfc_main$2B = {
             });
           });
           return sortedTodos;
+        case "all":
+          return this.getFilteredTodos().sort((a2, b2) => {
+            let sort = function(todo) {
+              return parseFloat(todo.repeat_index.toString().replace(",", "."));
+            };
+            return this.repeat(b2) / sort(b2) - this.repeat(a2) / sort(a2);
+          });
         case "today":
         case "tomorrow":
         default:
@@ -9704,7 +9714,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
         }, [
           createBaseVNode("span", {
             class: "task-description",
-            title: "task_date: " + $options.taskDate(todo.task_date) + ", last_execution: " + $options.taskDate(todo.last_execution) + ", repeat: " + ((new Date().getTime() - todo.last_execution) / (24 * 60 * 60 * 1e3)).toFixed(2),
+            title: "task_date: " + $options.taskDate(todo.task_date) + ", last_execution: " + $options.taskDate(todo.last_execution) + ", repeat: " + $options.repeat(todo),
             onClick: ($event) => $options.togglePopover(todo.task_uuid)
           }, [
             createTextVNode(" (" + toDisplayString(todo.task_time) + ") " + toDisplayString(todo.task_title) + " ", 1),
@@ -9758,8 +9768,8 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-fdc80590"]]);
-const Settings_vue_vue_type_style_index_0_scoped_15649261_lang = "";
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-85d23a60"]]);
+const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
   data() {
@@ -9806,34 +9816,32 @@ const _sfc_main$2A = {
     async customScript() {
       const settings2 = this.$store.getters["settings/allSettings"];
       const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
-      const table = new Table$2({
+      let itemsTable = new Table$2({
         spreadsheetId: spreadsheetSetting.value,
-        list: "task_executions"
+        list: "real_life_rewards"
       });
-      const list_done = await table.getAll({ formated: true, format: "orm" });
-      const table_tasks = new Table$2({
+      let products = await itemsTable.getAll({ formated: true, format: "orm" });
+      let historyTable = new Table$2({
         spreadsheetId: spreadsheetSetting.value,
-        list: "real_life_tasks"
+        list: "rewards_history"
       });
-      const list_all = await table_tasks.getAll({ formated: true, format: "orm" });
-      for (const item of list_all) {
-        {
-          console.log("проверяем задачу ", item.task_title);
-          let execution_date = null;
-          for (const item_done of list_done) {
-            if (item.task_uuid === item_done.task_id) {
-              execution_date = item_done.execution_date;
-            }
-          }
-          if (parseInt(item.last_execution) !== parseInt(execution_date)) {
-            const updatedTask = {
-              ...item,
-              last_execution: execution_date
-            };
-            console.log("обновляю задачу ", updatedTask, new Date(parseInt(execution_date)));
-            await table_tasks.updateRowByCode(updatedTask.task_title, updatedTask);
+      const rewards_log = await historyTable.getAll({ formated: true, format: "orm" });
+      console.log(products);
+      for (const product of products) {
+        console.log("проверяем товар ", product.reward_title);
+        let gold_spent = 0;
+        let count_spent = 0;
+        let gold = [];
+        for (const reward of rewards_log) {
+          if (reward.reward_id == product.reward_id) {
+            gold_spent += parseInt(reward.gold_spent);
+            count_spent++;
+            gold.push(reward.gold_spent);
           }
         }
+        console.log("покупки", gold);
+        console.log("куплено раз", count_spent);
+        console.log("средняя цена", gold_spent / count_spent);
       }
     }
   },
@@ -9902,7 +9910,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
     }, "customScript")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-15649261"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-e85741b6"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }

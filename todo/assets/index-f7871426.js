@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.87";
+window.version = "0.4.88";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9387,7 +9387,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_85d23a60_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_dcdf34a8_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9555,7 +9555,7 @@ const _sfc_main$2B = {
             let sort = function(todo) {
               return parseFloat(todo.repeat_index.toString().replace(",", "."));
             };
-            return this.repeat(b2) / sort(b2) - this.repeat(a2) / sort(a2);
+            return this.repeat(b2) - sort(b2) - (this.repeat(a2) - sort(a2));
           });
         case "today":
         case "tomorrow":
@@ -9768,7 +9768,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-85d23a60"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-dcdf34a8"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

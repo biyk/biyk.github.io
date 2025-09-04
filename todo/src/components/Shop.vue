@@ -57,8 +57,8 @@ export default {
         calc(){
             let calc = this.$store.getters["settings/allCalc"];
 
-            if (calc && calc.today){
-                return calc.month / calc.today
+            if (calc && calc.h24_time){
+                return calc.month / calc.h24_time
             }
             return calc.week;
         },

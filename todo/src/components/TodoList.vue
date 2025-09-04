@@ -247,7 +247,7 @@ export default {
                         let sort = function (todo) {
                             return parseFloat(todo.repeat_index.toString().replace(',', '.'))
                         }
-                        return this.repeat(b)-sort(b) - (this.repeat(a)-sort(a))
+                        return this.repeat(b)/sort(b) - (this.repeat(a)/sort(a))
                     });
                 case 'today':
                 case 'tomorrow':

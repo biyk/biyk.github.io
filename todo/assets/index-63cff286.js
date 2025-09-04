@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.88";
+window.version = "0.4.89";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8916,9 +8916,11 @@ async function calcExecutions(store2) {
   let today_time = 0;
   let week_time = 0;
   let month_time = 0;
+  let h24_time = 0;
   let now2 = new Date();
   let startOfToday = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate()).getTime();
   let sevenDaysAgo = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() - 6).getTime();
+  let dayAgo = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() - 1).getTime();
   let prevMonth = now2.getMonth() === 0 ? 11 : now2.getMonth() - 1;
   let prevMonthYear = now2.getMonth() === 0 ? now2.getFullYear() - 1 : now2.getFullYear();
   let daysInPrevMonth = new Date(now2.getFullYear(), now2.getMonth(), 0).getDate();
@@ -8943,11 +8945,14 @@ async function calcExecutions(store2) {
       let dayKey = new Date(execDate).toDateString();
       monthDaysWithData.add(dayKey);
     }
+    if (execDate >= dayAgo) {
+      h24_time += execution_time;
+    }
   });
   let today = today_time;
   let week = weekDaysWithData.size > 0 ? Math.round(week_time * 100 / weekDaysWithData.size) / 100 : 0;
   let month = monthDaysWithData.size > 0 ? Math.round(month_time * 100 / monthDaysWithData.size) / 100 : 0;
-  let calc = { today, week, month, averageCalc, prevAvg, today_points };
+  let calc = { today, week, month, averageCalc, prevAvg, today_points, h24_time };
   store2.dispatch("settings/calcSettings", calc);
   return calc;
 }
@@ -9387,7 +9392,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_dcdf34a8_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_d41546aa_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9555,7 +9560,7 @@ const _sfc_main$2B = {
             let sort = function(todo) {
               return parseFloat(todo.repeat_index.toString().replace(",", "."));
             };
-            return this.repeat(b2) - sort(b2) - (this.repeat(a2) - sort(a2));
+            return this.repeat(b2) / sort(b2) - this.repeat(a2) / sort(a2);
           });
         case "today":
         case "tomorrow":
@@ -9768,7 +9773,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-dcdf34a8"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-d41546aa"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
@@ -10892,7 +10897,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_d08cf4ea_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_aaaedd40_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10920,8 +10925,8 @@ const _sfc_main$2z = {
     },
     calc() {
       let calc = this.$store.getters["settings/allCalc"];
-      if (calc && calc.today) {
-        return calc.month / calc.today;
+      if (calc && calc.h24_time) {
+        return calc.month / calc.h24_time;
       }
       return calc.week;
     },
@@ -11001,7 +11006,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-d08cf4ea"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-aaaedd40"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

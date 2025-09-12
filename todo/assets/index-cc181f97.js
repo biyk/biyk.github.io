@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.89";
+window.version = "0.4.90";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9028,7 +9028,7 @@ async function makeTaskDone(task, store2, options = {}) {
   const now2 = new Date();
   let task_date4calc = last_execution ? parseInt(last_execution) : parseInt(task_date);
   let repeat_real = (repeat_index + (now2.getTime() - task_date4calc) / (1e3 * 60 * 60 * 24)) / 2;
-  repeat_index = Math.max(repeat_real, 1);
+  repeat_index = repeat_real;
   switch (repeat_mode) {
     case "0":
       task_date = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1, 0, 0, 1, 0).getTime();

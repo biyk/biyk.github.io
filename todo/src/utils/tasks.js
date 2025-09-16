@@ -194,8 +194,12 @@ export async function makeTaskDone(task, store, options = {}) {
     //разница между запланированной датой и реальной - настоящий индекс выполнения
     let repeat_real = (repeat_index  + (now.getTime() - task_date4calc)/(1000*60*60*24)) / 2;
 
+    if (deleted) {
+        repeat_index+=1;
+    } else {
+        repeat_index = repeat_real; Math.max(repeat_real, 1);//Нормализация индекса. Должен быть больше 1
+    }
 
-    repeat_index = repeat_real; Math.max(repeat_real, 1);//Нормализация индекса. Должен быть больше 1
 
     switch (repeat_mode) {
         case '0':

@@ -45,11 +45,13 @@ export async function calcExecutions(store){
     let week_time = 0;
     let month_time = 0;
     let h24_time = 0;
+    let d7_time = 0;
 
     let now = new Date();
     let startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    let sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime(); // включая сегодня
-    let dayAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime(); // включая сегодня
+    let sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime(); // 7 дней
+    let dayAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime(); // 1 день
+
 
     // Предыдущий месяц
     let prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
@@ -91,6 +93,9 @@ export async function calcExecutions(store){
         if (execDate >= dayAgo){
             h24_time+=execution_time;
         }
+        if (execDate >= dayAgo){
+            d7_time+=execution_time/7;
+        }
     });
 
     // Расчёт
@@ -98,7 +103,7 @@ export async function calcExecutions(store){
     let week = weekDaysWithData.size > 0 ? Math.round(week_time*100 / weekDaysWithData.size)/100 : 0;
     let month = monthDaysWithData.size > 0 ? Math.round(month_time*100 / monthDaysWithData.size)/100 : 0;
 
-    let calc ={ today, week, month , averageCalc, prevAvg, today_points, h24_time};
+    let calc ={ today, week, month , averageCalc, prevAvg, today_points, h24_time, d7_time};
 
     store.dispatch("settings/calcSettings", calc)
     return calc

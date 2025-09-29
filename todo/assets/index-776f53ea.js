@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.91";
+window.version = "0.4.92";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8917,6 +8917,7 @@ async function calcExecutions(store2) {
   let week_time = 0;
   let month_time = 0;
   let h24_time = 0;
+  let d7_time = 0;
   let now2 = new Date();
   let startOfToday = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate()).getTime();
   let sevenDaysAgo = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() - 6).getTime();
@@ -8948,11 +8949,14 @@ async function calcExecutions(store2) {
     if (execDate >= dayAgo) {
       h24_time += execution_time;
     }
+    if (execDate >= dayAgo) {
+      d7_time += execution_time / 7;
+    }
   });
   let today = today_time;
   let week = weekDaysWithData.size > 0 ? Math.round(week_time * 100 / weekDaysWithData.size) / 100 : 0;
   let month = monthDaysWithData.size > 0 ? Math.round(month_time * 100 / monthDaysWithData.size) / 100 : 0;
-  let calc = { today, week, month, averageCalc, prevAvg, today_points, h24_time };
+  let calc = { today, week, month, averageCalc, prevAvg, today_points, h24_time, d7_time };
   store2.dispatch("settings/calcSettings", calc);
   return calc;
 }

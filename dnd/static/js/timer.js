@@ -9,7 +9,7 @@ function startCountdown(endTime) {
     // Настройки для Canvas
     canvas.width = 75;
     canvas.height = 75;
-    const radius = canvas.width / 2 - 10;
+    const radius = canvas.width / 2 - 20;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
@@ -37,7 +37,7 @@ function startCountdown(endTime) {
             -Math.PI / 2 - 2 * Math.PI * percent,
             true
         );
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 30;
         ctx.strokeStyle = 'blue';
         ctx.stroke();
 

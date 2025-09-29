@@ -129,9 +129,11 @@ export function checkVersion() {
 }
 
 export async function checkForConfigUpdates() {
-    if (window.admin_mode) return;
     let mapTable = await getMapTable();
     const config = await mapTable.getAll({formated: true});
+    if (typeof startCountdown !== 'undefined') startCountdown(config.init?.timer);
+
+    if (window.admin_mode) return;
 
     if (config.active==='0') return location.reload(true)
     if (config) {
@@ -140,7 +142,6 @@ export async function checkForConfigUpdates() {
         this.createPolygons(config);
         setAudio(config);
 
-        if (typeof startCountdown !== 'undefined') startCountdown(config.init?.timer);
         if (typeof updateSkullColor !== 'undefined') updateSkullColor(config.init.rating);
         if (typeof updateInfoBar !== 'undefined') updateInfoBar(config);
         this.measurePoints = config.measure.points;

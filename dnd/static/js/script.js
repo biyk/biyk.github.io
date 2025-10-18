@@ -254,13 +254,15 @@ class MapManager {
     setReverseButtonHandler(config) {
         const reverseButton = document.getElementById('reverse-button');
         if (reverseButton) {
-            reverseButton.addEventListener('click', () => {
+            reverseButton.addEventListener('click', async () => {
                 if (this.mainPolygon) {
                     this.updateMainPolygon(config);
                     this.toggleMainPolygonVisibility();
                 } else {
+                    console.log('createMainPolygon')
                     this.createMainPolygon(config);
                 }
+                await this.sendData('mainPolygon');
             });
         }
     }

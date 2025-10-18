@@ -25,10 +25,11 @@ export function createPolygons(config) {
 
     if (config.mainPolygon?.points) {
         if (this.mainPolygon) this.map.removeLayer(this.mainPolygon);
+        let hide = window.admin_mode ? 0.7 : 1.0;
         this.mainPolygon = L.polygon(config.mainPolygon.points, {
             color: 'black',
             fillColor: 'black',
-            fillOpacity: 1.0,
+            fillOpacity: hide,
             weight: 3,
         }).addTo(this.map);
     }

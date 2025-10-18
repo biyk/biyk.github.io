@@ -70,7 +70,7 @@ export async function sendData(type = 'polygons') {
     const polygonsData = this.polygons.map(polygon => ({
         points: polygon.points,
         code: polygon.code,
-        isVisible: polygon.layer.isVisible,
+        isVisible: polygon.layer?.isVisible || 0,
     }));
     const markerData = Array.from(this.points.values()).map(point => {
         point.settings.latlng = point._latlng
@@ -84,6 +84,8 @@ export async function sendData(type = 'polygons') {
     switch (type) {
         case 'polygons':
             body.polygons = polygonsData;
+            break;
+        case 'mainPolygon':
             body.mainPolygon = this.mainPolygon ? {points: this.mainPolygon.getLatLngs()} : null;
             break;
         case 'markers':

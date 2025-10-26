@@ -3,12 +3,13 @@ export function createPolygons(config) {
     this.polygons.forEach(polygon => this.map.removeLayer(polygon.layer));
     this.polygons = [];
     if (config.polygons){
+        let hide = window.admin_mode ? 0.7 : 1.0;
         config.polygons.forEach(polygonData => {
             const polygonLayer = L.polygon(polygonData.points, {
                 color: 'black',
                 fillColor: 'black',
-                fillOpacity: polygonData.isVisible ? 1.0 : 0.0,
-                opacity: polygonData.isVisible ? 1.0 : 0.0,
+                fillOpacity: polygonData.isVisible ? hide : 0.0,
+                opacity: polygonData.isVisible ? hide : 0.0,
                 weight: 1,
             }).addTo(this.map);
             polygonLayer.isVisible = polygonData.isVisible;
@@ -55,10 +56,11 @@ export function createMainPolygon(config) {
     config.polygons.forEach(polygonData => {
         holes.push(polygonData.points);
     });
+    let hide = window.admin_mode ? 0.7 : 1.0;
     this.mainPolygon = L.polygon([polygonPoints, holes], {
         color: 'black',
         fillColor: 'black',
-        fillOpacity: 1,
+        fillOpacity: hide,
         weight: 3,
     }).addTo(this.map);
 }

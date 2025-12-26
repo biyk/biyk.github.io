@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.96";
+window.version = "0.4.97";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8781,12 +8781,15 @@ async function listEvents(store2 = false) {
   const api = window.GoogleSheetDB || new GoogleSheetDB();
   await api.waitGoogle();
   const today = new Date();
-  const start = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-  const end = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const start = `${year}-${month}-${day}T00:00:00`;
+  const end = `${year}-${month}-${day}T23:59:59`;
   let response = await gapi.client.calendar.events.list({
     calendarId: "primary",
-    timeMin: start,
-    timeMax: end,
+    timeMin: `${start}+04:00`,
+    timeMax: `${end}+04:00`,
     showDeleted: false,
     singleEvents: true,
     orderBy: "startTime"
@@ -9400,7 +9403,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_d41546aa_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_4aae99da_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9478,7 +9481,7 @@ const _sfc_main$2B = {
         const durationMs = now2 - start_date;
         const minutesSpent = Math.ceil(durationMs / 6e4);
         const previous = Number(task[0].task_time) || 0;
-        const newAverage = Math.ceil((previous + minutesSpent) / 2);
+        const newAverage = Math.ceil((previous + minutesSpent) * 0.9 / 2);
         task[0].task_time = newAverage;
         task[0].start_date = 0;
       }
@@ -9781,7 +9784,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-d41546aa"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-4aae99da"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

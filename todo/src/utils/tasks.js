@@ -197,7 +197,7 @@ export async function makeTaskDone(task, store, options = {}) {
     const now = new Date();
     let task_date4calc = last_execution ? parseInt(last_execution) : parseInt(task_date);
     //разница между запланированной датой и реальной - настоящий индекс выполнения
-    let repeat_real = (repeat_index  + (now.getTime() - task_date4calc)/(1000*60*60*24)) / 2;
+    let repeat_real = (repeat_index  + (now.getTime() - task_date4calc)/(1000*60*60*24)) * 0.9 / 2;
 
     if (deleted) {
         repeat_index+=1;

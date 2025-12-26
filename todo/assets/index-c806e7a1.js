@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.97";
+window.version = "0.4.98";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9034,7 +9034,7 @@ async function makeTaskDone(task, store2, options = {}) {
   repeat_index = parseFloat(repeat_index.toString().replace(",", "."));
   const now2 = new Date();
   let task_date4calc = last_execution ? parseInt(last_execution) : parseInt(task_date);
-  let repeat_real = (repeat_index + (now2.getTime() - task_date4calc) / (1e3 * 60 * 60 * 24)) / 2;
+  let repeat_real = (repeat_index + (now2.getTime() - task_date4calc) / (1e3 * 60 * 60 * 24)) * 0.9 / 2;
   if (deleted) {
     repeat_index += 1;
   } else {
@@ -9403,7 +9403,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_4aae99da_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_d41546aa_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9481,7 +9481,7 @@ const _sfc_main$2B = {
         const durationMs = now2 - start_date;
         const minutesSpent = Math.ceil(durationMs / 6e4);
         const previous = Number(task[0].task_time) || 0;
-        const newAverage = Math.ceil((previous + minutesSpent) * 0.9 / 2);
+        const newAverage = Math.ceil((previous + minutesSpent) / 2);
         task[0].task_time = newAverage;
         task[0].start_date = 0;
       }
@@ -9784,7 +9784,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-4aae99da"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-d41546aa"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

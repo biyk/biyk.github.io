@@ -146,7 +146,7 @@ export default {
                 const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
 
                 const previous = Number(task[0].task_time) || 0;
-                const newAverage = Math.ceil((previous + minutesSpent) / 2);
+                const newAverage = Math.ceil((previous + minutesSpent) * 0.9 / 2);
                 task[0].task_time = newAverage;
                 task[0].start_date = 0;
             }

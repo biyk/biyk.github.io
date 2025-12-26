@@ -1,27 +1,31 @@
 import {GoogleSheetDB} from "../../../dnd/static/js/db/google.js";
 
-export async function listEvents(store=false) {
+export async function listEvents(store = false) {
     const api = window.GoogleSheetDB || new GoogleSheetDB();
     await api.waitGoogle();
+
     const today = new Date();
-    const start = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-    const end = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+
+    const start = `${year}-${month}-${day}T00:00:00`;
+    const end = `${year}-${month}-${day}T23:59:59`;
 
     let response = await gapi.client.calendar.events.list({
         calendarId: 'primary',
-        timeMin: start,
-        timeMax: end,
+        timeMin: `${start}+04:00`,
+        timeMax: `${end}+04:00`,
         showDeleted: false,
         singleEvents: true,
         orderBy: 'startTime'
     });
 
     const events = response.result.items;
-    if (store){
+    if (store) {
         store.dispatch("events/setEvents", events);
     }
     return events;
-
 }
 
 export async function addEvent(event) {

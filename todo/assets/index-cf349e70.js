@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.99";
+window.version = "0.4.100";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -7989,7 +7989,7 @@ let Table$2 = class Table {
     this.list = options.list;
     this.sheets = {};
     this.spreadsheetId = options.spreadsheetId || spreadsheetId;
-    this.api = window.GoogleSheetDB || new GoogleSheetDB();
+    this.api = window.GoogleSheetDB || new GoogleSheetDB$1();
     this.spreadsheets = gapi.client.sheets.spreadsheets;
     this.columns = [];
     try {
@@ -8509,7 +8509,7 @@ class Drive {
     }
   }
 }
-class GoogleSheetDB {
+let GoogleSheetDB$1 = class GoogleSheetDB2 {
   constructor(options = {}) {
     this.DISCOVERY_DOC = "https://sheets.googleapis.com/$discovery/rest?version=v4";
     this.apiKey = API_KEY;
@@ -8697,7 +8697,7 @@ class GoogleSheetDB {
     await webStorage.setItem(storageTTLKey, new Date().getTime() + parseInt(caching) * 1e3);
     return data;
   }
-}
+};
 function loadScriptOnce({ src, onload, async = true, defer = true }) {
   const existingScript = Array.from(document.getElementsByTagName("script")).find((script2) => script2.src === src);
   if (existingScript) {
@@ -8730,7 +8730,7 @@ const _sfc_main$2C = {
   },
   methods: {
     addTodo: async function() {
-      const api = window.GoogleSheetDB || new GoogleSheetDB();
+      const api = window.GoogleSheetDB || new GoogleSheetDB$1();
       await api.waitGoogle();
       const settings2 = this.$store.getters["settings/allSettings"];
       const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
@@ -8778,7 +8778,7 @@ function _sfc_render$w(_ctx, _cache, $props, $setup, $data, $options) {
 const TodoNew = /* @__PURE__ */ _export_sfc$1(_sfc_main$2C, [["render", _sfc_render$w]]);
 const TodoList$1 = "";
 async function listEvents(store2 = false) {
-  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  const api = window.GoogleSheetDB || new GoogleSheetDB$1();
   await api.waitGoogle();
   const today = new Date();
   const year = today.getFullYear();
@@ -8887,7 +8887,7 @@ function getFreeSlots(events2, options = {}) {
   return freeSlots;
 }
 async function logExecuteTask(updatedTask, store2) {
-  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  const api = window.GoogleSheetDB || new GoogleSheetDB$1();
   await api.waitGoogle();
   const settings2 = store2.getters["settings/allSettings"];
   const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
@@ -8906,7 +8906,7 @@ async function logExecuteTask(updatedTask, store2) {
   });
 }
 async function calcExecutions(store2) {
-  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  const api = window.GoogleSheetDB || new GoogleSheetDB$1();
   await api.waitGoogle();
   const settings2 = store2.getters["settings/allSettings"];
   const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
@@ -9403,7 +9403,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_d41546aa_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_d1d23b41_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9473,6 +9473,7 @@ const _sfc_main$2B = {
       this.$store.dispatch("todos/updateTodo", { ...todo });
     },
     async toggleTodo(task_uuid) {
+      this.doAuth();
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       let start_date = parseInt(task[0].start_date);
       task[0].completed = true;
@@ -9523,6 +9524,7 @@ const _sfc_main$2B = {
       }, 300);
     },
     deleteTodo: throttle_1(async function(task_uuid) {
+      this.doAuth();
       const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
       let list = await listEvents(this.$store);
       let exist = list.filter((event) => {
@@ -9592,6 +9594,7 @@ const _sfc_main$2B = {
       this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
     },
     startTask(todo) {
+      this.doAuth();
       if (todo.task_finish_date) {
         todo.start_date = Date.now() - todo.task_finish_date;
       } else {
@@ -9600,10 +9603,17 @@ const _sfc_main$2B = {
       this.$store.dispatch("todos/updateTodo", { ...todo });
     },
     pauseTask(todo) {
+      this.doAuth();
       const now2 = Date.now();
       todo.task_finish_date = now2 - todo.start_date;
       todo.start_date = 0;
       this.$store.dispatch("todos/updateTodo", { ...todo });
+    },
+    doAuth() {
+      let api = window.GoogleSheetDB || new GoogleSheetDB();
+      if (api.expired()) {
+        document.getElementById("authorize_button").click();
+      }
     }
   },
   async mounted() {
@@ -9784,7 +9794,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-d41546aa"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-d1d23b41"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
@@ -9862,7 +9872,7 @@ const _sfc_main$2A = {
     }
   },
   async mounted() {
-    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    const api = window.GoogleSheetDB || new GoogleSheetDB$1();
     await api.waitGoogle();
     let drive = new Drive();
     let configs = await drive.find('name = "config.json"');
@@ -10890,7 +10900,7 @@ let intervalId = null;
 async function startTaskAgent(store2) {
   if (intervalId)
     return;
-  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  const api = window.GoogleSheetDB || new GoogleSheetDB$1();
   intervalId = setInterval(async () => {
     if (!api.expired()) {
       store2.dispatch("todos/initTodos");
@@ -10974,7 +10984,7 @@ const _sfc_main$2z = {
     let settings2 = data ? JSON.parse(data) : [];
     const spreadsheetSetting = settings2.find((s2) => s2.code === "spreadsheetId");
     this.spreadsheetId = spreadsheetSetting ? spreadsheetSetting.value : "";
-    this.api = window.GoogleSheetDB || new GoogleSheetDB();
+    this.api = window.GoogleSheetDB || new GoogleSheetDB$1();
     await this.api.waitGoogle();
     await this.fetchProducts();
   }
@@ -69405,7 +69415,7 @@ async function getGoogleSheetTable$2(rootGetters) {
     console.warn("spreadsheetId not found in settings");
     return null;
   }
-  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  const api = window.GoogleSheetDB || new GoogleSheetDB$1();
   await api.waitGoogle();
   return new Table$2({
     spreadsheetId: spreadsheetSetting.value,
@@ -69479,7 +69489,7 @@ async function getGoogleSheetTable$1(rootGetters) {
     console.warn("spreadsheetId not found in settings");
     return null;
   }
-  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  const api = window.GoogleSheetDB || new GoogleSheetDB$1();
   await api.waitGoogle();
   return new Table$2({
     spreadsheetId: spreadsheetSetting.value,
@@ -69544,7 +69554,7 @@ async function getGoogleSheetTable(rootGetters) {
     console.warn("spreadsheetId not found in settings");
     return null;
   }
-  const api = window.GoogleSheetDB || new GoogleSheetDB();
+  const api = window.GoogleSheetDB || new GoogleSheetDB$1();
   await api.waitGoogle();
   return new Table$2({
     spreadsheetId: spreadsheetSetting.value,

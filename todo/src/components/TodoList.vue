@@ -137,6 +137,7 @@ export default {
         },
 
         async toggleTodo(task_uuid) {
+            this.doAuth();
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
             let start_date = parseInt(task[0].start_date)
             task[0].completed = true;
@@ -188,6 +189,7 @@ export default {
             }, 300)
         },
         deleteTodo: throttle(async function (task_uuid) {
+            this.doAuth();
             const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
             let list = await listEvents(this.$store);
             let exist = list.filter(event => event.description?.includes(task_uuid));
@@ -268,6 +270,7 @@ export default {
             this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
         },
         startTask(todo) {
+            this.doAuth();
             if (todo.task_finish_date){
                 todo.start_date = Date.now() - todo.task_finish_date;
             } else  {
@@ -276,11 +279,18 @@ export default {
             this.$store.dispatch("todos/updateTodo", { ...todo });
         },
         pauseTask(todo) {
+            this.doAuth();
             const now = Date.now();
             todo.task_finish_date = now - todo.start_date;
             todo.start_date = 0;
             this.$store.dispatch("todos/updateTodo", { ...todo });
         },
+      doAuth() {
+        let api = window.GoogleSheetDB || new GoogleSheetDB();
+        if (api.expired()){
+          document.getElementById('authorize_button').click()
+        }
+      }
     },
     async mounted() {
         this.$store.dispatch("todos/initTodos");

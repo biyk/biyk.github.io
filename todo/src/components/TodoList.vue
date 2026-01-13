@@ -285,12 +285,12 @@ export default {
             todo.start_date = 0;
             this.$store.dispatch("todos/updateTodo", { ...todo });
         },
-      doAuth() {
-        let api = window.GoogleSheetDB || new GoogleSheetDB();
-        if (api.expired()){
-          document.getElementById('authorize_button').click()
+        doAuth() {
+            let api = window.GoogleSheetDB || new GoogleSheetDB();
+            if (api.expired()){
+                document.getElementById('authorize_button').click()
+            }
         }
-      }
     },
     async mounted() {
         this.$store.dispatch("todos/initTodos");

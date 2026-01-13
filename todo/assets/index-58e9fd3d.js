@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.4.100";
+window.version = "0.5.1";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9403,7 +9403,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_d1d23b41_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_4e237db8_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9794,7 +9794,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-d1d23b41"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-4e237db8"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.12";
+window.version = "0.5.13";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9403,7 +9403,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_4e237db8_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_fe095216_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9794,7 +9794,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-4e237db8"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-fe095216"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
@@ -10918,7 +10918,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_aaaedd40_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_382371ba_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10935,7 +10935,7 @@ const _sfc_main$2z = {
   },
   methods: {
     cost(product) {
-      return parseInt(Math.round(product["reward_cost"] * Math.min(this.calc(), 2)));
+      return product["reward_cost"];
     },
     async fetchProducts() {
       let itemsTable = new Table$2({
@@ -10976,6 +10976,7 @@ const _sfc_main$2z = {
         list: "real_life_rewards"
       });
       await itemsTable.updateRowByCode(product["reward_title"], { "reward_done": parseInt(product["reward_done"]) + 1 });
+      await itemsTable.updateRowByCode(product["reward_title"], { "reward_cost": parseInt(product["reward_cost_step"]) + 1 });
       this.$store.dispatch("hero/initHero");
     }
   },
@@ -11027,7 +11028,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-aaaedd40"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-382371ba"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

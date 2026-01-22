@@ -45,7 +45,8 @@ export default {
     },
     methods: {
         cost (product){
-            return parseInt(Math.round(product['reward_cost'] * Math.min(this.calc(), 2)) )
+            return product['reward_cost'];
+            //return parseInt(Math.round(product['reward_cost'] * Math.min(this.calc(), 2)) )
         },
         async fetchProducts() {
             let itemsTable = new Table({
@@ -97,6 +98,7 @@ export default {
                 list: 'real_life_rewards',
             });
             await itemsTable.updateRowByCode(product['reward_title'], {'reward_done': parseInt(product['reward_done']) + 1});
+            await itemsTable.updateRowByCode(product['reward_title'], {'reward_cost': parseInt(product['reward_cost_step']) + 1});
             this.$store.dispatch("hero/initHero");
         }
     },

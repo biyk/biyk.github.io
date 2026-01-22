@@ -115,9 +115,10 @@ export default {
                     case 'calendar':
                         const calendarEvents = this.events;
                         const matchingEvent = calendarEvents?.find(
-                            event => event.description?.includes(todo.task_uuid)
+                            event => {
+                                return event.description?.includes(todo.task_uuid)
+                            }
                         );
-
                         return (start < end_today || matchingEvent?.colorId !== task_done_color);
                     case 'today':
                         return start < end_today;
@@ -239,7 +240,6 @@ export default {
                                 sortedTodos.push(todoMap.get(uuid));
                             }
                         });
-
                     });
 
                     // Возвращаем отсортированные задачи

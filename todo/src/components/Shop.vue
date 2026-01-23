@@ -98,7 +98,7 @@ export default {
                 list: 'real_life_rewards',
             });
             await itemsTable.updateRowByCode(product['reward_title'], {'reward_done': parseInt(product['reward_done']) + 1});
-            await itemsTable.updateRowByCode(product['reward_title'], {'reward_cost': parseInt(product['reward_cost_step']) + 1});
+            await itemsTable.updateRowByCode(product['reward_title'], {'reward_cost': parseInt(product['reward_cost']) +  parseInt(product['reward_cost_step'])});
             this.$store.dispatch("hero/initHero");
         }
     },

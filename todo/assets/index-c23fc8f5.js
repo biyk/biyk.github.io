@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.13";
+window.version = "0.5.14";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -10918,7 +10918,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_382371ba_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_a14a25f7_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10976,7 +10976,7 @@ const _sfc_main$2z = {
         list: "real_life_rewards"
       });
       await itemsTable.updateRowByCode(product["reward_title"], { "reward_done": parseInt(product["reward_done"]) + 1 });
-      await itemsTable.updateRowByCode(product["reward_title"], { "reward_cost": parseInt(product["reward_cost_step"]) + 1 });
+      await itemsTable.updateRowByCode(product["reward_title"], { "reward_cost": parseInt(product["reward_cost"]) + parseInt(product["reward_cost_step"]) });
       this.$store.dispatch("hero/initHero");
     }
   },
@@ -11028,7 +11028,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-382371ba"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-a14a25f7"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

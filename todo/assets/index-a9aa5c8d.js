@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.18";
+window.version = "0.5.19";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9404,7 +9404,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_6b4a214e_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_ecbb5fc2_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9564,6 +9564,9 @@ const _sfc_main$2B = {
           this.events.forEach((event) => {
             var _a2;
             const uuids = (_a2 = event.description) == null ? void 0 : _a2.split("\n");
+            let task_done_color = "7";
+            if (event.colorId === task_done_color)
+              return;
             uuids == null ? void 0 : uuids.forEach((uuid) => {
               if (uuid && todoMap.has(uuid) && !existMap.has(uuid)) {
                 sortedTodos.push(todoMap.get(uuid));
@@ -9797,7 +9800,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-6b4a214e"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-ecbb5fc2"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

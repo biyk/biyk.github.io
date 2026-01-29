@@ -239,13 +239,14 @@ export default {
                     // Проходим по событиям и добавляем соответствующие задачи в результат
                     this.events.forEach(event => {
                         const uuids = event.description?.split('\n');
+                        let task_done_color = '7';
+                        if (event.colorId===task_done_color) return;
                         uuids?.forEach(uuid=>{
                             if (uuid && todoMap.has(uuid) && !existMap.has(uuid)) {
                                 sortedTodos.push(todoMap.get(uuid));
                             }
                         });
                     });
-
                     // Возвращаем отсортированные задачи
                     return sortedTodos;
                 case 'all':

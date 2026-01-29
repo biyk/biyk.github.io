@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.16";
+window.version = "0.5.17";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9026,6 +9026,7 @@ async function makeTaskDone(task, store2, options = {}) {
     repeat_mode,
     task_date,
     task_time,
+    minutesSpent,
     break_multiplier,
     number_of_executions,
     last_execution
@@ -9089,7 +9090,7 @@ async function makeTaskDone(task, store2, options = {}) {
   }
   number_of_executions++;
   let calc = store2.getters["settings/allCalc"];
-  let money_reward = task_time * calc.averageCalc / 2;
+  let money_reward = minutesSpent * calc.averageCalc / 2;
   const updatedTask = {
     ...task[0],
     task_date,
@@ -9403,7 +9404,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_fe095216_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_e3931e87_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9484,10 +9485,12 @@ const _sfc_main$2B = {
         const previous = Number(task[0].task_time) || 0;
         const newAverage = Math.ceil((previous + minutesSpent) / 2);
         task[0].task_time = newAverage;
+        task[0].minutesSpent = minutesSpent;
         task[0].start_date = 0;
       }
       const endDate = new Date();
-      const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1e3);
+      const timeSpent = task[0].minutesSpent ?? task[0].task_time;
+      const startDate = new Date(endDate.getTime() - timeSpent * 60 * 1e3);
       const task_done_color = "7";
       const event = {
         summary: task[0].task_title,
@@ -9794,7 +9797,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-fe095216"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-e3931e87"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

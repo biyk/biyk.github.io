@@ -174,7 +174,9 @@ export default {
             let list = await listEvents(this.$store);
 
             let exist = list.filter(event => event.description?.includes(task_uuid));
-            if(exist.length){
+
+            // если задача уже есть и она еще не выполнена
+            if(exist.length && exist[0].colorId!==task_done_color){
                 event.summary = exist[0].summary;
                 event.id = exist[0].id
                 await updateEvent(event)

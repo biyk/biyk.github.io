@@ -187,6 +187,7 @@ export async function makeTaskDone(task, store, options = {}) {
         repeat_mode,
         task_date,
         task_time,
+        minutesSpent,
         break_multiplier,
         number_of_executions,
         last_execution
@@ -223,15 +224,15 @@ export async function makeTaskDone(task, store, options = {}) {
         case '3':
 
             // Функция для поиска следующего рабочего дня
-        function getNextWorkingDayOffset(repeatDays, currentDay) {
-            for (let offset = 1; offset <= 7; offset++) {
-                let dayIndex = (currentDay + offset) % 7;
-                if (repeatDays[dayIndex] === '1') {
-                    return offset;
+            function getNextWorkingDayOffset(repeatDays, currentDay) {
+                for (let offset = 1; offset <= 7; offset++) {
+                    let dayIndex = (currentDay + offset) % 7;
+                    if (repeatDays[dayIndex] === '1') {
+                        return offset;
+                    }
                 }
+                return null; // нет рабочих дней
             }
-            return null; // нет рабочих дней
-        }
 
             const currentDay = now.getDay(); // 0 = воскресенье, ..., 6 = суббота
             const repeat_index3 = getNextWorkingDayOffset(repeat_days_of_week, currentDay);
@@ -261,7 +262,7 @@ export async function makeTaskDone(task, store, options = {}) {
     number_of_executions++;
     let calc =  store.getters["settings/allCalc"];
 
-    let money_reward = task_time  * calc.averageCalc / 2;
+    let money_reward = minutesSpent  * calc.averageCalc / 2;
 
     const updatedTask = {
         ...task[0],

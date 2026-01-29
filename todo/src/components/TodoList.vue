@@ -150,10 +150,12 @@ export default {
                 const previous = Number(task[0].task_time) || 0;
                 const newAverage = Math.ceil((previous + minutesSpent) / 2);
                 task[0].task_time = newAverage;
+                task[0].minutesSpent = minutesSpent;
                 task[0].start_date = 0;
             }
             const endDate = new Date();
-            const startDate = new Date(endDate.getTime() - task[0].task_time * 60 * 1000);
+            const timeSpent = task[0].minutesSpent ?? task[0].task_time;
+            const startDate = new Date(endDate.getTime() - timeSpent * 60 * 1000);
             const task_done_color = '7';
             const event = {
                 summary: task[0].task_title,

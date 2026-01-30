@@ -47,12 +47,12 @@
             <div v-if="visiblePopover !== todo.task_uuid" class="buttons">
                 <!-- Кнопки Старт / Стоп -->
                 <span style="margin-right: 8px;">
-                    <button class="start" v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
+                    <button class="start" v-if="todo.start_date === 0" @click="startTask(todo)">▶️</button>
                     <span v-else>
                       <button  class="pause" @click.stop="pauseTask(todo)">⏸</button>
                     </span>
                 </span>
-                <span  v-if="todo.start_date == 0" class="done" @click.stop="toggleTodo(todo)">✅</span>
+                <span v-if="todo.start_date === 0" class="done" @click.stop="toggleTodo(todo)">✅</span>
                 <span v-else class="done" >
                     <button @click.stop="toggleTodo(todo)">⏹</button>
                 </span>
@@ -101,7 +101,6 @@ export default {
         setTaskCompleted,
         setTaskToCalendar,
         taskDate,
-        taskSort,
         getFilteredTodos() {
             const task_done_color = '7';
             const now = new Date();
@@ -291,8 +290,6 @@ export default {
             this.doAuth();
             await this.toggleTodo(todo);
             setTimeout(()=>{
-                const todos = this.$store.getters['todos/getTodos'];
-                let task = todos.filter(todo => todo.task_uuid === todo.task_uuid);
                 todo.task_finish_date = 1;
                 todo.start_date = 0;
                 this.$store.dispatch("todos/updateTodo", {...todo});

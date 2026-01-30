@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.20";
+window.version = "0.5.21";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9404,7 +9404,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_2c7dbc09_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_2524e20a_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9437,7 +9437,6 @@ const _sfc_main$2B = {
     setTaskCompleted,
     setTaskToCalendar,
     taskDate,
-    taskSort,
     getFilteredTodos() {
       const task_done_color = "7";
       const now2 = new Date();
@@ -9614,8 +9613,6 @@ const _sfc_main$2B = {
       this.doAuth();
       await this.toggleTodo(todo);
       setTimeout(() => {
-        const todos2 = this.$store.getters["todos/getTodos"];
-        todos2.filter((todo2) => todo2.task_uuid === todo2.task_uuid);
         todo.task_finish_date = 1;
         todo.start_date = 0;
         this.$store.dispatch("todos/updateTodo", { ...todo });
@@ -9775,7 +9772,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
           ])) : createCommentVNode("", true),
           $data.visiblePopover !== todo.task_uuid ? (openBlock(), createElementBlock("div", _hoisted_15, [
             createBaseVNode("span", _hoisted_16, [
-              todo.start_date == 0 ? (openBlock(), createElementBlock("button", {
+              todo.start_date === 0 ? (openBlock(), createElementBlock("button", {
                 key: 0,
                 class: "start",
                 onClick: ($event) => $options.startTask(todo)
@@ -9786,7 +9783,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
                 }, "⏸", 8, _hoisted_19)
               ]))
             ]),
-            todo.start_date == 0 ? (openBlock(), createElementBlock("span", {
+            todo.start_date === 0 ? (openBlock(), createElementBlock("span", {
               key: 0,
               class: "done",
               onClick: withModifiers(($event) => $options.toggleTodo(todo), ["stop"])
@@ -9807,7 +9804,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-2c7dbc09"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-2524e20a"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

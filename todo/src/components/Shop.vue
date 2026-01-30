@@ -63,7 +63,14 @@ export default {
             }
             return calc.week;
         },
+        doAuth() {
+            let api = window.GoogleSheetDB || new GoogleSheetDB();
+            if (api.expired()){
+                document.getElementById('authorize_button').click()
+            }
+        },
         async buyProduct(product) {
+            this.doAuth();
             // получить текущий баланс
             let heroTable = new Table({
                 spreadsheetId: this.spreadsheetId,

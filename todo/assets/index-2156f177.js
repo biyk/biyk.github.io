@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.23";
+window.version = "0.5.24";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8895,7 +8895,6 @@ async function logExecuteTask(updatedTask, store2) {
     spreadsheetId: spreadsheetSetting.value,
     list: "task_executions"
   });
-  console.log(updatedTask);
   let execution_time = updatedTask.minutesSpent || updatedTask.task_time;
   await table.addRow({
     execution_id: generateUUIDv4(),
@@ -10933,7 +10932,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_a14a25f7_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_22671534_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10966,7 +10965,14 @@ const _sfc_main$2z = {
       }
       return calc.week;
     },
+    doAuth() {
+      let api = window.GoogleSheetDB || new GoogleSheetDB$1();
+      if (api.expired()) {
+        document.getElementById("authorize_button").click();
+      }
+    },
     async buyProduct(product) {
+      this.doAuth();
       let heroTable = new Table$2({
         spreadsheetId: this.spreadsheetId,
         list: "real_life_hero"
@@ -11043,7 +11049,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-a14a25f7"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-22671534"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

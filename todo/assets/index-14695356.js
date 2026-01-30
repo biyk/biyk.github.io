@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.19";
+window.version = "0.5.20";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9030,7 +9030,7 @@ async function makeTaskDone(task, store2, options = {}) {
     break_multiplier,
     number_of_executions,
     last_execution
-  } = task[0];
+  } = task;
   let { deleted } = options;
   repeat_index = parseFloat(repeat_index.toString().replace(",", "."));
   const now2 = new Date();
@@ -9092,7 +9092,7 @@ async function makeTaskDone(task, store2, options = {}) {
   let calc = store2.getters["settings/allCalc"];
   let money_reward = minutesSpent * calc.averageCalc / 2;
   const updatedTask = {
-    ...task[0],
+    ...task,
     task_date,
     task_time,
     repeat_index,
@@ -9404,7 +9404,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_ecbb5fc2_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_2c7dbc09_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9473,28 +9473,29 @@ const _sfc_main$2B = {
       this.visiblePopover = null;
       this.$store.dispatch("todos/updateTodo", { ...todo });
     },
-    async toggleTodo(task_uuid) {
+    async toggleTodo(todo) {
       this.doAuth();
-      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
-      let start_date = parseInt(task[0].start_date);
-      task[0].completed = true;
+      let task_uuid = todo.task_uuid;
+      const task = todo;
+      let start_date = parseInt(task.start_date);
+      task.completed = true;
       if (start_date) {
         const now2 = Date.now();
         const durationMs = now2 - start_date;
         const minutesSpent = Math.ceil(durationMs / 6e4);
-        const previous = Number(task[0].task_time) || 0;
+        const previous = Number(task.task_time) || 0;
         const newAverage = Math.ceil((previous + minutesSpent) / 2);
-        task[0].task_time = newAverage;
-        task[0].minutesSpent = minutesSpent;
-        task[0].start_date = 0;
+        task.task_time = newAverage;
+        task.minutesSpent = minutesSpent;
+        task.start_date = 0;
       }
       const endDate = new Date();
-      const timeSpent = task[0].minutesSpent ?? task[0].task_time;
+      const timeSpent = task.minutesSpent ?? task.task_time;
       const startDate = new Date(endDate.getTime() - timeSpent * 60 * 1e3);
       const task_done_color = "7";
       const event = {
-        summary: task[0].task_title,
-        description: task[0].task_uuid,
+        summary: task.task_title,
+        description: task.task_uuid,
         colorId: task_done_color,
         start: {
           dateTime: startDate.toISOString(),
@@ -9516,29 +9517,30 @@ const _sfc_main$2B = {
         await updateEvent(event);
       } else {
         await addEvent(event);
-        task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
-        task[0].repeat_index = parseFloat(task[0].repeat_index.toString().replace(",", ".")) - 0.1;
-        task[0].task_sort = parseFloat(task[0].task_sort.toString().replace(",", ".")) - 0.02;
+        task.break_multiplier = parseFloat(task.break_multiplier) + 1;
+        task.repeat_index = parseFloat(task.repeat_index.toString().replace(",", ".")) - 0.1;
+        task.task_sort = parseFloat(task.task_sort.toString().replace(",", ".")) - 0.02;
       }
       setTimeout(async () => {
         await makeTaskDone(task, this.$store);
         this.log = await calcExecutions(this.$store);
         console.log(this.log);
+        this.todos = this.$store.getters["todos/getTodos"];
       }, 300);
     },
-    deleteTodo: throttle_1(async function(task_uuid) {
+    deleteTodo: throttle_1(async function(task) {
       this.doAuth();
-      const task = this.todos.filter((todo) => todo.task_uuid === task_uuid);
+      let task_uuid = task.task_uuid;
       let list = await listEvents(this.$store);
       let exist = list.filter((event) => {
         var _a2;
         return (_a2 = event.description) == null ? void 0 : _a2.includes(task_uuid);
       });
-      task[0].completed = true;
+      task.completed = true;
       if (exist.length) {
         await deleteEvent(exist[0]);
-        task[0].break_multiplier = parseFloat(task[0].break_multiplier) - 0.1;
-        task[0].repeat_index = parseFloat(task[0].repeat_index.toString().replace(",", ".")) + 0.1;
+        task.break_multiplier = parseFloat(task.break_multiplier) - 0.1;
+        task.repeat_index = parseFloat(task.repeat_index.toString().replace(",", ".")) + 0.1;
       }
       await makeTaskDone(task, this.$store, { deleted: 1 });
     }, 1e3),
@@ -9608,12 +9610,17 @@ const _sfc_main$2B = {
       }
       this.$store.dispatch("todos/updateTodo", { ...todo });
     },
-    pauseTask(todo) {
+    async pauseTask(todo) {
       this.doAuth();
-      const now2 = Date.now();
-      todo.task_finish_date = now2 - todo.start_date;
-      todo.start_date = 0;
-      this.$store.dispatch("todos/updateTodo", { ...todo });
+      await this.toggleTodo(todo);
+      setTimeout(() => {
+        const todos2 = this.$store.getters["todos/getTodos"];
+        todos2.filter((todo2) => todo2.task_uuid === todo2.task_uuid);
+        todo.task_finish_date = 1;
+        todo.start_date = 0;
+        this.$store.dispatch("todos/updateTodo", { ...todo });
+        this.todos = this.$store.getters["todos/getTodos"];
+      }, 600);
     },
     doAuth() {
       let api = window.GoogleSheetDB || new GoogleSheetDB();
@@ -9782,16 +9789,16 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
             todo.start_date == 0 ? (openBlock(), createElementBlock("span", {
               key: 0,
               class: "done",
-              onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
+              onClick: withModifiers(($event) => $options.toggleTodo(todo), ["stop"])
             }, "✅", 8, _hoisted_20)) : (openBlock(), createElementBlock("span", _hoisted_21, [
               createBaseVNode("button", {
-                onClick: withModifiers(($event) => $options.toggleTodo(todo.task_uuid), ["stop"])
+                onClick: withModifiers(($event) => $options.toggleTodo(todo), ["stop"])
               }, "⏹", 8, _hoisted_22)
             ])),
             $data.selectedFilter === "calendar" ? (openBlock(), createElementBlock("span", {
               key: 2,
               class: "delete",
-              onClick: withModifiers(($event) => $options.deleteTodo(todo.task_uuid), ["stop"]),
+              onClick: withModifiers(($event) => $options.deleteTodo(todo), ["stop"]),
               title: "Нет возможности, нет сил сделать"
             }, "ⓧ", 8, _hoisted_23)) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
@@ -9800,7 +9807,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-ecbb5fc2"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-2c7dbc09"]]);
 const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

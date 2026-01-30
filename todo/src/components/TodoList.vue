@@ -52,11 +52,11 @@
                       <button  class="pause" @click.stop="pauseTask(todo)">⏸</button>
                     </span>
                 </span>
-                <span  v-if="todo.start_date == 0" class="done" @click.stop="toggleTodo(todo.task_uuid)">✅</span>
+                <span  v-if="todo.start_date == 0" class="done" @click.stop="toggleTodo(todo)">✅</span>
                 <span v-else class="done" >
-                    <button @click.stop="toggleTodo(todo.task_uuid)">⏹</button>
+                    <button @click.stop="toggleTodo(todo)">⏹</button>
                 </span>
-                <span v-if="selectedFilter==='calendar'" class="delete" @click.stop="deleteTodo(todo.task_uuid)" title="Нет возможности, нет сил сделать">ⓧ</span>
+                <span v-if="selectedFilter==='calendar'" class="delete" @click.stop="deleteTodo(todo)" title="Нет возможности, нет сил сделать">ⓧ</span>
             </div>
         </li>
 
@@ -137,29 +137,30 @@ export default {
             this.$store.dispatch("todos/updateTodo", { ...todo }); // принудительное сохранение
         },
 
-        async toggleTodo(task_uuid) {
+        async toggleTodo(todo) {
             this.doAuth();
-            const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
-            let start_date = parseInt(task[0].start_date)
-            task[0].completed = true;
+            let task_uuid = todo.task_uuid
+            const task = todo;
+            let start_date = parseInt(task.start_date)
+            task.completed = true;
             if (start_date) {
                 const now = Date.now();
                 const durationMs = now - start_date;
                 const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
 
-                const previous = Number(task[0].task_time) || 0;
+                const previous = Number(task.task_time) || 0;
                 const newAverage = Math.ceil((previous + minutesSpent) / 2);
-                task[0].task_time = newAverage;
-                task[0].minutesSpent = minutesSpent;
-                task[0].start_date = 0;
+                task.task_time = newAverage;
+                task.minutesSpent = minutesSpent;
+                task.start_date = 0;
             }
             const endDate = new Date();
-            const timeSpent = task[0].minutesSpent ?? task[0].task_time;
+            const timeSpent = task.minutesSpent ?? task.task_time;
             const startDate = new Date(endDate.getTime() - timeSpent * 60 * 1000);
             const task_done_color = '7';
             const event = {
-                summary: task[0].task_title,
-                description: task[0].task_uuid,
+                summary: task.task_title,
+                description: task.task_uuid,
                 colorId: task_done_color,
                 start: {
                     dateTime: startDate.toISOString(),
@@ -183,26 +184,29 @@ export default {
             } else {
                 await addEvent(event);
                 //т.к. задача была не на сегодня
-                task[0].break_multiplier = parseFloat(task[0].break_multiplier) + 1;
-                task[0].repeat_index = parseFloat( task[0].repeat_index.toString().replace(',', '.')) - 0.1;
-                task[0].task_sort = parseFloat( task[0].task_sort.toString().replace(',', '.')) - 0.02;
+                task.break_multiplier = parseFloat(task.break_multiplier) + 1;
+                task.repeat_index = parseFloat( task.repeat_index.toString().replace(',', '.')) - 0.1;
+                task.task_sort = parseFloat( task.task_sort.toString().replace(',', '.')) - 0.02;
             }
             setTimeout(async () => {
                 await makeTaskDone(task, this.$store);
                 this.log = await calcExecutions(this.$store);
                 console.log(this.log);
+                this.todos = this.$store.getters['todos/getTodos'];
             }, 300)
         },
-        deleteTodo: throttle(async function (task_uuid) {
+        deleteTodo: throttle(async function (task) {
             this.doAuth();
-            const task = this.todos.filter(todo => todo.task_uuid === task_uuid);
+            let task_uuid = task.task_uuid;
             let list = await listEvents(this.$store);
             let exist = list.filter(event => event.description?.includes(task_uuid));
-            task[0].completed = true;
+            task.completed = true;
             if(exist.length){
                 await deleteEvent(exist[0])
-                task[0].break_multiplier = parseFloat(task[0].break_multiplier) - 0.1;
-                task[0].repeat_index = parseFloat( task[0].repeat_index.toString().replace(',', '.')) + 0.1;
+                task.break_multiplier = parseFloat(task.break_multiplier) - 0.1;
+                task.repeat_index = parseFloat( task.repeat_index.toString().replace(',', '.')) + 0.1;
+            } else {
+
             }
             await makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),
@@ -283,12 +287,17 @@ export default {
             }
             this.$store.dispatch("todos/updateTodo", { ...todo });
         },
-        pauseTask(todo) {
+        async pauseTask(todo) {
             this.doAuth();
-            const now = Date.now();
-            todo.task_finish_date = now - todo.start_date;
-            todo.start_date = 0;
-            this.$store.dispatch("todos/updateTodo", { ...todo });
+            await this.toggleTodo(todo);
+            setTimeout(()=>{
+                const todos = this.$store.getters['todos/getTodos'];
+                let task = todos.filter(todo => todo.task_uuid === todo.task_uuid);
+                todo.task_finish_date = 1;
+                todo.start_date = 0;
+                this.$store.dispatch("todos/updateTodo", {...todo});
+                this.todos = this.$store.getters['todos/getTodos'];
+            }, 600)
         },
         doAuth() {
             let api = window.GoogleSheetDB || new GoogleSheetDB();

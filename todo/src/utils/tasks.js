@@ -191,7 +191,7 @@ export async function makeTaskDone(task, store, options = {}) {
         break_multiplier,
         number_of_executions,
         last_execution
-    } = task[0];
+    } = task;
     let {deleted} = options;
     repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
 
@@ -265,7 +265,7 @@ export async function makeTaskDone(task, store, options = {}) {
     let money_reward = minutesSpent  * calc.averageCalc / 2;
 
     const updatedTask = {
-        ...task[0],
+        ...task,
         task_date: task_date,
         task_time: task_time,
         repeat_index: repeat_index,

@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.22";
+window.version = "0.5.23";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8895,10 +8895,12 @@ async function logExecuteTask(updatedTask, store2) {
     spreadsheetId: spreadsheetSetting.value,
     list: "task_executions"
   });
+  console.log(updatedTask);
+  let execution_time = updatedTask.minutesSpent || updatedTask.task_time;
   await table.addRow({
     execution_id: generateUUIDv4(),
     execution_date: new Date().getTime(),
-    execution_time: updatedTask.task_time,
+    execution_time,
     gained_gold: updatedTask.money_reward,
     task_title: updatedTask.task_title,
     task_id: updatedTask.task_uuid,

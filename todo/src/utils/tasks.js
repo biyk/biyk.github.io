@@ -13,7 +13,7 @@ async function logExecuteTask(updatedTask, store) {
         spreadsheetId: spreadsheetSetting.value,
         list: "task_executions"
     });
-    console.log(updatedTask);
+
     let execution_time = updatedTask.minutesSpent || updatedTask.task_time;
     await table.addRow({
         execution_id: generateUUIDv4(),

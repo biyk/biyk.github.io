@@ -45,6 +45,11 @@ export default {
     },
     methods: {
         cost (product){
+            let cost = parseInt(product['reward_cost']);
+            if (isNaN(cost)) {
+                console.error(product);
+                return 0
+            }
             return parseInt(product['reward_cost']);
             //return parseInt(Math.round(product['reward_cost'] * Math.min(this.calc(), 2)) )
         },
@@ -82,7 +87,6 @@ export default {
 
             // вычесть стоимость из баланса
             let balance = parseFloat(hero.hero_money) - reward_cost;
-
             // записать баланс в таблицу
             await heroTable.updateRowByCode('hero_money', {value: balance});
 

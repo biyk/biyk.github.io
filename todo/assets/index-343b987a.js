@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.24";
+window.version = "0.5.25";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9108,7 +9108,7 @@ async function makeTaskDone(task, store2, options = {}) {
   if (deleted || repeat_mode === "5")
     return;
   let hero2 = { ...store2.getters["hero/getHero"] };
-  hero2.hero_money = parseFloat(hero2.hero_money) + money_reward;
+  hero2.hero_money = parseFloat(hero2.hero_money) + parseFloat(money_reward);
   store2.dispatch("hero/updateHero", hero2);
   await logExecuteTask(updatedTask, store2);
 }
@@ -10932,7 +10932,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_22671534_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_606cf385_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10949,7 +10949,7 @@ const _sfc_main$2z = {
   },
   methods: {
     cost(product) {
-      return product["reward_cost"];
+      return parseInt(product["reward_cost"]);
     },
     async fetchProducts() {
       let itemsTable = new Table$2({
@@ -11049,7 +11049,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-22671534"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-606cf385"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

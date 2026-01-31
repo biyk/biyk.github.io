@@ -45,7 +45,7 @@ export default {
     },
     methods: {
         cost (product){
-            return product['reward_cost'];
+            return parseInt(product['reward_cost']);
             //return parseInt(Math.round(product['reward_cost'] * Math.min(this.calc(), 2)) )
         },
         async fetchProducts() {

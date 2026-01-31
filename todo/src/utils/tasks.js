@@ -285,7 +285,7 @@ export async function makeTaskDone(task, store, options = {}) {
     if (deleted || repeat_mode === '5') return;
     let hero = {...store.getters["hero/getHero"]}; // создаем копию объекта
 
-    hero.hero_money = parseFloat(hero.hero_money) + money_reward;
+    hero.hero_money = parseFloat(hero.hero_money) + parseFloat(money_reward);
 
     store.dispatch("hero/updateHero", hero);
 

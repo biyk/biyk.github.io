@@ -191,7 +191,6 @@ export default {
             setTimeout(async () => {
                 await makeTaskDone(task, this.$store);
                 this.log = await calcExecutions(this.$store);
-                console.log(this.log);
                 this.todos = this.$store.getters['todos/getTodos'];
             }, 300)
         },

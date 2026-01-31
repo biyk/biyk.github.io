@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.25";
+window.version = "0.5.26";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9032,6 +9032,7 @@ async function makeTaskDone(task, store2, options = {}) {
     number_of_executions,
     last_execution
   } = task;
+  minutesSpent = minutesSpent || task_time;
   let { deleted } = options;
   repeat_index = parseFloat(repeat_index.toString().replace(",", "."));
   const now2 = new Date();
@@ -9405,7 +9406,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_2c7dbc09_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_fb9be792_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9525,7 +9526,6 @@ const _sfc_main$2B = {
       setTimeout(async () => {
         await makeTaskDone(task, this.$store);
         this.log = await calcExecutions(this.$store);
-        console.log(this.log);
         this.todos = this.$store.getters["todos/getTodos"];
       }, 300);
     },
@@ -9808,8 +9808,8 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-2c7dbc09"]]);
-const Settings_vue_vue_type_style_index_0_scoped_e85741b6_lang = "";
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-fb9be792"]]);
+const Settings_vue_vue_type_style_index_0_scoped_226cd577_lang = "";
 const _sfc_main$2A = {
   name: "Settings",
   data() {
@@ -9888,16 +9888,6 @@ const _sfc_main$2A = {
   async mounted() {
     const api = window.GoogleSheetDB || new GoogleSheetDB$1();
     await api.waitGoogle();
-    let drive = new Drive();
-    let configs = await drive.find('name = "config.json"');
-    if (configs.length > 0) {
-      this.driveConfigId = configs[0].id;
-    } else {
-      let file = await drive.createEmptyFile("config.json");
-      this.driveConfigId = file;
-    }
-    let setting = await drive.download(this.driveConfigId);
-    this.$store.dispatch("settings/setSettings", setting);
   }
 };
 const _hoisted_1$2 = { class: "settings" };
@@ -9950,7 +9940,7 @@ function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
     }, "customScript")
   ]);
 }
-const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-e85741b6"]]);
+const Settings = /* @__PURE__ */ _export_sfc$1(_sfc_main$2A, [["render", _sfc_render$u], ["__scopeId", "data-v-226cd577"]]);
 function getDevtoolsGlobalHook() {
   return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
 }
@@ -10932,7 +10922,7 @@ function stopTaskAgent() {
     console.log("[Агент] Остановлен.");
   }
 }
-const Shop_vue_vue_type_style_index_0_scoped_606cf385_lang = "";
+const Shop_vue_vue_type_style_index_0_scoped_75e7adbe_lang = "";
 const _sfc_main$2z = {
   name: "ProductList",
   data() {
@@ -10949,6 +10939,11 @@ const _sfc_main$2z = {
   },
   methods: {
     cost(product) {
+      let cost = parseInt(product["reward_cost"]);
+      if (isNaN(cost)) {
+        console.error(product);
+        return 0;
+      }
       return parseInt(product["reward_cost"]);
     },
     async fetchProducts() {
@@ -11049,7 +11044,7 @@ function _sfc_render$t(_ctx, _cache, $props, $setup, $data, $options) {
     ])) : createCommentVNode("", true)
   ]);
 }
-const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-606cf385"]]);
+const Shop = /* @__PURE__ */ _export_sfc$1(_sfc_main$2z, [["render", _sfc_render$t], ["__scopeId", "data-v-75e7adbe"]]);
 const _imports_0 = "" + new URL("logo-03d6d6da.png", import.meta.url).href;
 const _sfc_main$2y = {
   data() {

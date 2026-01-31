@@ -193,6 +193,7 @@ export async function makeTaskDone(task, store, options = {}) {
         number_of_executions,
         last_execution
     } = task;
+    minutesSpent = minutesSpent || task_time;
     let {deleted} = options;
     repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
 
@@ -288,7 +289,6 @@ export async function makeTaskDone(task, store, options = {}) {
     hero.hero_money = parseFloat(hero.hero_money) + parseFloat(money_reward);
 
     store.dispatch("hero/updateHero", hero);
-
 
     await logExecuteTask(updatedTask, store);
 }

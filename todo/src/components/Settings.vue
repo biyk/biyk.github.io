@@ -132,18 +132,22 @@ export default {
     async mounted() {
         const api = window.GoogleSheetDB || new GoogleSheetDB();
         await api.waitGoogle();
-        let drive = new Drive();
-        let configs = await drive.find('name = "config.json"');
-        if (configs.length > 0) {
-            //console.log(configs);
-            this.driveConfigId = configs[0].id;
-        } else {
-            let file = await drive.createEmptyFile('config.json');
-            //console.log(file);
-            this.driveConfigId = file;
+        if (0){
+            let drive = new Drive();
+            let configs = await drive.find('name = "config.json"');
+            if (configs.length > 0) {
+                //console.log(configs);
+                this.driveConfigId = configs[0].id;
+            } else {
+                let file = await drive.createEmptyFile('config.json');
+                //console.log(file);
+                this.driveConfigId = file;
+            }
+            let setting = await drive.download(this.driveConfigId);
+            this.$store.dispatch("settings/setSettings", setting)
+
         }
-        let setting = await drive.download(this.driveConfigId);
-        this.$store.dispatch("settings/setSettings", setting)
+
     }
 }
 </script>

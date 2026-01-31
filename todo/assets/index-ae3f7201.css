@@ -139,14 +139,14 @@
         font-size: x-large;
     }
 }
-.neumorphic-radio-group[data-v-2c7dbc09] {
+.neumorphic-radio-group[data-v-fb9be792] {
     display: flex;
     gap: 10px;
     padding: 10px;
     background: #e0e0e0; /* общий фон */
     border-radius: 20px;
 }
-.neumorphic-button[data-v-2c7dbc09] {
+.neumorphic-button[data-v-fb9be792] {
     background: #e0e0e0;
     border: none;
     border-radius: 12px;
@@ -159,45 +159,45 @@
 }
 
 /* Активная (впуклая) кнопка */
-.el-radio-button__original-radio:checked + .neumorphic-button[data-v-2c7dbc09],
-.el-radio-button.is-active.neumorphic-button[data-v-2c7dbc09] {
+.el-radio-button__original-radio:checked + .neumorphic-button[data-v-fb9be792],
+.el-radio-button.is-active.neumorphic-button[data-v-fb9be792] {
     box-shadow: inset 4px 4px 8px #bebebe,
     inset -4px -4px 8px #ffffff;
 }
 
 /* Hover эффект для большей интерактивности */
-.neumorphic-button[data-v-2c7dbc09]:hover {
+.neumorphic-button[data-v-fb9be792]:hover {
     box-shadow: 2px 2px 4px #bebebe,
     -2px -2px 4px #ffffff;
 }
 
 
-.settings[data-v-e85741b6] {
+.settings[data-v-226cd577] {
     margin-top: 1rem;
 }
-.form[data-v-e85741b6] {
+.form[data-v-226cd577] {
     margin-top: 1rem;
 }
-input[data-v-e85741b6] {
+input[data-v-226cd577] {
     display: inline-block;
     margin-right: 0.5rem;
     padding: 0.5rem;
     width: 150px;
 }
-button[data-v-e85741b6] {
+button[data-v-226cd577] {
     padding: 0.5rem 1rem;
     margin-left: 1rem;
 }
-ul[data-v-e85741b6] {
+ul[data-v-226cd577] {
     list-style-type: none;
     padding: 0;
 }
-li[data-v-e85741b6] {
+li[data-v-226cd577] {
     display: flex;
     align-items: center;
     margin-bottom: 0.5rem;
 }
-li button[data-v-e85741b6] {
+li button[data-v-226cd577] {
     margin-left: 10px;
     padding: 0.2rem 0.5rem;
 }
@@ -242,11 +242,11 @@ h1 {
     margin: 0 auto;
 }
 
-.product-item[data-v-606cf385] {
+.product-item[data-v-75e7adbe] {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
 }
-.cart[data-v-606cf385] {
+.cart[data-v-75e7adbe] {
     margin-top: 20px;
 }

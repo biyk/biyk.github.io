@@ -255,7 +255,12 @@ export default {
                 case 'all':
                     return this.getFilteredTodos().sort((a, b) => {
                         let sort = function (todo) {
-                            return parseFloat(todo.repeat_index.toString().replace(',', '.'))
+                            let sort = parseFloat(todo.repeat_index.toString().replace(',', '.'));
+                            const match = todo.task_description.toString().match(/(\d+)d/);
+                            if (match) {
+                                sort = match[1]
+                            }
+                            return sort
                         }
                         return this.repeat(b)/sort(b) - (this.repeat(a)/sort(a))
                     });

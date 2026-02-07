@@ -39,7 +39,7 @@
     fetch(link.href, fetchOpts);
   }
 })();
-window.version = "0.5.26";
+window.version = "0.5.27";
 /**
 * @vue/shared v3.5.13
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -9406,7 +9406,7 @@ function throttle$1(func, wait, options) {
   });
 }
 var throttle_1 = throttle$1;
-const TodoList_vue_vue_type_style_index_0_scoped_fb9be792_lang = "";
+const TodoList_vue_vue_type_style_index_0_scoped_c0a5c822_lang = "";
 const _sfc_main$2B = {
   data() {
     return {
@@ -9580,7 +9580,12 @@ const _sfc_main$2B = {
         case "all":
           return this.getFilteredTodos().sort((a2, b2) => {
             let sort = function(todo) {
-              return parseFloat(todo.repeat_index.toString().replace(",", "."));
+              let sort2 = parseFloat(todo.repeat_index.toString().replace(",", "."));
+              const match = todo.task_description.toString().match(/(\d+)d/);
+              if (match) {
+                sort2 = match[1];
+              }
+              return sort2;
             };
             return this.repeat(b2) / sort(b2) - this.repeat(a2) / sort(a2);
           });
@@ -9808,7 +9813,7 @@ function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ], 64);
 }
-const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-fb9be792"]]);
+const TodoList = /* @__PURE__ */ _export_sfc$1(_sfc_main$2B, [["render", _sfc_render$v], ["__scopeId", "data-v-c0a5c822"]]);
 const Settings_vue_vue_type_style_index_0_scoped_226cd577_lang = "";
 const _sfc_main$2A = {
   name: "Settings",

@@ -135,7 +135,7 @@ export async function checkForConfigUpdates() {
     const config = await mapTable.getAll({formated: true});
     if (typeof startCountdown !== 'undefined') startCountdown(config.init?.timer);
 
-    if (window.admin_mode) return;
+    if (window.admin_mode || 1) return;
 
     if (config.active==='0') return location.reload(true)
     if (config) {

@@ -328,11 +328,11 @@ class MapManager {
         });
 
         this.map.on('movestart', () => {
-            document.getElementById('map').style.opacity = '0';
+            //document.getElementById('map').style.opacity = '0';
         });
         this.map.on('moveend', async () => {
             this.sendData('mapState');
-            document.getElementById('map').style.opacity = '1';
+            //document.getElementById('map').style.opacity = '1';
 
         });
 

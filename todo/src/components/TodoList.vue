@@ -25,7 +25,7 @@
                 class="task-description"
                 :title="'task_date: ' + taskDate(todo.task_date) + ', last_execution: ' + taskDate(todo.last_execution)
                  + ', repeat: ' + repeat(todo)"
-                @click="togglePopover(todo.task_uuid)"
+                @click="!todo.completed && togglePopover(todo.task_uuid)"
             >
                 ({{ todo.task_time}}) {{ todo.task_title }}
                 <span class="task-repeat_index">({{ parseFloat(todo.repeat_index.toString().replace(',', '.')).toFixed(2) }})</span>
@@ -44,7 +44,7 @@
             </div>
 
 
-            <div v-if="visiblePopover !== todo.task_uuid" class="buttons">
+            <div v-if="!todo.completed && visiblePopover !== todo.task_uuid" class="buttons">
                 <!-- Кнопки Старт / Стоп -->
                 <span style="margin-right: 8px;">
                     <button class="start" v-if="todo.start_date == 0" @click="startTask(todo)">▶️</button>
@@ -191,6 +191,7 @@ export default {
             setTimeout(async () => {
                 await makeTaskDone(task, this.$store);
                 this.log = await calcExecutions(this.$store);
+                await listEvents(this.$store);
                 this.todos = this.$store.getters['todos/getTodos'];
             }, 300)
         },

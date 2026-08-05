@@ -116,7 +116,15 @@ export class Table {
         let rawValue = table.getRaw(values);
         await this.waitSending();
         await this.addRawValues([rawValue]);
+        await this.clearListCache();
 
+    }
+
+    async clearListCache() {
+        const webStorage = new WebStorage();
+        const storageKey = this.list + this.spreadsheetId;
+        await webStorage.removeItem(storageKey);
+        await webStorage.removeItem(storageKey + '_ttl');
     }
 
     async waitSending(timeout = 10000) {
@@ -169,6 +177,7 @@ export class Table {
                 ]
             }
         });
+        await this.clearListCache();
     }
 
     async updateRow(row, values = {}) {
@@ -195,6 +204,7 @@ export class Table {
             console.log('Value update failed:', err);
         });
         this.sending = false;
+        await this.clearListCache();
     }
 
     async getLists() {

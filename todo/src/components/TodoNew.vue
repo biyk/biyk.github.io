@@ -52,6 +52,8 @@ export default {
                 number_of_executions: 0
             })
 
+            await this.$store.dispatch("todos/initTodos");
+
             this.task_title = "";
         }
     }

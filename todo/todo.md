@@ -2,11 +2,6 @@
 
 ## Дыры в логике (баги)
 
-### 11. Новая задача не появляется в списке
-- Файл: `src/components/TodoNew.vue:38-53`
-- После `addRow` нет `initTodos`, плюс `getAll` кэширует 10 сек.
-- Исправление: `dispatch("todos/initTodos")` после добавления.
-
 ### 12. Настройки не уходят в Drive
 - Файл: `src/components/Settings.vue:80-90, 135-149`
 - Блок `if (0)` мёртв, `driveConfigId` никогда не заполняется → `this.driveConfigId && ...` всегда false.

@@ -262,8 +262,13 @@ export async function makeTaskDone(task, store, options = {}) {
 
     number_of_executions++;
     let calc =  store.getters["settings/allCalc"];
+    const avg = calc?.averageCalc || 1;
 
-    let money_reward = minutesSpent  * calc.averageCalc / 2;
+    let money_reward = minutesSpent * avg / 2;
+    if (!isFinite(money_reward)) {
+        console.error('money_reward = NaN (minutesSpent=%s, averageCalc=%s)', minutesSpent, avg, new Error().stack);
+        money_reward = 0;
+    }
 
     const updatedTask = {
         ...task,
@@ -286,7 +291,7 @@ export async function makeTaskDone(task, store, options = {}) {
     if (deleted || repeat_mode === '5') return;
     let hero = {...store.getters["hero/getHero"]}; // создаем копию объекта
 
-    hero.hero_money = parseFloat(hero.hero_money) + parseFloat(money_reward);
+    hero.hero_money = (parseFloat(hero.hero_money) || 0) + parseFloat(money_reward);
 
     store.dispatch("hero/updateHero", hero);
 

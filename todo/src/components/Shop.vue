@@ -4,6 +4,7 @@
             <li v-for="product in products" :key="product['reward_id']" class="product-item">
                 <span v-if="parseInt(product['reward_cost'])">{{ product['reward_title'] }} - {{ cost(product) }} <button
                     :style="{ backgroundColor: hero.hero_money < cost(product) ? 'red' : '' }"
+                    :disabled="buying"
 
                     @click="buyProduct(product)">🛒</button>
                 </span>
@@ -36,6 +37,7 @@ export default {
             products: [],
             cart: null,
             api: null,
+            buying: false,
         }
     },
     computed: {
@@ -76,41 +78,49 @@ export default {
         },
         async buyProduct(product) {
             this.doAuth();
-            // получить текущий баланс
-            let heroTable = new Table({
-                spreadsheetId: this.spreadsheetId,
-                list: 'real_life_hero',
-            });
-            let hero = await heroTable.getAll({formated: true, format: 'array'});
+            if (this.buying) return;
+            this.buying = true;
+            try {
+                // получить текущий баланс
+                let heroTable = new Table({
+                    spreadsheetId: this.spreadsheetId,
+                    list: 'real_life_hero',
+                });
+                let hero = await heroTable.getAll({formated: true, format: 'array'});
 
-            let reward_cost = this.cost(product)
+                let reward_cost = this.cost(product)
 
-            // вычесть стоимость из баланса
-            let balance = parseFloat(hero.hero_money) - reward_cost;
-            // записать баланс в таблицу
-            await heroTable.updateRowByCode('hero_money', {value: balance});
+                // вычесть стоимость из баланса
+                let balance = (parseFloat(hero.hero_money) || 0) - reward_cost;
+                // записать баланс в таблицу
+                await heroTable.updateRowByCode('hero_money', {value: balance});
 
-            // добавить в историю покупок
-            let historyTable = new Table({
-                spreadsheetId: this.spreadsheetId,
-                list: 'rewards_history',
-            });
-            await historyTable.addRow({
-                claim_date: new Date().getTime(),
-                item_id:generateUUIDv4(),
-                gold_spent: reward_cost,
-                reward_title: product['reward_title'],
-                reward_id: product['reward_id']
-            });
+                // добавить в историю покупок
+                let historyTable = new Table({
+                    spreadsheetId: this.spreadsheetId,
+                    list: 'rewards_history',
+                });
+                await historyTable.addRow({
+                    claim_date: new Date().getTime(),
+                    item_id:generateUUIDv4(),
+                    gold_spent: reward_cost,
+                    reward_title: product['reward_title'],
+                    reward_id: product['reward_id']
+                });
 
-            // обновить количество товара
-            let itemsTable = new Table({
-                spreadsheetId: this.spreadsheetId,
-                list: 'real_life_rewards',
-            });
-            await itemsTable.updateRowByCode(product['reward_title'], {'reward_done': parseInt(product['reward_done']) + 1});
-            await itemsTable.updateRowByCode(product['reward_title'], {'reward_cost': parseInt(product['reward_cost']) +  parseInt(product['reward_cost_step'])});
-            this.$store.dispatch("hero/initHero");
+                // обновить количество товара
+                let itemsTable = new Table({
+                    spreadsheetId: this.spreadsheetId,
+                    list: 'real_life_rewards',
+                });
+                await itemsTable.updateRowByCode(product['reward_title'], {'reward_done': parseInt(product['reward_done']) + 1});
+                await itemsTable.updateRowByCode(product['reward_title'], {'reward_cost': parseInt(product['reward_cost']) +  parseInt(product['reward_cost_step'])});
+                this.$store.dispatch("hero/initHero");
+            } catch (err) {
+                console.error('Ошибка покупки:', err);
+            } finally {
+                this.buying = false;
+            }
         }
     },
     async mounted() {

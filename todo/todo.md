@@ -2,16 +2,10 @@
 
 ## Дыры в логике (баги)
 
-### 13. `getFreeSlots` смешивает UTC и локальное время
-- Файл: `src/utils/calendar.js`
-- Дата дня из `toISOString()` (UTC), часы — локальные. В Самаре (+4) с 00:00 до 04:00 ночью слоты считались для вчерашнего дня.
-- Исправление: дата дня собирается из локальных компонент (`getFullYear/getMonth/getDate`); `listEvents` строит offset из `getTimezoneOffset()` вместо захардкоженного `+04:00`. `Europe/Samara` в `makeEvent`/`TodoList` остаётся.
-
 ### 15. Сериализация записей в Sheets не работает
-- Файл: `dnd/static/js/db/google.js:178-198, 122-126`
-- `updateRow` вызывает `this.waitSending()` без `await` (строка 183), а флаг `sending` на инстансе `Table`, но каждый вызов делает `new Table(...)`.
-- Последствие: параллельные записи не блокируются → потеря/перетирание данных.
-- Исправление: мьютекс записи на уровне модуля + `await waitSending()`.
+- Файл: `dnd/static/js/db/google.js`
+- `updateRow` вызывал `this.waitSending()` без `await`, а флаг `sending` висел на инстансе `Table`, хотя каждый вызов создаёт `new Table(...)` — параллельные записи не блокировались, терялись/перетирались данные.
+- Исправление: `sending`/`waitSending` удалены, вместо них promise-очередь на уровне модуля `enqueueWrite` — все записи (`addRawValues`, `addRows`, `updateRow`, `deleteRow`, `addColumns`, `clearList`) идут FIFO.
 
 ### 16. Кэш колонок по хардкод-спредшиту
 - Файл: `dnd/static/js/db/google.js:106, 362`

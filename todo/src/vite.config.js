@@ -18,7 +18,8 @@ export default defineConfig({
         }
     },
     build: {
-        minify: false,
+        minify: 'esbuild',
+        sourcemap: true,
         // Папка выше относительно src => это ../
         outDir: resolve(__dirname, '../'),
         emptyOutDir: false, // очищает папку перед сборкой (по умолчанию true только если outDir внутри проекта)

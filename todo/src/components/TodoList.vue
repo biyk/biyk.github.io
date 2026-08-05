@@ -207,17 +207,28 @@ export default {
         deleteTodo: throttle(async function (task) {
             this.doAuth();
             let task_uuid = task.task_uuid;
-            let list = await listEvents(this.$store);
-            let exist = list.filter(event => event.description?.includes(task_uuid));
-            task.completed = true;
-            if(exist.length){
-                await deleteEvent(exist[0])
-                task.break_multiplier = parseFloat(task.break_multiplier) - 0.1;
-                task.repeat_index = parseFloat( task.repeat_index.toString().replace(',', '.')) + 0.1;
-            } else {
+            try {
+                let list = await listEvents(this.$store);
+                let exist = list.filter(event => event.description?.includes(task_uuid));
+                task.completed = true;
+                if(exist.length){
+                    await deleteEvent(exist[0])
+                    task.break_multiplier = parseFloat(task.break_multiplier) - 0.1;
+                    task.repeat_index = parseFloat( task.repeat_index.toString().replace(',', '.')) + 0.1;
+                } else {
 
+                }
+                await makeTaskDone(task, this.$store, {deleted: 1});
+            } catch (err) {
+                console.error('Ошибка удаления задачи:', err);
+            } finally {
+                try {
+                    await listEvents(this.$store);
+                    await this.$store.dispatch("todos/initTodos");
+                } catch (err) {
+                    console.error('Ошибка обновления данных после удаления:', err);
+                }
             }
-            await makeTaskDone(task, this.$store, {deleted: 1});
         }, 1000),
         getSortedTodos(){
             switch (this.selectedFilter) {

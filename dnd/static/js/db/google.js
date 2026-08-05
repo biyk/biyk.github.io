@@ -9,6 +9,14 @@ const DISCOVERY_DOC_DRIVE = 'https://www.googleapis.com/discovery/v1/apis/drive/
 const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 
 
+let writeQueue = Promise.resolve();
+
+function enqueueWrite(task) {
+    const run = writeQueue.then(task);
+    writeQueue = run.then(() => {}, () => {});
+    return run;
+}
+
 export class ORM {
     constructor(columns = []) {
         this.columns = columns
@@ -56,7 +64,6 @@ export class Table {
 
         }
         this.codes = {};
-        this.sending = false;
     }
 
     async exist(){
@@ -78,26 +85,24 @@ export class Table {
     }
 
     async addRawValues(values = []) {
-        await this.waitSending();
-        try {
-            this.sending = true;
-            let res = await this.spreadsheets.values.append({
-                spreadsheetId: this.spreadsheetId,
-                range: this.list + '!A1:Z1',
-                valueInputOption: "RAW",
-                insertDataOption: "INSERT_ROWS",
-                resource: {
-                    majorDimension: "ROWS",
-                    values: values,
-                    //values: [["Engine", "$100", "1", "3/20/2016"]],
-                }
-            });
-            //console.log(res);
-        } catch (e) {
-            console.error(e)
-        } finally {
-            this.sending = false;
-        }
+        await enqueueWrite(async () => {
+            try {
+                await this.spreadsheets.values.append({
+                    spreadsheetId: this.spreadsheetId,
+                    range: this.list + '!A1:Z1',
+                    valueInputOption: "RAW",
+                    insertDataOption: "INSERT_ROWS",
+                    resource: {
+                        majorDimension: "ROWS",
+                        values: values,
+                        //values: [["Engine", "$100", "1", "3/20/2016"]],
+                    }
+                });
+                //console.log(res);
+            } catch (e) {
+                console.error(e)
+            }
+        });
     }
 
     async addRow(values = {}) {
@@ -114,7 +119,6 @@ export class Table {
 
         let table = new ORM(this.columns[this.list]);
         let rawValue = table.getRaw(values);
-        await this.waitSending();
         await this.addRawValues([rawValue]);
         await this.clearListCache();
 
@@ -127,30 +131,24 @@ export class Table {
         await webStorage.removeItem(storageKey + '_ttl');
     }
 
-    async waitSending(timeout = 10000) {
-        while (this.sending) {
-            await new Promise(resolve => setTimeout(resolve, timeout));
-        }
-    }
-
     async addColumns(values = []) {
-        try {
-            let res = await this.spreadsheets.values.append({
-                spreadsheetId: this.spreadsheetId,
-                range: this.list + '!A1:Z1',
-                valueInputOption: "RAW",
-                insertDataOption: "INSERT_ROWS",
-                resource: {
-                    majorDimension: "ROWS",
-                    values: [values],
-                    //values: [["Engine", "$100", "1", "3/20/2016"]],
-                }
-            });
-            console.log(res);
-        } catch (e) {
-            console.error(e)
-        }
-
+        await enqueueWrite(async () => {
+            try {
+                await this.spreadsheets.values.append({
+                    spreadsheetId: this.spreadsheetId,
+                    range: this.list + '!A1:Z1',
+                    valueInputOption: "RAW",
+                    insertDataOption: "INSERT_ROWS",
+                    resource: {
+                        majorDimension: "ROWS",
+                        values: [values],
+                        //values: [["Engine", "$100", "1", "3/20/2016"]],
+                    }
+                });
+            } catch (e) {
+                console.error(e)
+            }
+        });
     }
 
     async deleteRow(rowIndex) {
@@ -160,22 +158,24 @@ export class Table {
             throw new Error("Лист 'API' не найден");
         }
 
-        await this.spreadsheets.batchUpdate({
-            spreadsheetId: this.spreadsheetId,
-            resource: {
-                requests: [
-                    {
-                        deleteDimension: {
-                            range: {
-                                sheetId: sheetId,
-                                dimension: "ROWS",
-                                startIndex: rowIndex - 1,
-                                endIndex: rowIndex
+        await enqueueWrite(async () => {
+            await this.spreadsheets.batchUpdate({
+                spreadsheetId: this.spreadsheetId,
+                resource: {
+                    requests: [
+                        {
+                            deleteDimension: {
+                                range: {
+                                    sheetId: sheetId,
+                                    dimension: "ROWS",
+                                    startIndex: rowIndex - 1,
+                                    endIndex: rowIndex
+                                }
                             }
                         }
-                    }
-                ]
-            }
+                    ]
+                }
+            });
         });
         await this.clearListCache();
     }
@@ -189,21 +189,20 @@ export class Table {
         let rawValue = table.getRaw(values);
 
         //console.debug('values.update',new Error().stack);
-        this.waitSending();
-        this.sending = true;
-        await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: this.spreadsheetId,
-            range: this.list + '!A' + row,
-            valueInputOption: 'RAW',
-            resource: {
-                values: [rawValue]
+        await enqueueWrite(async () => {
+            try {
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: this.spreadsheetId,
+                    range: this.list + '!A' + row,
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [rawValue]
+                    }
+                });
+            } catch (err) {
+                console.error('Value update failed:', err);
             }
-        }).then((response) => {
-            //console.log('Value updated successfully:', response);
-        }).catch((err) => {
-            console.log('Value update failed:', err);
         });
-        this.sending = false;
         await this.clearListCache();
     }
 
@@ -269,9 +268,11 @@ export class Table {
     }
 
     async clearList() {
-        await this.spreadsheets.values.clear({
-            spreadsheetId: this.spreadsheetId,
-            range: this.list + '!A2:Z1000',
+        await enqueueWrite(async () => {
+            await this.spreadsheets.values.clear({
+                spreadsheetId: this.spreadsheetId,
+                range: this.list + '!A2:Z1000',
+            });
         });
     }
 
@@ -384,26 +385,23 @@ export class Table {
             rawValues.push(table.getRaw(e))
         });
 
-        await this.waitSending();
-        try {
-            this.sending = true;
-            let res = await this.spreadsheets.values.append({
-                spreadsheetId: this.spreadsheetId,
-                range: this.list + '!A1:Z1',
-                valueInputOption: "RAW",
-                insertDataOption: "INSERT_ROWS",
-                resource: {
-                    majorDimension: "ROWS",
-                    values: rawValues,
-                    //values: [["Engine", "$100", "1", "3/20/2016"]],
-                }
-            });
-            console.log(res);
-        } catch (e) {
-            console.error(e)
-        } finally {
-            this.sending = false;
-        }
+        await enqueueWrite(async () => {
+            try {
+                await this.spreadsheets.values.append({
+                    spreadsheetId: this.spreadsheetId,
+                    range: this.list + '!A1:Z1',
+                    valueInputOption: "RAW",
+                    insertDataOption: "INSERT_ROWS",
+                    resource: {
+                        majorDimension: "ROWS",
+                        values: rawValues,
+                        //values: [["Engine", "$100", "1", "3/20/2016"]],
+                    }
+                });
+            } catch (e) {
+                console.error(e)
+            }
+        });
     }
 }
 

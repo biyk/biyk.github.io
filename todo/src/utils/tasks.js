@@ -251,7 +251,7 @@ export async function makeTaskDone(task, store, options = {}) {
 
             break;
         default:
-            //console.log(task[0])
+            console.error('Неизвестный repeat_mode — задача не выполнена:', repeat_mode, new Error().stack, { task });
             return;
     }
     if (deleted) {

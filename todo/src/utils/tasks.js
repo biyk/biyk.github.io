@@ -54,11 +54,9 @@ export async function calcExecutions(store){
     let dayAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime(); // 1 день
 
 
-    // Предыдущий месяц
-    let prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-    let prevMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    // Окно «месяц»: ровно месяц назад от сегодня
     let daysInPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-    let startOfPrevMonth = new Date(prevMonthYear, prevMonth, now.getDate() - daysInPrevMonth).getTime();
+    let startOfMonthWindow = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysInPrevMonth).getTime();
 
     // Уникальные даты с данными для подсчёта рабочих дней
     let weekDaysWithData = new Set();
@@ -83,8 +81,8 @@ export async function calcExecutions(store){
             weekDaysWithData.add(dayKey);
         }
 
-        // Прошлый месяц
-        if (execDate >= startOfPrevMonth) {
+        // Месяц назад от сегодня
+        if (execDate >= startOfMonthWindow) {
             month_time += execution_time;
 
             // Добавляем только уникальные дни
@@ -205,7 +203,7 @@ export async function makeTaskDone(task, store, options = {}) {
     if (deleted) {
         repeat_index+=1;
     } else {
-        repeat_index = repeat_real; Math.max(repeat_real, 1);//Нормализация индекса. Должен быть больше 1
+        repeat_index = repeat_real;
     }
 
 

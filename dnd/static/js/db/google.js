@@ -179,7 +179,7 @@ export class Table {
         let table = new ORM(this.columns[this.list]);
         let rawValue = table.getRaw(values);
 
-        console.debug('values.update',new Error().stack);
+        //console.debug('values.update',new Error().stack);
         this.waitSending();
         this.sending = true;
         await gapi.client.sheets.spreadsheets.values.update({
@@ -858,7 +858,7 @@ export class GoogleSheetDB {
                 spreadsheetId,
                 range: range,
             });
-            console.debug('values.get', new Error().stack);
+            //console.debug('values.get', new Error().stack);
         } catch (err) {
             console.error(err);
             return data;

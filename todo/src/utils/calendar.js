@@ -12,10 +12,13 @@ export async function listEvents(store = false) {
     const start = `${year}-${month}-${day}T00:00:00`;
     const end = `${year}-${month}-${day}T23:59:59`;
 
+    const offsetMin = -today.getTimezoneOffset();
+    const tzOffset = `${offsetMin >= 0 ? '+' : '-'}${String(Math.floor(Math.abs(offsetMin) / 60)).padStart(2, '0')}:${String(Math.abs(offsetMin) % 60).padStart(2, '0')}`;
+
     let response = await gapi.client.calendar.events.list({
         calendarId: 'primary',
-        timeMin: `${start}+04:00`,
-        timeMax: `${end}+04:00`,
+        timeMin: `${start}${tzOffset}`,
+        timeMax: `${end}${tzOffset}`,
         showDeleted: false,
         singleEvents: true,
         orderBy: 'startTime'
@@ -84,7 +87,7 @@ export function getFreeSlots(events, options={}) {
     let minutes = String(now.getMinutes()).padStart(2, '0');
 
     let workStart = `${hours}:${minutes}`;
-    const day = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const toDateTime = (timeStr) => new Date(`${day}T${timeStr}:00`);
 
     const startOfDay = toDateTime(workStart);

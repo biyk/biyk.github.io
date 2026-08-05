@@ -189,10 +189,19 @@ export default {
                 task.task_sort = parseFloat( task.task_sort.toString().replace(',', '.')) - 0.02;
             }
             setTimeout(async () => {
-                await makeTaskDone(task, this.$store);
-                this.log = await calcExecutions(this.$store);
-                await listEvents(this.$store);
-                this.todos = this.$store.getters['todos/getTodos'];
+                try {
+                    await makeTaskDone(task, this.$store);
+                    this.log = await calcExecutions(this.$store);
+                } catch (err) {
+                    console.error('Ошибка выполнения задачи:', err);
+                } finally {
+                    try {
+                        await listEvents(this.$store);
+                        await this.$store.dispatch("todos/initTodos");
+                    } catch (err) {
+                        console.error('Ошибка обновления данных после выполнения:', err);
+                    }
+                }
             }, 300)
         },
         deleteTodo: throttle(async function (task) {

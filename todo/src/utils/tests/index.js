@@ -1,15 +1,32 @@
 const modules = import.meta.glob('./*.test.js', { eager: true });
 
-export async function runTests() {
-    const results = [];
+async function ensureGapi() {
+    const start = Date.now();
+    while (!gapi.client.drive || !gapi.client.sheets) {
+        if (Date.now() - start > 10000) throw new Error('Google API (sheets/drive) не загружен');
+        if (!gapi.client.sheets) { try { await gapi.client.load('sheets', 'v4'); } catch (e) {} }
+        if (!gapi.client.drive) { try { await gapi.client.load('drive', 'v3'); } catch (e) {} }
+        if (!gapi.client.drive || !gapi.client.sheets) await new Promise(r => setTimeout(r, 250));
+    }
+}
+
+export async function runTests(ctx = {}, onResult = () => {}) {
+    let testId = null;
     for (const [path, mod] of Object.entries(modules)) {
         const test = mod.default;
         try {
-            const res = await test.run();
-            results.push({ name: test.name, ...res });
+            if (test.requiresGapi) await ensureGapi();
+            console.log(`▶ Запущен тест «${test.name}»`);
+            const runCtx = Object.create(ctx);
+            runCtx.testId = testId;
+            runCtx.setTestId = (id) => { testId = id; };
+            const res = await test.run(runCtx);
+            console.log(`   Итог: ${res.passed ? '✅' : '❌'} ${res.details}`);
+            onResult({ name: test.name, ...res });
         } catch (e) {
-            results.push({ name: test.name, passed: false, details: 'Ошибка: ' + e.message });
+            const details = 'Ошибка: ' + (e.message || JSON.stringify(e) || e);
+            console.error(`   💥 ${details}`);
+            onResult({ name: test.name, passed: false, details });
         }
     }
-    return results;
 }

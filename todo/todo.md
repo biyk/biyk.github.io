@@ -1,12 +1,5 @@
 # TODO: todo-приложение — найденные проблемы и улучшения
 
-## Дыры в логике (баги)
-
-### 18. Мёртвый код
-- `src/store/modules/events.js` — копипаста модуля hero (`initHero`, `getGoogleSheetTable` с `real_life_hero`), не используется.
-- `src/App.vue` — скрытая вкладка `v-if="0"`.
-- `src/components/Shop.vue` — корзина (cart всегда null).
-
 ## Улучшения
 
 ### Перф / бандл

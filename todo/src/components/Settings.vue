@@ -41,7 +41,7 @@
                     {{ test.passed ? '✅' : '❌' }} {{ test.name }} — {{ test.details }}
                 </li>
             </ul>
-            <p v-else>Тесты пока не добавлены</p>
+            <p v-else>Выполняется...</p>
         </div>
     </div>
 </template>
@@ -72,8 +72,8 @@ export default {
     methods: {
         async runTests() {
             this.testsRun = true;
-            this.testResults = await runTestsSuite();
-            console.log('Результаты тестов:', this.testResults);
+            this.testResults = [];
+            await runTestsSuite(this, (r) => this.testResults.push(r));
         },
         // Сохраняем новую пару код/значение
         saveSetting() {

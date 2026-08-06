@@ -2,11 +2,12 @@ const modules = import.meta.glob('./*.test.js', { eager: true });
 
 async function ensureGapi() {
     const start = Date.now();
-    while (!gapi.client.drive || !gapi.client.sheets) {
-        if (Date.now() - start > 10000) throw new Error('Google API (sheets/drive) не загружен');
+    while (!gapi.client.drive || !gapi.client.sheets || !gapi.client.calendar) {
+        if (Date.now() - start > 10000) throw new Error('Google API (sheets/drive/calendar) не загружен');
         if (!gapi.client.sheets) { try { await gapi.client.load('sheets', 'v4'); } catch (e) {} }
         if (!gapi.client.drive) { try { await gapi.client.load('drive', 'v3'); } catch (e) {} }
-        if (!gapi.client.drive || !gapi.client.sheets) await new Promise(r => setTimeout(r, 250));
+        if (!gapi.client.calendar) { try { await gapi.client.load('calendar', 'v3'); } catch (e) {} }
+        if (!gapi.client.drive || !gapi.client.sheets || !gapi.client.calendar) await new Promise(r => setTimeout(r, 250));
     }
 }
 

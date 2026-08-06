@@ -2,21 +2,6 @@
 
 ## Дыры в логике (баги)
 
-### 15. Сериализация записей в Sheets не работает
-- Файл: `dnd/static/js/db/google.js`
-- `updateRow` вызывал `this.waitSending()` без `await`, а флаг `sending` висел на инстансе `Table`, хотя каждый вызов создаёт `new Table(...)` — параллельные записи не блокировались, терялись/перетирались данные.
-- Исправление: `sending`/`waitSending` удалены, вместо них promise-очередь на уровне модуля `enqueueWrite` — все записи (`addRawValues`, `addRows`, `updateRow`, `deleteRow`, `addColumns`, `clearList`) идут FIFO.
-
-### 16. Кэш колонок по хардкод-спредшиту
-- Файл: `dnd/static/js/db/google.js:106, 362`
-- `sessionStorage.getItem(spreadsheetId + '/' + ...)` использует константу, а не `this.spreadsheetId` → при кастомной таблице подставляются колонки дефолтной.
-- Исправление: использовать `this.spreadsheetId`.
-
-### 17. `Cache.js` сломан и не используется
-- Файл: `src/utils/cache.js`
-- `try { ... } finally { this.value = null }` — `finally` всегда затирает значение, `get()` всегда вернёт null.
-- Решение: удалить (класс нигде не используется).
-
 ### 18. Мёртвый код
 - `src/store/modules/events.js` — копипаста модуля hero (`initHero`, `getGoogleSheetTable` с `real_life_hero`), не используется.
 - `src/App.vue` — скрытая вкладка `v-if="0"`.

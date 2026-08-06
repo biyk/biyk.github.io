@@ -11,9 +11,6 @@
             <el-tab-pane label="Магазин" name="shop">
                 <Shop/>
             </el-tab-pane>
-            <el-tab-pane label="Персонаж" name="player" v-if="0">
-                <div>Тут будут данные игрока</div>
-            </el-tab-pane>
             <el-tab-pane label="Настройки" name="settings">
                 <Settings/>
             </el-tab-pane>

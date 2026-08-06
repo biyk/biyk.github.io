@@ -12,15 +12,6 @@
             </li>
         </ul>
         <p v-else>Загрузка товаров...</p>
-
-        <div class="cart" v-if="cart">
-            <h3>Корзина</h3>
-            <ul>
-                <li v-for="item in cart.items" :key="item.id">
-                    {{ item.name }} x{{ item.quantity }}
-                </li>
-            </ul>
-        </div>
     </div>
 </template>
 
@@ -35,7 +26,6 @@ export default {
     data() {
         return {
             products: [],
-            cart: null,
             api: null,
             buying: false,
         }
@@ -141,9 +131,5 @@ export default {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
-}
-
-.cart {
-    margin-top: 20px;
 }
 </style>

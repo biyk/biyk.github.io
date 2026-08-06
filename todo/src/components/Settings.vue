@@ -32,13 +32,24 @@
                 </li>
             </ul>
         </div>
-        <button @click="this.customScript()">customScript</button>
+        <button @click="runTests">Тесты</button>
+
+        <div v-if="testsRun">
+            <h3 v-if="testResults.length">Результаты тестов:</h3>
+            <ul v-if="testResults.length">
+                <li v-for="(test, i) in testResults" :key="i">
+                    {{ test.passed ? '✅' : '❌' }} {{ test.name }} — {{ test.details }}
+                </li>
+            </ul>
+            <p v-else>Тесты пока не добавлены</p>
+        </div>
     </div>
 </template>
 
 <script>
 import { generateUUIDv4 } from '@/utils/uuid';
-import {GoogleSheetDB, Drive, Table} from "../../../dnd/static/js/db/google.js";
+import { runTests as runTestsSuite } from '@/utils/tests/index.js';
+import {GoogleSheetDB, Drive} from "../../../dnd/static/js/db/google.js";
 
 export default {
     name: 'Settings',
@@ -47,7 +58,9 @@ export default {
             showForm: false,
             code: '',
             value: '',
-            driveConfigId: {}
+            driveConfigId: {},
+            testResults: [],
+            testsRun: false
         }
     },
     computed: {
@@ -57,6 +70,11 @@ export default {
         }
     },
     methods: {
+        async runTests() {
+            this.testsRun = true;
+            this.testResults = await runTestsSuite();
+            console.log('Результаты тестов:', this.testResults);
+        },
         // Сохраняем новую пару код/значение
         saveSetting() {
             const setting = {
@@ -88,45 +106,6 @@ export default {
             let drive = new Drive();
             this.driveConfigId && drive.upload(this.driveConfigId, JSON.stringify(sendSettings))
         },
-        async customScript() {
-            const settings = this.$store.getters["settings/allSettings"];
-            const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
-
-            let itemsTable = new Table({
-                spreadsheetId: spreadsheetSetting.value,
-                list: 'real_life_rewards',
-            });
-
-            let products = await itemsTable.getAll({formated:true, format: 'orm'});
-
-
-            let historyTable = new Table({
-                spreadsheetId: spreadsheetSetting.value,
-                list: 'rewards_history',
-            });
-
-            const rewards_log = await historyTable.getAll({ formated: true, format: 'orm' });
-
-
-            console.log(products)
-
-            for (const product of products) {
-                console.log('проверяем товар ', product.reward_title);
-                let gold_spent = 0;
-                let count_spent = 0;
-                let gold = [];
-                for (const reward of rewards_log) {
-                    if (reward.reward_id == product.reward_id){
-                        gold_spent+=parseInt(reward.gold_spent);
-                        count_spent++;
-                        gold.push(reward.gold_spent)
-                    }
-                }
-                console.log('покупки', gold);
-                console.log('куплено раз', count_spent);
-                console.log('средняя цена', gold_spent/count_spent);
-            }
-        }
 
     },
     async mounted() {

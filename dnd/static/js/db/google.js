@@ -108,7 +108,7 @@ export class Table {
     async addRow(values = {}) {
 
         if (!this.columns[this.list]) {
-            let columnsRaw = sessionStorage.getItem(spreadsheetId + '/' + this.list + '/columns');
+            let columnsRaw = sessionStorage.getItem(this.spreadsheetId + '/' + this.list + '/columns');
             if (columnsRaw) {
                 this.columns[this.list] = JSON.parse(columnsRaw);
             } else {
@@ -370,7 +370,7 @@ export class Table {
 
     async addRows(values = []) {
         if (!this.columns[this.list]) {
-            let columnsRaw = sessionStorage.getItem(spreadsheetId + '/' + this.list + '/columns');
+            let columnsRaw = sessionStorage.getItem(this.spreadsheetId + '/' + this.list + '/columns');
             if (columnsRaw) {
                 this.columns[this.list] = JSON.parse(columnsRaw);
             } else {

@@ -44,6 +44,25 @@
 
 ---
 
+# Node-тесты (vitest)
+
+Запуск из консоли/CI: `npm test` (в `todo/src`). Цель — зафиксировать текущий функционал и ловить деградацию кода без браузера (быстро, до браузерного прогона).
+
+- Раннер: `vitest run`, конфиг `src/vitest.config.js` — include только `utils/tests/unit/**`, браузерный раннер (glob `./*.test.js`) эти файлы не подхватывает.
+- Среда: чистый Node, без jsdom. Браузерные глобалы (`gapi`, `window`, `localStorage`, `sessionStorage`) — стабы в `unit/_globals.js`.
+- Структура: `src/utils/tests/unit/*.test.js` — чистая логика без сети (ORM, formatData, getFreeSlots, taskSort/taskDate).
+- Известные баги (todo.md, «Устойчивость к сбоям») оформлены как `it.todo(...)` со ссылкой на пункт — прогон остаётся зелёным; при починке `todo` превращается в полноценный тест.
+- Планируется дальше: mock-gapi сьюты 04.15–04.18, outbox 08.x — тоже в `unit/`.
+
+| Файл | Покрытие |
+|---|---|
+| `unit/orm.test.js` | `ORM.getRaw`/`getFormated`: round-trip, строка короче колонок, чанки >49000 симв. |
+| `unit/formatData.test.js` | `Table.formatData`: простые значения, JSON-чанки |
+| `unit/freeSlots.test.js` | `getFreeSlots`: слоты, события встык, min-слот 15 мин |
+| `unit/taskSort.test.js` | `taskSort`, `taskDate` |
+
+---
+
 # UI-сценарии — план (функциональное тестирование)
 
 ## Проблема

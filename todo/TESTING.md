@@ -38,6 +38,7 @@
 | 04.08 | `04.08-custom-id-columns.test.js` | Запись с кастомным `spreadsheetId` кладёт данные по своим колонкам |
 | 04.09 | `04.09-calendar-list.test.js` | События на сегодня загружаются |
 | 04.11 | `04.11-calendar-tz.test.js` | Таймзона слотов корректна |
+| 05.13 | `05.13-double-execution.test.js` | Двойное выполнение за день (`makeTaskDone` дважды) → 2 записи в `task_executions`, награда дважды (по одной за каждую паузу, безлимит); приложение переключается на копию и восстанавливается |
 | 06 | `06-cleanup-copy.test.js` | Копия удаляется (404 при удалении несуществующего = OK) |
 
 Примечание: тест 04.10 (дубли по `task_uuid`) удалён — он ничего не диагностировал (дубли в календаре бывают нормально, по решению пользователя проверку убрали).
@@ -46,9 +47,11 @@
 
 Запуск из консоли/CI: `npm test` (в `todo/src`). Цель — зафиксировать текущий функционал и ловить деградацию кода без браузера (быстро, до браузерного прогона).
 
-- Раннер: `vitest run`, конфиг `src/vitest.config.js` — include только `utils/tests/unit/**`, браузерный раннер (glob `./*.test.js`) эти файлы не подхватывает.
-- Среда: чистый Node, без jsdom. Браузерные глобалы (`gapi`, `window`, `localStorage`, `sessionStorage`) — стабы в `unit/_globals.js`.
-- Структура: `src/utils/tests/unit/*.test.js` — чистая логика без сети (ORM, formatData, getFreeSlots, taskSort/taskDate).
+- Раннеры: `vitest run` (unit), `vitest run --config vitest.config.component.js` (компонентные), `vitest run --config vitest.config.smoke.js` (smoke).
+- Unit: include только `utils/tests/unit/**`, браузерный раннер (glob `./*.test.js`) эти файлы не подхватывает.
+- Unit-среда: чистый Node, без jsdom. Браузерные глобалы (`gapi`, `window`, `localStorage`, `sessionStorage`) — стабы в `unit/_globals.js` и `vi.stubGlobal`.
+- Компонентные: среда `happy-dom` + `@vitejs/plugin-vue` + `@vue/test-utils`, include `utils/tests/component/**`.
+- Структура: `src/utils/tests/unit/*.test.js` — чистая логика без сети (ORM, formatData, getFreeSlots, taskSort/taskDate, guard настроек).
 - Известные баги (todo.md, «Устойчивость к сбоям») оформлены как `it.todo(...)` со ссылкой на пункт — прогон остаётся зелёным; при починке `todo` превращается в полноценный тест (см. список в конце документа).
 
 | Файл | Покрытие |
@@ -57,6 +60,24 @@
 | `unit/formatData.test.js` | `Table.formatData`: простые значения, JSON-чанки |
 | `unit/freeSlots.test.js` | `getFreeSlots`: слоты, события встык, min-слот 15 мин |
 | `unit/taskSort.test.js` | `taskSort`, `taskDate` |
+| `unit/toNumber.test.js` | `toNumber`: запятая/точка как разделитель, число, `undefined`/`null`/мусор → NaN без throw |
+| `unit/formatDateTime.test.js` | `formatDateTime`: русская локаль `дд.мм.гггг, чч:мм:сс`, NaN → "Invalid Date" |
+| `unit/emptySettings.test.js` | Регрессия TypeError `.value`: `calcExecutions`/`logExecuteTask` без `spreadsheetId` не падают (нулевой calc-объект / тихий return) |
+
+### Компонентные (vitest, happy-dom)
+
+| Файл | Покрытие |
+|---|---|
+| `component/todo-list-lock.test.js` | Регрессия двойной награды: повторный клик по ✅ игнорируется, кнопки скрыты пока задача выполняется (`busyUuids`), блокировка снимается после завершения и при ошибке; двойная пауза → один `toggleTodo`; повторная отметка уже выполненной задачи (событие `colorId=7`) выполняется снова (безлимит: событие обновляется); пауза запущенной задачи, уже выполненной сегодня (`colorId=7`), завершает её повторно (обновление события, `finish_date`=1, `start_date`=0) |
+
+### Smoke (vitest + Playwright, консольный Chromium)
+
+Запуск: `vitest run --config vitest.config.smoke.js`. Каждый файл поднимает `vite preview` (собранные assets в `todo/`), требует предварительного `npm run build`. Playwright-стабы (`page.addInitScript`) подменяют `window.gapi` и `window.GoogleSheetDB` in-memory-заглушками с тестовыми листами — боевые Google API и таблица не затрагиваются.
+
+| Файл | Покрытие |
+|---|---|
+| `smoke/site-load.test.js` | Сайт загружается без JS-ошибок (pageerror / ReferenceError / `[vuex] do not mutate`), приложение монтируется, русская локализация времени в шапке |
+| `smoke/double-execution.test.js` | Загружает собранное приложение с тестовыми данными (задача, hero, пустая `task_executions`, стабы `gapi`/`GoogleSheetDB`): быстрый двойной клик по ✅ → одно событие `colorId=7`, одна запись `task_executions`, награда один раз (инвариант: `hero_money` = 100 + Σ gained_gold); повторная отметка (кнопка снова видна, т.к. `completed` не хранится в таблице) → ещё одна запись и награда (безлимит), событие обновляется без дубля; запуск задачи (▶️) и пауза (⏸) при уже выполненной сегодня → задача останавливается (`start_date`=0, `task_finish_date`=1, номер выполнения +1), каждая пауза = новая запись и награда, события не дублируются; нет `[vuex] do not mutate` |
 
 ---
 
@@ -69,6 +90,10 @@
 | `src/utils/tests/index.js` | Раннер кнопки: `Object.create(ctx)` (сохраняет Vue-прокси `$store`/`$el` через прототип), `testId`/`setTestId`, `onResult`, `ensureGapi` (sheets+drive+calendar) |
 | `src/utils/tests/*.test.js` | Браузерные кейсы; порядок = алфавит имён (числовые префиксы `01-`, `03-`, `04-`, `04.xx-`, `06-`) |
 | `src/utils/tests/unit/*.test.js` | Node-кейсы (vitest), браузерный раннер их не подхватывает |
+| `src/utils/tests/component/*.test.js` | Компонентные кейсы (vitest + happy-dom), монтируются через `@vue/test-utils` |
+| `src/vitest.config.js` | Unit-конфиг vitest (node) |
+| `src/vitest.config.component.js` | Компонентный конфиг vitest (happy-dom + plugin-vue) |
+| `src/vitest.config.smoke.js` | Smoke-конфиг vitest (node + Playwright, spawn `vite preview`) |
 | `src/components/Settings.vue` | Кнопка «Тесты» + панель результатов (`runTests(this, r => this.testResults.push(r))`, «Выполняется…» пока пусто) |
 
 ## Ключевые классы/функции под тестами
@@ -114,6 +139,8 @@
 - [ ] Старт → таймер идёт, `start_date` установлен
 - [ ] Пауза → фактическое поведение без изменений (сейчас = завершение + сброс таймеров)
 - [ ] Завершение → деньги начислены + событие `colorId=7` в календаре + запись в `task_executions`
+- [ ] Двойной клик по ✅/⏹ (и по ⓧ) → выполнение ровно одно, кнопки скрыты до завершения
+- [ ] Повторная отметка/пауза той же задачи в течение дня → новая запись в `task_executions` и награда (безлимит), событие календаря обновляется без дублей
 - [ ] Завершение с таймером → `minutesSpent` = потраченное время, `task_time` усреднён
 - [ ] Удаление → событие удалено, денег НЕТ, `task_date` сдвинут
 - [ ] Правка описания сохраняется
@@ -171,7 +198,7 @@
 
 ## Что нужно из кода для этих тестов
 
-- `setCalendarTestMode(true)` в `src/utils/calendar.js` — `addEvent/updateEvent/deleteEvent` → no-op с записью вызовов в память, `listEvents` возвращает управляемый список. Без этого `toggleTodo`/`deleteTodo` создают реальные события в календаре пользователя (нужно для всех 05.x).
+- `setCalendarTestMode(true)` в `src/utils/calendar.js` — **реализован**: `addEvent/updateEvent/deleteEvent` → no-op с записью вызовов в память, `listEvents` возвращает управляемый список. Уже используется в `05.13`.
 - `src/utils/tests/helpers.js` (не существует) — `waitFor` (polling с учётом `setTimeout` 300/600 мс и throttle 1000 мс), DOM-клики, swap/restore настроек (`NEW_SETTINGS` + `todos/initTodos` + `hero/initHero` + `listEvents`), читалки листов копии, `withGapiStub(apiPath, stubFn, asyncFn)` — подмена и восстановление gapi-метода.
 - Правки из todo.md «Устойчивость к сбоям» (04.12–04.19, 07) и «Оффлайн-очередь действий» (08.x) — без них соответствующие тесты остаются красными (в этом их смысл).
 - `Outbox` в `dnd/static/js/db/` с чистыми `enqueue`/`flush`/`isRetryableError` (08.x) и тест-хелпер `clearOutbox()` — очистка очереди в `finally`.

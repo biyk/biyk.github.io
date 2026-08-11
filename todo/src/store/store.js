@@ -5,6 +5,7 @@ import * as events from '@/store/modules/events.js'  // новый модуль 
 import * as settings from '@/store/modules/settings.js'  // новый модуль для настроек
 
 export default createStore({
+    strict: true,
     modules: {
         todos: { ...todos, namespaced: true },
         hero: { ...hero, namespaced: true },

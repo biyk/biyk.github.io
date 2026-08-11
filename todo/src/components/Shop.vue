@@ -53,12 +53,12 @@ export default {
             this.products = await itemsTable.getAll({formated:true, format: 'orm'});
         },
         calc(){
-            let calc = this.$store.getters["settings/allCalc"];
+            const calc = this.$store.getters["settings/allCalc"] || {};
 
-            if (calc && calc.h24_time){
-                return calc.month / calc.h24_time
+            if (calc.h24_time){
+                return (Number(calc.month) || 0) / (Number(calc.h24_time) || 1)
             }
-            return calc.week;
+            return Number(calc.week) || 0;
         },
         doAuth() {
             let api = window.GoogleSheetDB || new GoogleSheetDB();

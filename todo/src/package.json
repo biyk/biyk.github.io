@@ -9,8 +9,9 @@
     "build": "npm run clean && vite build",
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
-    "test": "npm run test:unit && npm run test:smoke",
+    "test": "npm run test:unit && npm run test:component && npm run test:smoke",
     "test:unit": "vitest run",
+    "test:component": "vitest run --config vitest.config.component.js",
     "test:watch": "vitest",
     "test:smoke": "vitest run --config vitest.config.smoke.js"
   },
@@ -24,7 +25,9 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "@vue/test-utils": "^2.4.11",
     "gh-pages": "^5.0.0",
+    "happy-dom": "^13.10.1",
     "playwright": "^1.62.1",
     "rimraf": "^6.0.1",
     "unplugin-vue-components": "^0.26.0",

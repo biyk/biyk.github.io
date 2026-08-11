@@ -2,8 +2,9 @@ import {addEvent, getFreeSlots, listEvents, makeEvent} from "@/utils/calendar.js
 import {GoogleSheetDB, Table} from "../../../dnd/static/js/db/google.js";
 import {generateUUIDv4} from "@/utils/uuid.js";
 import {formatDateTime} from "@/utils/format.js";
+import {toNumber} from "@/utils/numbers.js";
 
-async function logExecuteTask(updatedTask, store) {
+export async function logExecuteTask(updatedTask, store) {
     const api = window.GoogleSheetDB || new GoogleSheetDB();
     await api.waitGoogle();
 
@@ -137,7 +138,7 @@ function getAverageCalc(list) {
         const dayKey = getDateKey(date);
         daysWorkSheet[dayKey] = (daysWorkSheet[dayKey] || 0) + parseInt(item.execution_time);
         try {
-            const gold = parseFloat(item.gained_gold.toString().replace(',', '.'));
+            const gold = toNumber(item.gained_gold);
             day_points[dayKey] = (day_points[dayKey] || 0) + (isNaN(gold) ? 0 : gold);
         } catch (err) {
             console.error('Ошибка разбора gained_gold — строка пропущена из статистики:', err, { item });
@@ -203,7 +204,7 @@ export async function makeTaskDone(task, store, options = {}) {
     } = task;
     minutesSpent = minutesSpent || task_time;
     let {deleted} = options;
-    repeat_index = parseFloat(repeat_index.toString().replace(',', '.'));
+    repeat_index = toNumber(repeat_index);
 
     const now = new Date();
     let task_date4calc = last_execution ? parseInt(last_execution) : parseInt(task_date);
@@ -298,6 +299,7 @@ export async function makeTaskDone(task, store, options = {}) {
 
 
     if (deleted || repeat_mode === '5') return;
+
     let hero = {...store.getters["hero/getHero"]}; // создаем копию объекта
 
     hero.hero_money = (parseFloat(hero.hero_money) || 0) + parseFloat(money_reward);

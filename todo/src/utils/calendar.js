@@ -1,6 +1,32 @@
 import {GoogleSheetDB} from "../../../dnd/static/js/db/google.js";
 
+// Тест-режим: addEvent/updateEvent/deleteEvent — no-op с записью в память,
+// listEvents возвращает управляемый список. Нужен для веб-тестов сценариев (05.x),
+// чтобы не создавать реальные события в календаре пользователя.
+let _testMode = false;
+let _testEvents = [];
+
+export function setCalendarTestMode(enabled = true) {
+    _testMode = enabled;
+    if (enabled) _testEvents = [];
+}
+
+export function getTestEvents() {
+    return [..._testEvents];
+}
+
+export function setTestEvents(events) {
+    _testEvents = Array.isArray(events) ? [...events] : [];
+}
+
 export async function listEvents(store = false) {
+    if (_testMode) {
+        if (store) {
+            store.dispatch("events/setEvents", [..._testEvents]);
+        }
+        return [..._testEvents];
+    }
+
     const api = window.GoogleSheetDB || new GoogleSheetDB();
     await api.waitGoogle();
 
@@ -32,6 +58,11 @@ export async function listEvents(store = false) {
 }
 
 export async function addEvent(event) {
+    if (_testMode) {
+        _testEvents.push({...event});
+        console.log('Событие добавлено (тест):', event.summary);
+        return;
+    }
     await gapi.client.calendar.events.insert({
         calendarId: 'primary',
         resource: event,
@@ -56,6 +87,12 @@ export function makeEvent(task, slot,endDate) {
 }
 
 export async function updateEvent(event) {
+    if (_testMode) {
+        const idx = _testEvents.findIndex(e => e.id === event.id);
+        if (idx !== -1) _testEvents[idx] = {...event};
+        console.log('Событие обновлено (тест):', event.summary);
+        return;
+    }
     await gapi.client.calendar.events.update({
         calendarId: 'primary',
         eventId: event.id,
@@ -66,6 +103,12 @@ export async function updateEvent(event) {
 }
 
 export async function deleteEvent(event) {
+    if (_testMode) {
+        const idx = _testEvents.findIndex(e => e.id === event.id);
+        if (idx !== -1) _testEvents.splice(idx, 1);
+        console.log('Событие удалено (тест):', event.summary);
+        return;
+    }
     try {
         await gapi.client.calendar.events.delete({
             calendarId: 'primary',

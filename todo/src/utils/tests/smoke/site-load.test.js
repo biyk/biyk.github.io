@@ -63,7 +63,7 @@ test('сайт загружается без JS-ошибок (ReferenceError/thr
 
     expect(pageErrors, `pageerror:\n${pageErrors.join('\n')}`).toEqual([]);
     // Отфильтровываем ошибки загрузки ресурсов (gapi/скрипты Google могут не доехать) — ловим только JS-ошибки
-    const jsErrors = consoleErrors.filter((e) => /(?:ReferenceError|TypeError|SyntaxError|is not defined|before initialization)/.test(e));
+    const jsErrors = consoleErrors.filter((e) => /(?:ReferenceError|TypeError|SyntaxError|is not defined|before initialization|\[vuex\] do not mutate vuex store state)/i.test(e));
     expect(jsErrors, `console errors:\n${jsErrors.join('\n')}`).toEqual([]);
     expect(appChildren).toBeGreaterThan(0);
     // Время в шапке — русская локализация (дд.мм.гггг, чч:мм:сс), а не локаль браузера (en)

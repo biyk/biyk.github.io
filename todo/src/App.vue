@@ -29,11 +29,12 @@ import './assets/styles/App.css'
 import { startTaskAgent, stopTaskAgent } from "@/agents/taskAgent.js"
 import Shop from "@/components/Shop.vue";
 import {calcExecutions} from "@/utils/tasks.js";  // ← 🔥
+import { formatDateTime } from "@/utils/format.js"
 
 export default {
     data() {
         return {
-            currentTime: new Date().toLocaleString(),
+            currentTime: formatDateTime(),
             log:{}
         };
     },
@@ -73,7 +74,7 @@ export default {
     async mounted() {
         this.$store.dispatch("hero/initHero");
         this.timer = setInterval(() => {
-            this.currentTime = new Date().toLocaleString();
+            this.currentTime = formatDateTime();
         }, 1000);
         this.log = await calcExecutions(this.$store);
     }

@@ -19,11 +19,9 @@ describe('taskSort', () => {
 });
 
 describe('taskDate', () => {
-    it('форматирует timestamp в локальную строку', () => {
+    it('форматирует timestamp в русской локали (дд.мм.гггг, чч:мм:сс)', () => {
         const ts = new Date(2026, 7, 11, 15, 30, 0).getTime();
-        const s = taskDate(ts);
-        expect(s).toMatch(/2026/);
-        expect(s).toContain('15:30');
+        expect(taskDate(ts)).toBe('11.08.2026, 15:30:00');
     });
 
     it('NaN даёт "Invalid Date" без throw', () => {

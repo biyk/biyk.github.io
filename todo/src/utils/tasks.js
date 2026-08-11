@@ -1,6 +1,7 @@
 import {addEvent, getFreeSlots, listEvents, makeEvent} from "@/utils/calendar.js";
 import {GoogleSheetDB, Table} from "../../../dnd/static/js/db/google.js";
 import {generateUUIDv4} from "@/utils/uuid.js";
+import {formatDateTime} from "@/utils/format.js";
 
 async function logExecuteTask(updatedTask, store) {
     const api = window.GoogleSheetDB || new GoogleSheetDB();
@@ -411,5 +412,5 @@ export async function setTaskToCalendar() {
 
 export function taskDate(date){
     date = parseInt(date)
-    return (new Date(date)).toLocaleString()
+    return formatDateTime(date)
 }

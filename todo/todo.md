@@ -2,10 +2,6 @@
 
 ## Улучшения
 
-### Перф / бандл
-- `src/vite.config.js:21` — `minify: false`! Включить minify + vendor-чанк (element-plus/vue отдельно) + автоимпорт Element Plus (`unplugin-vue-components`) вместо полного `import ElementPlus` + `dist/index.css`. Сейчас 2.2 МБ JS + 337 КБ CSS.
-- `getSortedTodos()` вызывается 3 раза за рендер (дважды в шаблоне + в `getTotalTime`) — сделать `computed`.
-
 ### Надёжность
 - Идемпотентность выполнения: не давать деньги повторно за ту же `(task_uuid + день)`.
 - Гварды: `spreadsheetId` не найден, `averageCalc` ещё не посчитан, `repeat_index`/`gained_gold` отсутствуют.

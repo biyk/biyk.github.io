@@ -9,7 +9,7 @@
     <button v-if="selectedFilter==='calendar'" @click="setTaskToCalendar">Заполнить календарь</button>
     <button  v-if="selectedFilter==='0'" @click="setTaskCompleted">Отметить завершенные</button>
     <ul class="tasks">
-        <li>{{getSortedTodos().length}} ({{getTotalTime()}} ч.) <span style="float: right"
+        <li>{{getSortedTodos.length}} ({{getTotalTime}} ч.) <span style="float: right"
         ><span title="Времени сегодня">{{log.today}}</span> /
             <span title="В среднем за неделю">{{log.week}}</span> /
             <span title="В среднем за месяц">{{log.month}}</span>
@@ -17,7 +17,7 @@
             <span title="Проверка дисциплины">{{calc.prevAvg?.toFixed(2)}}</span>)
         </span></li>
         <li
-            v-for="todo in getSortedTodos()"
+            v-for="todo in getSortedTodos"
             :key="todo.id"
             :class="['task', todo.task_color, { completed: todo.completed }]"
         >
@@ -89,6 +89,76 @@ export default {
         },
         calc(){
             return  this.$store.getters["settings/allCalc"];
+        },
+        getSortedTodos(){
+            switch (this.selectedFilter) {
+                case 'calendar':
+                    // Получаем список отфильтрованных задач
+                    const filteredTodos = this.getFilteredTodos();
+                    // Создаём пустой массив для результата
+                    let sortedTodos = [];
+
+                    sortedTodos = sortedTodos.concat(
+                        this.todos.filter(todo => {
+                            // Проверка, есть ли уже такой task_uuid в sortedTodos
+                            const alreadyIncluded = sortedTodos.some(e => e.task_uuid === todo.task_uuid);
+
+                            // Добавляем только если его ещё нет и поля корректны
+                            return !alreadyIncluded &&
+                                ((parseInt(todo.task_time) &&
+                                    parseInt(todo.task_finish_date)) || parseInt(todo.start_date));
+                        })
+                    );
+
+                    // Создаём карту задач для быстрого доступа по UUID
+                    const todoMap = new Map();
+                    filteredTodos.forEach(todo => {
+                        todoMap.set(todo.task_uuid, todo);
+                    });
+                    const existMap = new Map();
+                    sortedTodos.forEach(todo => {
+                        existMap.set(todo.task_uuid, todo);
+                    });
+
+                    // Проходим по событиям и добавляем соответствующие задачи в результат
+                    this.events.forEach(event => {
+                        const uuids = event.description?.split('\n');
+                        let task_done_color = '7';
+                        if (event.colorId===task_done_color) return;
+                        uuids?.forEach(uuid=>{
+                            if (uuid && todoMap.has(uuid) && !existMap.has(uuid)) {
+                                sortedTodos.push(todoMap.get(uuid));
+                            }
+                        });
+                    });
+                    // Возвращаем отсортированные задачи
+                    return sortedTodos;
+                case 'all':
+                    return this.getFilteredTodos().sort((a, b) => {
+                        let sort = function (todo) {
+                            let sort = parseFloat(todo.repeat_index.toString().replace(',', '.'));
+                            const match = todo.task_description.toString().match(/(\d+)d/);
+                            if (match) {
+                                sort = match[1]
+                            }
+                            return sort
+                        }
+                        return this.repeat(b)/sort(b) - (this.repeat(a)/sort(a))
+                    });
+                case 'today':
+                case 'tomorrow':
+                default:
+                    return this.getFilteredTodos().sort((a, b) => {
+                        return taskSort(a) - taskSort(b)
+                    });
+            }
+        },
+        getTotalTime() {
+            let summ = 0;
+            this.getSortedTodos.forEach((task) => {
+                summ += Number(task.task_time) || 0;
+            });
+            return (summ / 60).toFixed(2);
         }
     },
     props: {
@@ -230,76 +300,6 @@ export default {
                 }
             }
         }, 1000),
-        getSortedTodos(){
-            switch (this.selectedFilter) {
-                case 'calendar':
-                    // Получаем список отфильтрованных задач
-                    const filteredTodos = this.getFilteredTodos();
-                    // Создаём пустой массив для результата
-                    let sortedTodos = [];
-
-                    sortedTodos = sortedTodos.concat(
-                        this.todos.filter(todo => {
-                            // Проверка, есть ли уже такой task_uuid в sortedTodos
-                            const alreadyIncluded = sortedTodos.some(e => e.task_uuid === todo.task_uuid);
-
-                            // Добавляем только если его ещё нет и поля корректны
-                            return !alreadyIncluded &&
-                                ((parseInt(todo.task_time) &&
-                                    parseInt(todo.task_finish_date)) || parseInt(todo.start_date));
-                        })
-                    );
-
-                    // Создаём карту задач для быстрого доступа по UUID
-                    const todoMap = new Map();
-                    filteredTodos.forEach(todo => {
-                        todoMap.set(todo.task_uuid, todo);
-                    });
-                    const existMap = new Map();
-                    sortedTodos.forEach(todo => {
-                        existMap.set(todo.task_uuid, todo);
-                    });
-
-                    // Проходим по событиям и добавляем соответствующие задачи в результат
-                    this.events.forEach(event => {
-                        const uuids = event.description?.split('\n');
-                        let task_done_color = '7';
-                        if (event.colorId===task_done_color) return;
-                        uuids?.forEach(uuid=>{
-                            if (uuid && todoMap.has(uuid) && !existMap.has(uuid)) {
-                                sortedTodos.push(todoMap.get(uuid));
-                            }
-                        });
-                    });
-                    // Возвращаем отсортированные задачи
-                    return sortedTodos;
-                case 'all':
-                    return this.getFilteredTodos().sort((a, b) => {
-                        let sort = function (todo) {
-                            let sort = parseFloat(todo.repeat_index.toString().replace(',', '.'));
-                            const match = todo.task_description.toString().match(/(\d+)d/);
-                            if (match) {
-                                sort = match[1]
-                            }
-                            return sort
-                        }
-                        return this.repeat(b)/sort(b) - (this.repeat(a)/sort(a))
-                    });
-                case 'today':
-                case 'tomorrow':
-                default:
-                    return this.getFilteredTodos().sort((a, b) => {
-                        return taskSort(a) - taskSort(b)
-                    });
-            }
-        },
-        getTotalTime() {
-            let summ = 0;
-            this.getSortedTodos().forEach((task) => {
-                summ += Number(task.task_time) || 0;
-            });
-            return (summ / 60).toFixed(2);
-        },
         togglePopover(uuid) {
             this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
         },

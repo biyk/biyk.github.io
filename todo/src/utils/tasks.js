@@ -8,6 +8,10 @@ async function logExecuteTask(updatedTask, store) {
 
     const settings = store.getters["settings/allSettings"];
     const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+    if (!spreadsheetSetting) {
+        console.warn("spreadsheetId not found in settings");
+        return;
+    }
 
     let table = new Table({
         spreadsheetId: spreadsheetSetting.value,
@@ -32,6 +36,10 @@ export async function calcExecutions(store){
 
     const settings = store.getters["settings/allSettings"];
     const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+    if (!spreadsheetSetting) {
+        console.warn("spreadsheetId not found in settings");
+        return {today: 0, week: 0, month: 0, averageCalc: 0, prevAvg: null, today_points: 0, h24_time: 0};
+    }
 
     let table = new Table({
         spreadsheetId: spreadsheetSetting.value,

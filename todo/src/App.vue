@@ -25,7 +25,6 @@ import TodoNew from "@/components/TodoNew.vue"
 import TodoList from "@/components/TodoList.vue"
 import Settings from "@/components/Settings.vue"
 import { useStore } from 'vuex'
-import 'element-plus/dist/index.css'
 import './assets/styles/App.css'
 import { startTaskAgent, stopTaskAgent } from "@/agents/taskAgent.js"
 import Shop from "@/components/Shop.vue";

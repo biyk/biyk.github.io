@@ -60,14 +60,14 @@ export async function listEvents(store = false) {
 export async function addEvent(event) {
     if (_testMode) {
         _testEvents.push({...event});
-        console.log('Событие добавлено (тест):', event.summary);
+        console.log('Событие добавлено (тест):', event.summary, { colorId: event.colorId, start: event.start?.dateTime, end: event.end?.dateTime });
         return;
     }
     await gapi.client.calendar.events.insert({
         calendarId: 'primary',
         resource: event,
     });
-    console.log('Событие добавлено:', event.summary);
+    console.log('Событие добавлено:', event.summary, { colorId: event.colorId, start: event.start?.dateTime, end: event.end?.dateTime });
 
 }
 
@@ -90,7 +90,7 @@ export async function updateEvent(event) {
     if (_testMode) {
         const idx = _testEvents.findIndex(e => e.id === event.id);
         if (idx !== -1) _testEvents[idx] = {...event};
-        console.log('Событие обновлено (тест):', event.summary);
+        console.log('Событие обновлено (тест):', event.summary, { eventId: event.id, colorId: event.colorId, start: event.start?.dateTime, end: event.end?.dateTime });
         return;
     }
     await gapi.client.calendar.events.update({
@@ -98,7 +98,7 @@ export async function updateEvent(event) {
         eventId: event.id,
         resource:event
     });
-    console.log('Событие обновлено:', event.summary);
+    console.log('Событие обновлено:', event.summary, { eventId: event.id, colorId: event.colorId, start: event.start?.dateTime, end: event.end?.dateTime });
 
 }
 

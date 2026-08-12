@@ -19,7 +19,7 @@
         <li
             v-for="todo in getSortedTodos"
             :key="todo.id"
-            :class="['task', todo.task_color, { completed: todo.completed }]"
+            :class="['task', todo.task_color, { completed: todo.completed || isCompleting(todo.task_uuid) }]"
         >
             <span
                 class="task-description"
@@ -79,7 +79,8 @@ export default {
             currentTime: 0,
             log:{},
             selectedFilter: 'calendar',
-            busyUuids: new Set()
+            busyUuids: new Set(),
+            completingUuids: new Set()
         };
     },
     computed: {
@@ -213,8 +214,17 @@ export default {
         async toggleTodo(todo) {
             this.doAuth();
             let task_uuid = todo.task_uuid
-            if (this.busyUuids.has(task_uuid)) return false;
+            if (this.busyUuids.has(task_uuid)) {
+                console.log('[toggleTodo] ПРОПУЩЕНО — busy-лок:', task_uuid, todo.task_title);
+                return false;
+            }
+            console.log('[toggleTodo] ВХОД:', {
+                task_uuid, task_title: todo.task_title, start_date: todo.start_date,
+                task_finish_date: todo.task_finish_date, completed: todo.completed,
+                number_of_executions: todo.number_of_executions, task_time: todo.task_time, minutesSpent: todo.minutesSpent
+            });
             this.busyUuids.add(task_uuid);
+            this.completingUuids.add(task_uuid);
             try {
                 const task = { ...todo };
                 let start_date = parseInt(task.start_date)
@@ -223,12 +233,14 @@ export default {
                     const now = Date.now();
                     const durationMs = now - start_date;
                     const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
-
+                    console.log('[toggleTodo] старт был:', start_date, '→ durationMs:', durationMs, '→ minutesSpent:', minutesSpent);
                     const previous = Number(task.task_time) || 0;
                     const newAverage = Math.ceil((previous + minutesSpent) / 2);
                     task.task_time = newAverage;
                     task.minutesSpent = minutesSpent;
                     task.start_date = 0;
+                } else {
+                    console.log('[toggleTodo] start_date = 0 (задача НЕ была запущена): minutesSpent не считаем, timeSpent = task_time =', todo.task_time);
                 }
                 const endDate = new Date();
                 const timeSpent = task.minutesSpent ?? task.task_time;
@@ -255,10 +267,12 @@ export default {
                 // если событие уже есть (задача в работе или уже выполнена) — обновляем его,
                 // иначе добавляем новое; повторная отметка/пауза всегда завершают задачу с наградой
                 if (exist.length) {
+                    console.log('[toggleTodo] событие уже есть → updateEvent:', { id: exist[0].id, colorId: exist[0].colorId, summary: exist[0].summary });
                     event.summary = exist[0].summary;
                     event.id = exist[0].id
                     await updateEvent(event)
                 } else {
+                    console.log('[toggleTodo] события нет → addEvent (новое)');
                     await addEvent(event);
                     //т.к. задача была не на сегодня
                     task.break_multiplier = parseFloat(task.break_multiplier) + 1;
@@ -267,6 +281,7 @@ export default {
                 }
                 setTimeout(async () => {
                     try {
+                        console.log('[toggleTodo] setTimeout(300) → makeTaskDone:', { task_uuid, minutesSpent: task.minutesSpent, start_date: task.start_date, task_time: task.task_time });
                         await makeTaskDone(task, this.$store);
                         this.log = await calcExecutions(this.$store);
                     } catch (err) {
@@ -279,12 +294,16 @@ export default {
                             console.error('Ошибка обновления данных после выполнения:', err);
                         }
                         this.busyUuids.delete(task_uuid);
+                        this.completingUuids.delete(task_uuid);
+                        const after = this.$store.getters['todos/getTodos']?.find(t => t.task_uuid === task_uuid);
+                        console.log('[toggleTodo] ГОТОВО, busy снят:', task_uuid, '| after initTodos:', after ? { start_date: after.start_date, task_finish_date: after.task_finish_date, completed: after.completed, number_of_executions: after.number_of_executions } : 'не найден в списке');
                     }
                 }, 300)
                 return true;
             } catch (err) {
                 console.error('Ошибка выполнения задачи:', err);
                 this.busyUuids.delete(task_uuid);
+                this.completingUuids.delete(task_uuid);
                 return false;
             }
         },
@@ -321,6 +340,9 @@ export default {
         isBusy(task_uuid) {
             return this.busyUuids.has(task_uuid);
         },
+        isCompleting(task_uuid) {
+            return this.completingUuids.has(task_uuid);
+        },
         togglePopover(uuid) {
             this.visiblePopover = this.visiblePopover === uuid ? null : uuid;
         },
@@ -336,7 +358,11 @@ export default {
         },
         async pauseTask(todo) {
             this.doAuth();
-            if (this.busyUuids.has(todo.task_uuid)) return;
+            if (this.busyUuids.has(todo.task_uuid)) {
+                console.log('[pauseTask] ПРОПУЩЕНО — busy-лок:', todo.task_uuid, todo.task_title);
+                return;
+            }
+            console.log('[pauseTask] ВХОД (стоп запущенной):', { task_uuid: todo.task_uuid, task_title: todo.task_title, start_date: todo.start_date });
             const started = await this.toggleTodo(todo);
             if (!started) return;
             setTimeout(()=>{
@@ -346,6 +372,7 @@ export default {
                 next.task_finish_date = 1;
                 next.start_date = 0;
                 this.$store.dispatch("todos/updateTodo", next);
+                console.log('[pauseTask] setTimeout(600): task_finish_date=1, start_date=0 → updateTodo:', todo.task_uuid);
             }, 600)
         },
         doAuth() {

@@ -206,6 +206,21 @@ export async function makeTaskDone(task, store, options = {}) {
     let {deleted} = options;
     repeat_index = toNumber(repeat_index);
 
+    const _caller = new Error().stack?.split('\n').slice(2, 4).map(s => s.trim()).join(' → ');
+    console.log('[makeTaskDone] ВХОД:', {
+        task_uuid: task.task_uuid,
+        task_title: task.task_title,
+        режим: options.deleted ? 'delete (без награды)' : (task.repeat_mode === '5' ? 'repeat_mode=5 (без награды)' : 'выполнение (награда)'),
+        start_date_вход: task.start_date,
+        task_finish_date_вход: task.task_finish_date,
+        number_of_executions_было: number_of_executions,
+        minutesSpent_вход: minutesSpent,
+        task_time,
+        completed_вход: task.completed,
+        money_reward_вход: task.money_reward,
+    });
+    console.log('[makeTaskDone] вызван из:', _caller);
+
     const now = new Date();
     let task_date4calc = last_execution ? parseInt(last_execution) : parseInt(task_date);
     //разница между запланированной датой и реальной - настоящий индекс выполнения
@@ -295,8 +310,11 @@ export async function makeTaskDone(task, store, options = {}) {
 
     console.log('updatedTask', updatedTask)
 
-    store.dispatch("todos/updateTodo", updatedTask);
-
+    await store.dispatch("todos/updateTodo", updatedTask);
+    console.log('[makeTaskDone] updateTodo await-завершён (запись в таблицу долетела до initTodos):', {
+        task_uuid: task.task_uuid, number_of_executions, last_execution, start_date: updatedTask.start_date,
+        task_finish_date: updatedTask.task_finish_date, completed: updatedTask.completed, money_reward
+    });
 
     if (deleted || repeat_mode === '5') return;
 
@@ -305,8 +323,10 @@ export async function makeTaskDone(task, store, options = {}) {
     hero.hero_money = (parseFloat(hero.hero_money) || 0) + parseFloat(money_reward);
 
     store.dispatch("hero/updateHero", hero);
+    console.log('[makeTaskDone] награда начислена в store:', money_reward, '→ hero_money:', hero.hero_money);
 
     await logExecuteTask(updatedTask, store);
+    console.log('[makeTaskDone] запись в task_executions добавлена:', task.task_uuid);
 }
 
 export function taskSort(task){

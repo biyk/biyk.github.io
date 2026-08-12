@@ -89,6 +89,8 @@ export const actions = {
         const list = await table.getAll();
         const orm = new ORM(table.columns["real_life_tasks"]);
         const todos = list.map(e => orm.getFormated(e));
+        console.log('[initTodos] загружено задач:', todos.length, '| колонки таблицы:', table.columns["real_life_tasks"]?.join(', '));
+        console.log('[initTodos] в таблице нет колонки completed → все задачи после перезагрузки completed=false/undefined (источник «задача снова активна»)');
         commit("SET_TODOS", todos);
     },
 

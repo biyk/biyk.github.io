@@ -1,0 +1,87 @@
+# AGENTS.md — ImDora
+
+Vanilla JS SPA (SVG apartment plan editor + item inventory). Russian UI. No build tools.
+
+## Quickstart
+- Open `index.html` in any browser directly (no server needed)
+- Data persists in `localStorage` under key `apartmentPlan`
+- Tests: `python tests/run_tests.py` (all), `--unit`, `--integration`, `--headless`
+
+## Architecture
+
+```
+index.html  ← loads 12 scripts (dependency order)
+├── js/core/     EventBus, DataStore (singleton), utils
+├── js/ui/       Renderer (SVG), Ruler, GuideManager, ModalManager, PanelManager
+├── js/interaction/  DragManager, SearchManager
+└── js/io/       ExportImport
+```
+
+- **Global namespace**: all modules attach to `window.App` via IIFE closures. Never use `const App` or `let App` — always `window.App`.
+- **Communication**: `App.EventBus` (observer pattern) — events: `data:changed`, `drag:start|moving|end`, `search:*`, `guide:*`, `room:*`, `object:*`, `container:*`, `item:*`
+- **Init order** (`js/app.js:App.init`): Ruler → Renderer → GuideManager → DragManager → Search → Modal → Panel. This sets SVG layer z-order (ruler bottom, plan middle, guides top).
+
+## Data Schema (`DataStore`, localStorage key `apartmentPlan`)
+```js
+{ scale: 100, // px per meter
+  rooms: [{ id, name, x, y, w, h, color? }],
+  objects: [{ id, name, roomId: null|'r_X', parentId: null|'o_X', x, y, w, h, color,
+              items: string[] }],
+  guides: [{ id, orientation: 'horizontal'|'vertical', position }]
+}
+```
+- Objects can be **nested**: `parentId: null` = root (drawn on SVG, has geometry), `parentId: 'o_X'` = nested (logical storage only, shown in panel, inherits `roomId` from parent).
+- Items live **directly** on objects (`obj.items`). There are **no containers** — legacy `containers` are migrated into nested objects on import/`_validate`.
+- `Renderer` draws only `getRootObjects()` (`parentId === null`). Nested objects are never rendered on SVG.
+- `addObject()` with `parentId` inherits `roomId` from parent; root objects auto-detect room by spatial containment at creation if `roomId` not provided.
+- `moveObjectInto(objectId, newParentId)` nests/detaches objects. Guards: rejects self-nesting and nesting into own descendant (cycle protection). `null` detaches to root and recomputes `roomId` by center coordinates.
+- `deleteObject()` only works on **empty** objects (no children, no items) — cascade delete is not supported.
+- `moveObject()` skips room recomputation for nested objects (they have no geometry).
+- Objects are **independent** from rooms — `moveRoom()` does NOT shift child objects; `deleteRoom()` does NOT delete objects.
+- Search highlights the **root ancestor** of a matched nested object (`getRootAncestor`).
+
+## SVG & Coordinates
+- `viewBox="0 0 5000 3500"`, SVG `min-width: 5000px`, `min-height: 3500px`. Scale: **100px = 1m** (up to 50m).
+- Plan content wrapped in `<g class="plan-wrap">` with CSS `transform="scale(z)"` for zoom. **Never change viewBox for zoom.**
+- `transform-origin: 0 0` on `.plan-wrap` is required for correct zoom behavior.
+- All coordinates `{ x, y, w, h }` in pixels (data space).
+- `vector-effect="non-scaling-stroke"` on ruler, room/object rects, guide lines (borders don't scale with zoom).
+- Snap threshold: **8px** (`DragManager.SNAP_THRESHOLD`).
+- Room drag snaps to guides AND ruler grid (every `scale` px, default 100px = 1m).
+- Object drag snaps to guides only.
+
+## Zoom
+- Range: 0.25 – 3.0, step 0.25 (`App.Config`).
+- Applied via `transform="scale(z)"` on `.plan-wrap` group, NOT viewBox change.
+- Resize handles rendered **outside** `.plan-wrap` (in `.resize-layer`), coordinates multiplied by `z` so they appear at correct screen position.
+- `DragManager._onMouseMove` divides dx/dy by `z` for resize delta; GuideManager divides mouse coords by `z`.
+- Snap positions always in data space (no zoom division needed).
+
+## Drag & Drop / Resize
+- SVG elements get `data-draggable="{id}" data-dtype="object"|"room"`.
+- Resize handles: `data-resize="nw|n|ne|e|se|s|sw|w"`, `data-resize-target="{id}"`, `data-resize-type="object"|"room"`.
+- Click (no drag) opens info panel via emulated click in `_onMouseUp` (checks `_state.moved` flag).
+- **Never reference `ResizeManager`** — deleted, resize handled inside `DragManager`.
+
+## Adding New Features
+- Add module under `js/`, register `<script>` in `index.html` before `app.js`.
+- Init in `App.init()` — order determines SVG layer z-order.
+- All IDs via `App.utils.generateId(prefix)` (timestamp + random base36).
+- CRUD in `DataStore` auto-persist to localStorage + emit `data:changed`.
+- Color palette: 10 colors in `App.utils.COLORS`, pick via `App.utils.nextColor()`.
+
+## Testing
+- `tests/browser.py` — CDP browser launcher (Chrome DevTools Protocol via WebSocket). Class: `BrowserSession`.
+- `tests/integration.py` — integration tests (render, zoom, drag, resize, guides, ruler, snap).
+- `tests/run_tests.py` — runner entry point. Uses `BrowserSession` context manager.
+- `tests.html` — unit tests (EventBus, utils, DataStore, ExportImport, guides).
+- Headless window: **1920×1080** via `Emulation.setDeviceMetricsOverride` so rooms at x=650+ are visible.
+- Page scroll: `plan-container.scrollTo(600, 0)` in `inject_data()`.
+
+## Gotchas
+- **Guide creation**: toolbar buttons (`guide-h`/`guide-v`) set pending state + cursor change. User must **click on canvas** to place the guide. `Esc` cancels pending. Never create guides immediately on button press.
+- **SVG layer z-order**: `plan-wrap` wraps `.ruler-layer`, `.plan-content`, `.guide-layer`. `.resize-layer` is appended to SVG after `plan-wrap`. New SVG layers must be appended in correct z-order.
+- **GuideManager `_render`** listens to `guide:added`, `guide:removed`, `guide:updated`, `data:changed` — all cause re-render.
+- **DataStore `_validate`** runs on init: ensures `rooms`, `objects`, `guides` are arrays; `scale` is positive number.
+- **`utils.escapeHtml`** implemented in `utils.js` — use it for all user content in SVG/text.
+- Do NOT add files outside `F:\ImDora`.

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>ImDora — Tests</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+    h1 { color: #e94560; font-size: 18px; margin-bottom: 16px; }
+    h2 { color: #4fc3f7; font-size: 14px; margin: 16px 0 8px; }
+    .pass { color: #66bb6a; }
+    .fail { color: #ef5350; }
+    .suite { margin-bottom: 4px; }
+    .summary { margin-top: 20px; padding: 12px; background: #0d1b2a; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>🧪 ImDora — Test Suite</h1>
+  <div id="output"></div>
+  <div id="panel-default" style="display:none;"></div>
+  <div id="panel-content" style="display:none;"></div>
+
+  <script src="js/core/EventBus.js"></script>
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/DataStore.js"></script>
+  <script src="js/ui/Ruler.js"></script>
+  <script src="js/ui/GuideManager.js"></script>
+  <script src="js/interaction/SearchManager.js"></script>
+  <script src="js/io/ExportImport.js"></script>
+  <script src="js/interaction/DragManager.js"></script>
+  <script src="js/ui/ModalManager.js"></script>
+  <script src="js/ui/PanelManager.js"></script>
+  <script src="js/ui/Renderer.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    const out = document.getElementById('output');
+    let total = 0, passed = 0;
+
+    function assert(cond, msg) {
+      total++;
+      const ok = !!cond;
+      if (ok) passed++;
+      const div = document.createElement('div');
+      div.className = ok ? 'pass' : 'fail';
+      div.textContent = (ok ? '✓' : '✗') + ' ' + msg;
+      out.appendChild(div);
+    }
+
+    function group(name) {
+      const h = document.createElement('h2');
+      h.textContent = name;
+      out.appendChild(h);
+    }
+
+    // Init DataStore for tests (start fresh)
+    App.EventBus.clear();
+    App.DataStore.init();
+    App.PanelManager.init();
+
+    // ========== TESTS ==========
+
+    group('1. EventBus');
+
+    (function() {
+      let got = null;
+      const unsub = App.EventBus.on('test:event', (d) => { got = d; });
+      App.EventBus.emit('test:event', { x: 42 });
+      assert(got && got.x === 42, 'on/emit — listener receives data');
+
+      got = null;
+      unsub();
+      App.EventBus.emit('test:event', { x: 99 });
+      assert(got === null, 'unsub — listener removed');
+
+      let count = 0;
+      App.EventBus.once('test:once', () => count++);
+      App.EventBus.emit('test:once');
+      App.EventBus.emit('test:once');
+      assert(count === 1, 'once — fires only once');
+
+      let got2 = null;
+      App.EventBus.on('test:multi', (d) => { got = d; });
+      App.EventBus.on('test:multi', (d) => { got2 = d; });
+      App.EventBus.emit('test:multi', { y: 7 });
+      assert(got && got.y === 7, 'multi — multiple listeners on same event');
+      assert(got2 && got2.y === 7, 'multi — second listener receives data');
+
+      App.EventBus.off('test:multi');
+      got = null;
+      App.EventBus.emit('test:multi', { y: 8 });
+      assert(got === null, 'off(event) — removes all listeners');
+    })();
+
+    group('2. Utils');
+
+    (function() {
+      assert(App.utils.clamp(5, 0, 10) === 5, 'clamp — value in range');
+      assert(App.utils.clamp(-1, 0, 10) === 0, 'clamp — below min');
+      assert(App.utils.clamp(15, 0, 10) === 10, 'clamp — above max');
+
+      const id1 = App.utils.generateId('test');
+      const id2 = App.utils.generateId('test');
+      assert(id1.startsWith('test_'), 'generateId — correct prefix');
+      assert(id1 !== id2, 'generateId — unique');
+
+      assert(App.utils.isNear(100, 105, 8) === true, 'isNear — within threshold');
+      assert(App.utils.isNear(100, 110, 8) === false, 'isNear — outside threshold');
+      assert(App.utils.isNear(100, 100, 0) === true, 'isNear — exact match');
+
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const rect = App.utils.createSvgElement('rect', { x: 10, y: 20, width: 30, height: 40 });
+      assert(rect instanceof SVGElement, 'createSvgElement — returns SVG element');
+      assert(rect.getAttribute('x') === '10', 'createSvgElement — sets attributes');
+
+      const clone = App.utils.deepClone({ a: 1, b: { c: 2 } });
+      assert(clone.a === 1 && clone.b.c === 2 && clone !== { a: 1, b: { c: 2 } }, 'deepClone — produces independent copy');
+
+      const throttled = App.utils.throttle(() => {}, 100);
+      assert(typeof throttled === 'function', 'throttle — returns function');
+
+      const colors = App.utils.nextColor();
+      assert(typeof colors === 'string' && colors.startsWith('#'), 'nextColor — returns hex string');
+    })();
+
+    group('3. DataStore — init & structure');
+
+    (function() {
+      const d = App.DataStore.getData();
+      assert(d !== null && typeof d === 'object', 'getData — returns object');
+      assert(Array.isArray(d.rooms), 'getData — rooms is array');
+      assert(Array.isArray(d.objects), 'getData — objects is array');
+      assert(Array.isArray(d.guides), 'getData — guides is array');
+      assert(d.scale === 100, 'getData — default scale is 100');
+      assert(d.rooms.length === 6, 'default rooms count');
+      assert(d.objects.length === 22, 'default objects count');
+      assert(App.DataStore.getRootObjects().length === 8, 'default root objects count');
+      assert(App.DataStore.getChildren('o_1').length === 3, 'default nested objects (Стеллаж)');
+    })();
+
+    group('4. DataStore — CRUD rooms');
+
+    (function() {
+      const countBefore = App.DataStore.getRooms().length;
+      const r = App.DataStore.addRoom({ name: 'Тестовая', x: 10, y: 10, w: 200, h: 150 });
+      assert(r !== false && r.id && r.name === 'Тестовая', 'addRoom — creates room with id');
+      assert(App.DataStore.getRooms().length === countBefore + 1, 'addRoom — increments count');
+
+      const bad = App.DataStore.addRoom({ x: 10 });
+      assert(bad === false, 'addRoom — rejects without name');
+
+      const updated = App.DataStore.updateRoom(r.id, { name: 'Обновлённая', x: 50 });
+      assert(updated === true, 'updateRoom — returns true');
+      const room = App.DataStore.getRooms().find(rm => rm.id === r.id);
+      assert(room.name === 'Обновлённая' && room.x === 50, 'updateRoom — changes values');
+
+      const deleted = App.DataStore.deleteRoom(r.id);
+      assert(deleted === true, 'deleteRoom — returns true');
+      assert(App.DataStore.getRooms().find(rm => rm.id === r.id) === undefined, 'deleteRoom — removes room');
+
+      // Move
+      const r2 = App.DataStore.addRoom({ name: 'MoveTest', x: 100, y: 100, w: 300, h: 200 });
+      App.DataStore.moveRoom(r2.id, 200, 300);
+      const moved = App.DataStore.getRooms().find(rm => rm.id === r2.id);
+      assert(moved.x === 200 && moved.y === 300, 'moveRoom — changes coordinates');
+      App.DataStore.deleteRoom(r2.id);
+    })();
+
+    group('5. DataStore — CRUD objects');
+
+    (function() {
+      // Need a room to attach to
+      const room = App.DataStore.addRoom({ name: 'ObjTest', x: 0, y: 0, w: 400, h: 400 });
+      const countBefore = App.DataStore.getObjects().length;
+
+      const o = App.DataStore.addObject({ name: 'Тестовый стеллаж', roomId: room.id, x: 50, y: 50, w: 80, h: 40, color: '#ff0000' });
+      assert(o !== false && o.id && o.name === 'Тестовый стеллаж', 'addObject — creates object');
+      assert(App.DataStore.getObjects().length === countBefore + 1, 'addObject — increments count');
+
+      const noName = App.DataStore.addObject({ roomId: room.id });
+      assert(noName === false, 'addObject — rejects without name');
+
+      const indep = App.DataStore.addObject({ name: 'Unbound', x: 999, y: 999, w: 50, h: 50 });
+      assert(indep !== false && indep.roomId === null, 'addObject — creates independent object without room');
+
+      const updated = App.DataStore.updateObject(o.id, { name: 'Обновлён', x: 100, w: 120 });
+      assert(updated === true, 'updateObject — returns true');
+      const obj = App.DataStore.getObjects().find(ob => ob.id === o.id);
+      assert(obj.name === 'Обновлён' && obj.x === 100 && obj.w === 120, 'updateObject — changes values');
+
+      App.DataStore.moveObject(o.id, 200, 250);
+      const moved = App.DataStore.getObjects().find(ob => ob.id === o.id);
+      assert(moved.x === 200 && moved.y === 250, 'moveObject — changes coordinates');
+
+      // Items (directly on object)
+      const item = App.DataStore.addObjectItem(o.id, 'Книги');
+      assert(item === true, 'addObjectItem — returns true');
+      const objWithItem = App.DataStore.getObjects().find(ob => ob.id === o.id);
+      assert(objWithItem.items.length === 1 && objWithItem.items[0] === 'Книги', 'addObjectItem — stores item');
+
+      const renamed = App.DataStore.renameObjectItem(o.id, 0, 'Книги-2');
+      assert(renamed === true && objWithItem.items[0] === 'Книги-2', 'renameObjectItem — renames item');
+
+      App.DataStore.removeObjectItem(o.id, 0);
+      const objAfter = App.DataStore.getObjects().find(ob => ob.id === o.id);
+      assert(objAfter.items.length === 0, 'removeObjectItem — removes item');
+
+      const delNonEmpty = App.DataStore.addObjectItem(o.id, 'Вещь');
+      assert(delNonEmpty === true, 'addObjectItem — adds again');
+
+      const delNonEmptyResult = App.DataStore.deleteObject(o.id);
+      assert(delNonEmptyResult === false, 'deleteObject — rejects object with items');
+
+      App.DataStore.removeObjectItem(o.id, 0);
+      const delEmpty = App.DataStore.deleteObject(o.id);
+      assert(delEmpty === true, 'deleteObject — removes empty object');
+      assert(App.DataStore.getObjects().find(ob => ob.id === o.id) === undefined, 'deleteObject — removes object');
+      App.DataStore.deleteRoom(room.id);
+    })();
+
+    group('6. DataStore — guides');
+
+    (function() {
+      const g = App.DataStore.addGuide('horizontal', 350);
+      assert(g !== false && g.orientation === 'horizontal' && g.position === 350, 'addGuide — creates horizontal');
+      assert(App.DataStore.getGuides().length >= 1, 'addGuide — increments guides');
+
+      App.DataStore.updateGuide(g.id, 400);
+      const updated = App.DataStore.getGuides().find(gg => gg.id === g.id);
+      assert(updated.position === 400, 'updateGuide — changes position');
+
+      App.DataStore.removeGuide(g.id);
+      assert(App.DataStore.getGuides().find(gg => gg.id === g.id) === undefined, 'removeGuide — removes guide');
+    })();
+
+    group('7. DataStore — persistence');
+
+    (function() {
+      // Reset to defaults
+      App.DataStore.reset(true);
+      const data = App.DataStore.getData();
+      assert(data.rooms.length === 6, 'reset — restores default rooms');
+
+      // Export/Import cycle via string
+      const exported = App.DataStore.exportData();
+      assert(typeof exported === 'string', 'exportData — returns JSON string');
+
+      const parsed = JSON.parse(exported);
+      assert(parsed.rooms.length === 6 && parsed.objects.length === 22, 'exportData — valid JSON with data');
+
+      // Reset empty
+      App.DataStore.reset(false);
+      assert(App.DataStore.getRooms().length === 0, 'reset(false) — empty state');
+
+      // Import back
+      const result = App.DataStore.importData(exported);
+      assert(result.ok === true, 'importData — success');
+      assert(App.DataStore.getRooms().length === 6, 'importData — restores rooms');
+      assert(App.DataStore.getObjects().length === 22, 'importData — restores objects');
+    })();
+
+    group('8. Schema validation on import');
+
+    (function() {
+      const bad1 = App.DataStore.importData('{"rooms":{},"objects":[]}');
+      assert(bad1.ok === false, 'import — rejects invalid rooms');
+
+      const bad2 = App.DataStore.importData('not json');
+      assert(bad2.ok === false, 'import — rejects non-JSON');
+    })();
+
+    group('9. Guide snap positions');
+
+    (function() {
+      App.DataStore.addGuide('horizontal', 300);
+      App.DataStore.addGuide('vertical', 500);
+      const snaps = App.GuideManager.getSnapPositions();
+      assert(Array.isArray(snaps.x) && snaps.x.includes(500), 'getSnapPositions — vertical');
+      assert(Array.isArray(snaps.y) && snaps.y.includes(300), 'getSnapPositions — horizontal');
+    })();
+
+    group('10. Data integrity after all operations');
+
+    (function() {
+      const data = App.DataStore.getData();
+      let idIssues = [];
+      data.rooms.forEach(r => {
+        if (!r.id) idIssues.push('room missing id');
+        if (typeof r.x !== 'number') idIssues.push('room x not number');
+      });
+      data.objects.forEach(o => {
+        if (!o.id) idIssues.push('obj missing id');
+        if (!o.roomId) idIssues.push('obj missing roomId');
+        if (typeof o.parentId !== 'string' && o.parentId !== null) idIssues.push('obj bad parentId');
+        if (!Array.isArray(o.items)) idIssues.push('obj items not array');
+      });
+      data.guides.forEach(g => {
+        if (!['horizontal', 'vertical'].includes(g.orientation)) idIssues.push('bad guide orientation');
+      });
+      assert(idIssues.length === 0, 'all records have valid structure — ' + (idIssues.length ? idIssues.join(', ') : 'OK'));
+    })();
+
+    group('11. Resize constraints (DragManager internal)');
+
+    (function() {
+      // Verify min dimensions enforced by DataStore
+      const room = App.DataStore.addRoom({ name: 'Tiny', x: 0, y: 0, w: 5, h: 5 });
+      assert(room.w >= 20 && room.h >= 20, 'addRoom — enforces minimum 20x20');
+
+      const obj = App.DataStore.addObject({ name: 'Tiny', roomId: App.DataStore.getRooms()[0].id, x: 0, y: 0, w: 3, h: 3 });
+      assert(obj.w >= 10 && obj.h >= 10, 'addObject — enforces minimum 10x10');
+
+      App.DataStore.deleteRoom(room.id);
+      if (obj) App.DataStore.deleteObject(obj.id);
+    })();
+
+    group('12. DataStore — вложенные объекты (parentId)');
+
+    (function() {
+      // Подготовка: корневой объект с комнатой
+      const room = App.DataStore.addRoom({ name: 'NestTest', x: 0, y: 0, w: 500, h: 500 });
+      const parent = App.DataStore.addObject({ name: 'Шкаф', roomId: room.id, x: 50, y: 50, w: 120, h: 200 });
+      assert(parent !== false && parent.parentId === null, 'addObject — корневой объект имеет parentId=null');
+
+      // Создание вложенного объекта наследует комнату родителя
+      const box = App.DataStore.addObject({ name: 'Коробка', parentId: parent.id });
+      assert(box !== false && box.parentId === parent.id, 'addObject — создаёт вложенный объект');
+      assert(box.roomId === room.id, 'addObject — вложенный объект наследует roomId родителя');
+
+      const box2 = App.DataStore.addObject({ name: 'Коробка 2', parentId: box.id });
+      assert(box2.roomId === room.id, 'addObject — наследует roomId от вложенного предка');
+
+      // Хелперы
+      assert(App.DataStore.getChildren(parent.id).length === 1, 'getChildren — находит прямых детей');
+      assert(App.DataStore.getChildren(box.id).length === 1, 'getChildren — дети второго уровня');
+      assert(App.DataStore.getRootObjects().includes(parent), 'getRootObjects — вложенные не считаются корневыми');
+      assert(App.DataStore.getRootAncestor(box2.id).id === parent.id, 'getRootAncestor — возвращает корень');
+
+      const anc = App.DataStore.getAncestors(box2.id);
+      assert(anc.length === 2 && anc[0].id === parent.id && anc[1].id === box.id, 'getAncestors — путь от корня до родителя');
+
+      assert(App.DataStore.isDescendant(box2.id, parent.id) === true, 'isDescendant — box2 потомок parent');
+      assert(App.DataStore.isDescendant(parent.id, box2.id) === false, 'isDescendant — parent не потомок box2');
+      assert(App.DataStore.isDescendant(box.id, box.id) === false, 'isDescendant — объект не является своим потомком');
+
+      // Рекурсивный подсчёт предметов
+      App.DataStore.addObjectItem(parent.id, 'Вещь на родителе');
+      App.DataStore.addObjectItem(parent.id, 'Книга');
+      App.DataStore.addObjectItem(box.id, 'Вещь в коробке');
+      assert(App.DataStore.getObjectTotalItems(parent.id) === 3, 'getObjectTotalItems — суммирует предметы всех уровней');
+      assert(App.DataStore.getObjectTotalItems(box.id) === 1, 'getObjectTotalItems — только ветка объекта');
+
+      // Удаление непустого запрещено
+      assert(App.DataStore.deleteObject(parent.id) === false, 'deleteObject — нельзя удалить родителя с содержимым');
+      assert(App.DataStore.deleteObject(box.id) === false, 'deleteObject — нельзя удалить объект с предметами');
+
+      // Рендер: вложенные объекты не входят в список корневых
+      assert(App.DataStore.getRootObjects().every(o => o.id !== box.id), 'getRootObjects — вложенный объект не рисуется на плане');
+
+      // moveObjectInto: защита от циклов (до разрыва связей)
+      assert(App.DataStore.moveObjectInto(parent.id, box.id) === false, 'moveObjectInto — нельзя вложить предка в потомка');
+      assert(App.DataStore.moveObjectInto(parent.id, box2.id) === false, 'moveObjectInto — нельзя вложить предка в потомка 2-го уровня');
+      assert(App.DataStore.moveObjectInto(box.id, box.id) === false, 'moveObjectInto — нельзя вложить в самого себя');
+      assert(App.DataStore.getObject(parent.id).parentId === null, 'moveObjectInto — структура не изменилась после защиты');
+
+      // moveObjectInto: вложение
+      const sib = App.DataStore.addObject({ name: 'Тумба', roomId: room.id, x: 300, y: 300, w: 60, h: 50 });
+      const moved = App.DataStore.moveObjectInto(box.id, sib.id);
+      assert(moved === true && App.DataStore.getObject(box.id).parentId === sib.id, 'moveObjectInto — вкладывает объект в другой');
+      assert(App.DataStore.getObject(box.id).roomId === room.id, 'moveObjectInto — наследует комнату нового родителя');
+      assert(App.DataStore.getChildren(sib.id).length === 1, 'moveObjectInto — ребёнок числится у нового родителя');
+      assert(App.DataStore.getChildren(parent.id).length === 0, 'moveObjectInto — у старого родителя больше нет детей');
+
+      // moveObjectInto: сделать независимым
+      const freed = App.DataStore.moveObjectInto(box.id, null);
+      assert(freed === true && App.DataStore.getObject(box.id).parentId === null, 'moveObjectInto — null делает объект независимым');
+      assert(App.DataStore.getObject(box.id).roomId === room.id, 'moveObjectInto — независимый объект пересчитал комнату по координатам');
+
+      // Очистка
+      App.DataStore.removeObjectItem(box.id, 0);      // 'Вещь в коробке'
+      App.DataStore.removeObjectItem(parent.id, 0);   // 'Вещь на родителе'
+      App.DataStore.removeObjectItem(parent.id, 0);   // 'Книга'
+      App.DataStore.deleteObject(box2.id);
+      App.DataStore.deleteObject(box.id);
+      App.DataStore.deleteObject(sib.id);
+      App.DataStore.deleteObject(parent.id);
+      App.DataStore.deleteRoom(room.id);
+    })();
+
+    group('13. DataStore — миграция старых данных (без parentId и с containers)');
+
+    (function() {
+      const legacy = JSON.stringify({
+        scale: 100,
+        rooms: [{ id: 'lr_1', name: 'Легаси', x: 0, y: 0, w: 200, h: 200 }],
+        objects: [
+          { id: 'lo_1', name: 'Старый объект', roomId: 'lr_1', x: 10, y: 10, w: 50, h: 50,
+            containers: [{ id: 'c_x1', name: 'Полка', items: ['Книга'] }, { id: 'c_x2', name: 'Ящик', items: ['Инструменты'] }] },
+          { id: 'lo_2', name: 'Старый вложенный', roomId: 'lr_1', x: 10, y: 10, w: 30, h: 30, parentId: 'lo_1' }
+        ],
+        guides: []
+      });
+      const result = App.DataStore.importData(legacy);
+      assert(result.ok === true, 'импорт старых данных — успех');
+      const o1 = App.DataStore.getObject('lo_1');
+      const o2 = App.DataStore.getObject('lo_2');
+      assert(o1 && o1.parentId === null, 'миграция — объекту без parentId присвоен null');
+      assert(o2 && o2.parentId === 'lo_1', 'миграция — валидный parentId сохранён');
+      assert(!('containers' in o1), 'миграция — поле containers удалено');
+
+      // Контейнеры стали вложенными объектами
+      const kids = App.DataStore.getChildren('lo_1').filter(o => o.name !== 'Старый вложенный');
+      assert(kids.length === 2, 'миграция — контейнеры превращены во вложенные объекты');
+      const shelf = kids.find(k => k.name === 'Полка');
+      assert(shelf && shelf.parentId === 'lo_1', 'миграция — контейнер вложен в родителя');
+      assert(shelf && Array.isArray(shelf.items) && shelf.items[0] === 'Книга', 'миграция — предметы контейнера сохранены');
+      assert(shelf && shelf.roomId === 'lr_1', 'миграция — вложенный контейнер наследует комнату');
+
+      // Цикл parentId
+      const cyclic = JSON.stringify({
+        scale: 100,
+        rooms: [],
+        objects: [
+          { id: 'cy_1', name: 'A', parentId: 'cy_2' },
+          { id: 'cy_2', name: 'B', parentId: 'cy_1' }
+        ],
+        guides: []
+      });
+      const res2 = App.DataStore.importData(cyclic);
+      assert(res2.ok === true, 'импорт цикла — успех (без падения)');
+      const cy1 = App.DataStore.getObject('cy_1');
+      const cy2 = App.DataStore.getObject('cy_2');
+      const noCycle = (cy1.parentId === null) || (cy2.parentId === null);
+      assert(noCycle, 'миграция — цикл разорван');
+
+      // Битый parentId
+      const broken = JSON.stringify({
+        scale: 100,
+        rooms: [],
+        objects: [{ id: 'br_1', name: 'X', parentId: 'nonexistent' }],
+        guides: []
+      });
+      App.DataStore.importData(broken);
+      assert(App.DataStore.getObject('br_1').parentId === null, 'миграция — битый parentId сброшен в null');
+
+      App.DataStore.reset(true);
+    })();
+
+    group('14. PanelManager — search highlight');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      // Emit search:results with name match
+      const obj = App.DataStore.getObjects().find(o => o.name === 'Стеллаж');
+      App.EventBus.emit('search:results', {
+        query: 'Стеллаж',
+        results: [{ object: obj, matchedItems: [], nameMatch: true }]
+      });
+      const panel = document.getElementById('panel-content');
+      assert(panel.innerHTML.includes('search-highlight'), 'search highlight — panel renders search-highlight class on object name');
+
+      // Emit search:results with item match
+      const obj2 = App.DataStore.getObjects().find(o => o.name === 'Диван');
+      App.DataStore.addObjectItem(obj2.id, 'Подушки');
+      App.EventBus.emit('search:results', {
+        query: 'Подушки',
+        results: [{ object: obj2, matchedItems: ['Подушки'], nameMatch: false }]
+      });
+      assert(panel.innerHTML.includes('search-highlight'), 'search highlight — panel renders search-highlight on matched item');
+      assert(panel.innerHTML.includes('Подушки'), 'search highlight — matched item text visible');
+
+      // Clear search removes highlights
+      App.EventBus.emit('search:clear');
+      assert(!panel.innerHTML.includes('search-highlight'), 'search highlight — clear removes all highlights');
+
+      // Cleanup
+      App.DataStore.reset(true);
+    })();
+
+    group('15. GoogleDrive module');
+
+    (function() {
+      assert(typeof App.GoogleDrive === 'object', 'GoogleDrive — module exists');
+      assert(typeof App.GoogleDrive.init === 'function', 'GoogleDrive — init method exists');
+      assert(typeof App.GoogleDrive.isReady === 'function', 'GoogleDrive — isReady method exists');
+      assert(typeof App.GoogleDrive.isAuthorized === 'function', 'GoogleDrive — isAuthorized method exists');
+      assert(typeof App.GoogleDrive.expired === 'function', 'GoogleDrive — expired method exists');
+      assert(typeof App.GoogleDrive.auth === 'function', 'GoogleDrive — auth method exists');
+      assert(typeof App.GoogleDrive.signout === 'function', 'GoogleDrive — signout method exists');
+      assert(typeof App.GoogleDrive.upload === 'function', 'GoogleDrive — upload method exists');
+      assert(typeof App.GoogleDrive.download === 'function', 'GoogleDrive — download method exists');
+      assert(App.GoogleDrive.isReady() === false, 'GoogleDrive — not ready before scripts load');
+      assert(App.GoogleDrive.isAuthorized() === false, 'GoogleDrive — not authorized initially');
+      assert(typeof App.GoogleDrive.expired() === 'boolean', 'GoogleDrive — expired returns boolean');
+    })();
+
+    // ========== SUMMARY ==========
+    const summary = document.createElement('div');
+    summary.className = 'summary';
+    summary.innerHTML = `<strong>Результат:</strong> ${passed}/${total} тестов пройдено ${passed === total ? '✅' : '❌'}`;
+    out.appendChild(summary);
+  </script>
+</body>
+</html>

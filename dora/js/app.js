@@ -8,6 +8,7 @@ App.Config = {
 
 let _zoom = 1;
 const SPREADSHEET_ID = '1Tr_FN9yu4CIdBqA4V99qOLCNe0boNkw8ZCmhWcYWqG4';
+let _gsReady = false;
 
 App.getZoom = () => _zoom;
 
@@ -43,7 +44,9 @@ App.init = () => {
       var GoogleSheetDB = imports.GoogleSheetDB;
       App._gsdb = new GoogleSheetDB();
       App._gsdb.waitGoogle().then(function() {
-        _updateGDriveBtn();
+        _gsReady = true;
+        _doSheetsImport(true);
+        App.EventBus.on('data:changed', _debouncedExport);
       });
     }).catch(function(err) { console.warn('[App] Google API:', err); });
 
@@ -67,6 +70,12 @@ App.init = () => {
   }
 };
 
+let _exportTimer = null;
+function _debouncedExport() {
+  clearTimeout(_exportTimer);
+  _exportTimer = setTimeout(function() { _doSheetsExport(); }, 1000);
+}
+
 function _bindToolbar() {
   document.querySelectorAll('[data-action]').forEach(el => {
     const action = el.getAttribute('data-action');
@@ -89,8 +98,6 @@ function _resolveAction(action) {
     'reset':         () => _handleReset(),
     'search-clear':  () => App.SearchManager.clear(),
     'gdrive-auth':   () => _handleGDriveAuth(),
-    'gdrive-export': () => _handleGDriveExport(),
-    'gdrive-import': () => _handleGDriveImport(),
   };
   return map[action] || null;
 }
@@ -102,24 +109,6 @@ function _handleReset() {
   App.SearchManager.clear();
 }
 
-function _updateGDriveBtn() {
-  const btn = document.getElementById('gdrive-auth-btn');
-  if (!btn) return;
-  if (!window.gapi || !gapi.client) {
-    btn.textContent = '☁ Войти';
-    btn.title = 'Авторизация Google';
-    return;
-  }
-  const token = gapi.client.getToken();
-  if (token && token.access_token) {
-    btn.textContent = '☁ Выйти';
-    btn.title = 'Выйти из Google';
-  } else {
-    btn.textContent = '☁ Войти';
-    btn.title = 'Авторизация Google';
-  }
-}
-
 function _handleGDriveAuth() {
   if (window.gapi && gapi.client && gapi.client.getToken()) {
     var token = gapi.client.getToken();
@@ -129,24 +118,13 @@ function _handleGDriveAuth() {
     }
     localStorage.removeItem('gapi_token');
     localStorage.removeItem('gapi_token_expires');
-    _updateGDriveBtn();
     return;
   }
   document.getElementById('authorize_button').click();
-  setTimeout(function() { _updateGDriveBtn(); }, 2000);
-}
-
-function _handleGDriveExport() {
-  if (!window.gapi || !gapi.client || !gapi.client.getToken()) {
-    document.getElementById('authorize_button').click();
-    setTimeout(function() { _handleGDriveExport(); }, 2000);
-    return;
-  }
-  _doSheetsExport();
 }
 
 async function _doSheetsExport() {
-  if (!confirm('Сохранить текущие данные на Google Таблицу?')) return;
+  if (!_gsReady || !window.gapi || !gapi.client || !gapi.client.getToken()) return;
   try {
     var json = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
     var resp = await gapi.client.sheets.spreadsheets.values.get({
@@ -174,24 +152,13 @@ async function _doSheetsExport() {
         resource: { values: [['plan', json]] }
       });
     }
-    alert('Данные сохранены на Google Таблицу');
   } catch (err) {
-    console.error('[Sheets] export error:', err);
-    alert('Ошибка сохранения: ' + (err.message || 'неизвестная'));
+    console.warn('[Sheets] auto-export error:', err);
   }
 }
 
-function _handleGDriveImport() {
-  if (!window.gapi || !gapi.client || !gapi.client.getToken()) {
-    document.getElementById('authorize_button').click();
-    setTimeout(function() { _handleGDriveImport(); }, 2000);
-    return;
-  }
-  _doSheetsImport();
-}
-
-async function _doSheetsImport() {
-  if (!confirm('Загрузить данные с Google Таблицы? Текущие данные будут заменены.')) return;
+async function _doSheetsImport(silent) {
+  if (!_gsReady || !window.gapi || !gapi.client || !gapi.client.getToken()) return;
   try {
     var resp = await gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
@@ -202,18 +169,14 @@ async function _doSheetsImport() {
     for (var i = 0; i < values.length; i++) {
       if (values[i][0] === 'plan') { content = values[i][1]; break; }
     }
-    if (!content) throw new Error('Запись "plan" не найдена');
+    if (!content) return;
     var result = App.DataStore.importData(content);
     if (result.ok) {
-      App.PanelManager.showDefault();
-      App.SearchManager.clear();
-      alert('Данные загружены с Google Таблицы');
-    } else {
-      alert('Ошибка: ' + result.error);
+      App.Renderer.render();
+      App.GuideManager._render && App.GuideManager._render();
     }
   } catch (err) {
-    console.error('[Sheets] import error:', err);
-    alert('Ошибка загрузки: ' + (err.message || 'неизвестная'));
+    console.warn('[Sheets] auto-import error:', err);
   }
 }
 
@@ -232,7 +195,6 @@ function _defineGlobals() {
     });
     event.target.value = '';
   };
-  _updateGDriveBtn();
 }
 
 document.addEventListener('DOMContentLoaded', App.init);

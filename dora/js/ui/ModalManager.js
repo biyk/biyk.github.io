@@ -166,16 +166,29 @@ App.ModalManager = (() => {
 
     const objects = App.DataStore.getObjects()
       .filter(o => o.id !== objectId && !App.DataStore.isDescendant(o.id, objectId));
+    const validIds = new Set(objects.map(o => o.id));
 
-    const opts = [
-      obj.parentId ? '<option value="">Сделать независимым (на план)</option>' : ''
-    ].concat(
-      objects.map(o => {
-        const root = App.DataStore.getRootAncestor(o.id);
-        const where = root ? ` (внутри: ${root.name})` : '';
-        return `<option value="${o.id}">${App.utils.escapeHtml(o.name)}${where}</option>`;
-      })
-    ).join('');
+    let opts = obj.parentId ? '<option value="">Сделать независимым (на план)</option>' : '';
+
+    function _addObjectOptions(parentId, depth) {
+      const children = objects.filter(o => o.parentId === parentId && validIds.has(o.id));
+      children.forEach(o => {
+        const indent = '\u00a0\u00a0'.repeat(depth);
+        opts += `<option value="${o.id}">${indent}${depth > 0 ? '└ ' : ''}${App.utils.escapeHtml(o.name)}</option>`;
+        _addObjectOptions(o.id, depth + 1);
+      });
+    }
+
+    const rooms = App.DataStore.getRooms();
+    rooms.forEach(room => {
+      const roomObjs = objects.filter(o => o.parentId === null && o.roomId === room.id);
+      if (roomObjs.length === 0) return;
+      opts += `<option value="" disabled>── ${App.utils.escapeHtml(room.name)} ──</option>`;
+      roomObjs.forEach(o => {
+        opts += `<option value="${o.id}">${App.utils.escapeHtml(o.name)}</option>`;
+        _addObjectOptions(o.id, 1);
+      });
+    });
 
     return `
       <h2>📥 ${obj.parentId ? 'Переместить объект' : 'Положить в объект'}</h2>

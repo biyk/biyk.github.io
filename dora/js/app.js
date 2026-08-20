@@ -7,6 +7,7 @@ App.Config = {
 };
 
 let _zoom = 1;
+const SPREADSHEET_ID = '1Tr_FN9yu4CIdBqA4V99qOLCNe0boNkw8ZCmhWcYWqG4';
 
 App.getZoom = () => _zoom;
 
@@ -35,11 +36,19 @@ App.init = () => {
     App.SearchManager.init('#searchInput');
     App.ModalManager.init();
     App.PanelManager.init();
-    App.GoogleDrive.init();
+
+    if (!window.version) window.version = '1.0.0';
+
+    import('../../dnd/static/js/db/google.js').then(function(imports) {
+      var GoogleSheetDB = imports.GoogleSheetDB;
+      App._gsdb = new GoogleSheetDB();
+      App._gsdb.waitGoogle().then(function() {
+        _updateGDriveBtn();
+      });
+    }).catch(function(err) { console.warn('[App] Google API:', err); });
 
     App.PanelManager.showDefault();
 
-    // Wrap ruler, plan, guides in a single zoom group; resize handles stay outside
     const wrap = App.utils.createSvgElement('g', { class: 'plan-wrap' });
     const toMove = svg.querySelectorAll('.ruler-layer, .plan-content, .guide-layer');
     toMove.forEach(g => wrap.appendChild(g));
@@ -96,7 +105,13 @@ function _handleReset() {
 function _updateGDriveBtn() {
   const btn = document.getElementById('gdrive-auth-btn');
   if (!btn) return;
-  if (App.GoogleDrive.isAuthorized()) {
+  if (!window.gapi || !gapi.client) {
+    btn.textContent = '☁ Войти';
+    btn.title = 'Авторизация Google';
+    return;
+  }
+  const token = gapi.client.getToken();
+  if (token && token.access_token) {
     btn.textContent = '☁ Выйти';
     btn.title = 'Выйти из Google';
   } else {
@@ -106,62 +121,100 @@ function _updateGDriveBtn() {
 }
 
 function _handleGDriveAuth() {
-  if (App.GoogleDrive.isAuthorized()) {
-    App.GoogleDrive.signout();
+  if (window.gapi && gapi.client && gapi.client.getToken()) {
+    var token = gapi.client.getToken();
+    if (token) {
+      google.accounts.oauth2.revoke(token.access_token);
+      gapi.client.setToken('');
+    }
+    localStorage.removeItem('gapi_token');
+    localStorage.removeItem('gapi_token_expires');
     _updateGDriveBtn();
     return;
   }
-  App.GoogleDrive.auth(() => { _updateGDriveBtn(); });
+  document.getElementById('authorize_button').click();
+  setTimeout(function() { _updateGDriveBtn(); }, 2000);
 }
 
 function _handleGDriveExport() {
-  if (!App.GoogleDrive.isAuthorized()) {
-    App.GoogleDrive.auth().then(() => {
-      _updateGDriveBtn();
-      _doGDriveExport();
-    });
+  if (!window.gapi || !gapi.client || !gapi.client.getToken()) {
+    document.getElementById('authorize_button').click();
+    setTimeout(function() { _handleGDriveExport(); }, 2000);
     return;
   }
-  _doGDriveExport();
+  _doSheetsExport();
 }
 
-function _doGDriveExport() {
-  if (!confirm('Сохранить текущие данные на Google Диск?')) return;
-  const json = App.DataStore.exportData();
-  App.GoogleDrive.upload('imDoraPlan.json', json).then(() => {
-    alert('Данные сохранены на Google Диск');
-  }).catch(err => {
-    console.error('[GDrive] export error:', err);
-    alert('Ошибка сохранения: ' + (err.message || err.statusText || 'неизвестная'));
-  });
+async function _doSheetsExport() {
+  if (!confirm('Сохранить текущие данные на Google Таблицу?')) return;
+  try {
+    var json = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
+    var resp = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'dora!A:B'
+    });
+    var values = resp.result.values || [];
+    var rowIndex = -1;
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0] === 'plan') { rowIndex = i + 1; break; }
+    }
+    if (rowIndex > 0) {
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'dora!A' + rowIndex + ':B' + rowIndex,
+        valueInputOption: 'RAW',
+        resource: { values: [['plan', json]] }
+      });
+    } else {
+      await gapi.client.sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'dora!A:B',
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        resource: { values: [['plan', json]] }
+      });
+    }
+    alert('Данные сохранены на Google Таблицу');
+  } catch (err) {
+    console.error('[Sheets] export error:', err);
+    alert('Ошибка сохранения: ' + (err.message || 'неизвестная'));
+  }
 }
 
 function _handleGDriveImport() {
-  if (!App.GoogleDrive.isAuthorized()) {
-    App.GoogleDrive.auth().then(() => {
-      _updateGDriveBtn();
-      _doGDriveImport();
-    });
+  if (!window.gapi || !gapi.client || !gapi.client.getToken()) {
+    document.getElementById('authorize_button').click();
+    setTimeout(function() { _handleGDriveImport(); }, 2000);
     return;
   }
-  _doGDriveImport();
+  _doSheetsImport();
 }
 
-function _doGDriveImport() {
-  if (!confirm('Загрузить данные с Google Диска? Текущие данные будут заменены.')) return;
-  App.GoogleDrive.download('imDoraPlan.json').then(content => {
-    const result = App.DataStore.importData(typeof content === 'string' ? content : JSON.stringify(content));
+async function _doSheetsImport() {
+  if (!confirm('Загрузить данные с Google Таблицы? Текущие данные будут заменены.')) return;
+  try {
+    var resp = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'dora!A:B'
+    });
+    var values = resp.result.values || [];
+    var content = null;
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0] === 'plan') { content = values[i][1]; break; }
+    }
+    if (!content) throw new Error('Запись "plan" не найдена');
+    var result = App.DataStore.importData(content);
     if (result.ok) {
       App.PanelManager.showDefault();
       App.SearchManager.clear();
-      alert('Данные загружены с Google Диска');
+      alert('Данные загружены с Google Таблицы');
     } else {
       alert('Ошибка: ' + result.error);
     }
-  }).catch(err => {
-    console.error('[GDrive] import error:', err);
-    alert('Ошибка загрузки: ' + (err.message || err.statusText || 'неизвестная'));
-  });
+  } catch (err) {
+    console.error('[Sheets] import error:', err);
+    alert('Ошибка загрузки: ' + (err.message || 'неизвестная'));
+  }
 }
 
 function _defineGlobals() {
@@ -179,7 +232,6 @@ function _defineGlobals() {
     });
     event.target.value = '';
   };
-  App.EventBus.on('gdrive:ready', _updateGDriveBtn);
   _updateGDriveBtn();
 }
 

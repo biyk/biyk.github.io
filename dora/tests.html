@@ -478,23 +478,6 @@
       App.DataStore.reset(true);
     })();
 
-    group('15. GoogleDrive module');
-
-    (function() {
-      assert(typeof App.GoogleDrive === 'object', 'GoogleDrive — module exists');
-      assert(typeof App.GoogleDrive.init === 'function', 'GoogleDrive — init method exists');
-      assert(typeof App.GoogleDrive.isReady === 'function', 'GoogleDrive — isReady method exists');
-      assert(typeof App.GoogleDrive.isAuthorized === 'function', 'GoogleDrive — isAuthorized method exists');
-      assert(typeof App.GoogleDrive.expired === 'function', 'GoogleDrive — expired method exists');
-      assert(typeof App.GoogleDrive.auth === 'function', 'GoogleDrive — auth method exists');
-      assert(typeof App.GoogleDrive.signout === 'function', 'GoogleDrive — signout method exists');
-      assert(typeof App.GoogleDrive.upload === 'function', 'GoogleDrive — upload method exists');
-      assert(typeof App.GoogleDrive.download === 'function', 'GoogleDrive — download method exists');
-      assert(App.GoogleDrive.isReady() === false, 'GoogleDrive — not ready before scripts load');
-      assert(App.GoogleDrive.isAuthorized() === false, 'GoogleDrive — not authorized initially');
-      assert(typeof App.GoogleDrive.expired() === 'boolean', 'GoogleDrive — expired returns boolean');
-    })();
-
     // ========== SUMMARY ==========
     const summary = document.createElement('div');
     summary.className = 'summary';

@@ -393,4 +393,64 @@ def run_all(session):
 
     test("26. deleteObject rejects non-empty parent", delete_nonempty_rejected)
 
+    # --- 27. Multi-plan: create / switch / rename / delete ---
+    def multi_plan_crud():
+        created = session.evaluate("App.DataStore.createPlan('Интеграция')")
+        assert created and created.get("id"), "createPlan should return new entry"
+        pid = created["id"]
+        assert pid != "plan", "New plan id must differ from legacy 'plan'"
+
+        # New apartment becomes active and is empty
+        rooms = session.evaluate("App.DataStore.getRooms().length")
+        assert rooms == 0, f"New apartment must be empty, got {rooms} rooms"
+        rects = session.evaluate("document.querySelectorAll('[data-dtype=\"room\"]').length")
+        assert rects == 0, f"SVG must render no rooms for new apartment, got {rects}"
+
+        # Select reflects the new active plan
+        sel_val = session.evaluate("document.getElementById('planSelect') && document.getElementById('planSelect').value")
+        assert sel_val == pid, f"planSelect must follow active plan, got {sel_val}"
+
+        # Switch back to legacy plan — data restored and re-rendered
+        ok = session.evaluate("App.DataStore.switchPlan('plan')")
+        assert ok is True, "switchPlan('plan') should succeed"
+        time.sleep(0.3)
+        rooms2 = session.evaluate("App.DataStore.getRooms().length")
+        assert rooms2 == 2, f"Legacy plan must keep its 2 rooms, got {rooms2}"
+        rects2 = session.evaluate("document.querySelectorAll('[data-dtype=\"room\"]').length")
+        assert rects2 == 2, f"SVG must re-render 2 rooms after switch, got {rects2}"
+
+        # Isolation: marker room added in legacy plan is invisible in other plan
+        session.evaluate("App.DataStore.addRoom({ name: 'Маркер', x: 10, y: 10, w: 100, h: 100 })")
+        session.evaluate(f"App.DataStore.switchPlan('{pid}')")
+        marker = session.evaluate("App.DataStore.getRooms().some(r => r.name === 'Маркер')")
+        assert marker is False, "Marker room from plan must not leak into other apartment"
+
+        # Rename + duplicate guard
+        rn = session.evaluate(f"App.DataStore.renamePlan('{pid}', 'Вторая')")
+        assert rn is True, "renamePlan should succeed"
+        names = session.evaluate("App.DataStore.listPlans().map(p => p.name)")
+        assert "Вторая" in names, f"Renamed plan must appear in registry: {names}"
+        dup = session.evaluate(f"App.DataStore.renamePlan('{pid}', 'plan')")
+        assert dup is False, "Duplicate names must be rejected"
+
+        # Delete non-active keeps active intact
+        dl = session.evaluate(f"App.DataStore.deletePlan('{pid}')")
+        assert dl is True, "deletePlan should succeed"
+        assert session.evaluate("App.DataStore.listPlans().length") == 1, "Only legacy plan must remain"
+
+        # Last apartment cannot be deleted
+        last = session.evaluate("App.DataStore.deletePlan('plan')")
+        assert last is False, "Cannot delete the last remaining apartment"
+
+        # Cleanup marker room
+        session.evaluate("""
+            (() => {
+                const m = App.DataStore.getRooms().find(r => r.name === 'Маркер');
+                if (m) App.DataStore.deleteRoom(m.id);
+            })()
+        """)
+        assert session.evaluate("App.DataStore.getRooms().length") == 2, "Cleanup failed"
+
+    test("27. Multi-plan create/switch/rename/delete", multi_plan_crud)
+
     return results

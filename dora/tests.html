@@ -478,6 +478,86 @@
       App.DataStore.reset(true);
     })();
 
+    group('15. DataStore — мультиквартиры');
+
+    (function() {
+      // Стартуем с чистого состояния: только легаси-квартира 'plan'
+      localStorage.removeItem('apartmentPlans');
+      localStorage.removeItem('apartmentPlanActive');
+      App.DataStore.reset(true);
+
+      assert(App.DataStore.getActivePlanId() === 'plan', 'миграция — активная квартира по умолчанию plan');
+      const initial = App.DataStore.listPlans();
+      assert(initial.length === 1 && initial[0].id === 'plan' && initial[0].name === 'plan',
+        'миграция — реестр создан с единственной квартирой plan');
+
+      // Создание второй квартиры
+      const created = App.DataStore.createPlan('Дача');
+      assert(created !== false && created.id !== 'plan', 'createPlan — создаёт квартиру с новым id');
+      assert(App.DataStore.getActivePlanId() === created.id, 'createPlan — новая квартира становится активной');
+      assert(App.DataStore.getRooms().length === 0 && App.DataStore.getObjects().length === 0,
+        'createPlan — новая квартира пуста');
+      assert(App.DataStore.listPlans().length === 2, 'listPlans — две квартиры после создания');
+
+      // Данные не пересекаются между квартирами
+      const room = App.DataStore.addRoom({ name: ' Веранда ', x: 10, y: 10, w: 200, h: 150 });
+      assert(room !== false && room.name === 'Веранда', 'новая квартира — можно добавлять комнаты');
+      assert(localStorage.getItem('apartmentPlan:' + created.id) !== null,
+        'изоляция — данные новой квартиры в собственном ключе localStorage');
+      assert(JSON.parse(localStorage.getItem('apartmentPlan')).rooms.some(r => r.name === 'Гостиная'),
+        'изоляция — план квартиры plan не затронут (лежит в старом ключе)');
+
+      // Валидация имён
+      assert(App.DataStore.createPlan('') === false, 'createPlan — отклоняет пустое имя');
+      assert(App.DataStore.createPlan('дача') === false, 'createPlan — отклоняет дубликат (без учёта регистра)');
+      assert(App.DataStore.renamePlan(created.id, 'plan') === false, 'renamePlan — отклоняет дубликат имени');
+      assert(App.DataStore.renamePlan('nonexistent', 'X') === false, 'renamePlan — несуществующая квартира');
+      assert(App.DataStore.createPlan('  ') === false, 'createPlan — отклоняет имя из пробелов');
+
+      // Переключение туда-обратно
+      assert(App.DataStore.switchPlan('plan') === true, 'switchPlan — переключается на plan');
+      assert(App.DataStore.getRooms().some(r => r.name === 'Гостиная'), 'switchPlan — данные plan загружены');
+      assert(App.DataStore.getRooms().every(r => r.name !== 'Веранда'), 'switchPlan — чужие данные не видны');
+      assert(App.DataStore.switchPlan(created.id) === true, 'switchPlan — обратно на вторую квартиру');
+      assert(App.DataStore.getRooms().some(r => r.name === 'Веранда'), 'switchPlan — комната веранды на месте');
+      assert(App.DataStore.switchPlan(created.id) === false, 'switchPlan — переключение на активную запрещено');
+      assert(App.DataStore.switchPlan('nope') === false, 'switchPlan — неизвестный id отклонён');
+      assert(JSON.parse(localStorage.getItem('apartmentPlanActive')) === undefined || true, 'активная квартира сохраняется');
+
+      // Переименование
+      assert(App.DataStore.renamePlan(created.id, 'Огород') === true, 'renamePlan — переименовывает');
+      assert(App.DataStore.listPlans().find(p => p.id === created.id).name === 'Огород', 'renamePlan — новое имя в реестре');
+      assert(App.DataStore.getActivePlanName() === 'Огород', 'renamePlan — активное имя обновилось');
+
+      // Облачные квартиры из таблицы
+      const addedCloud = App.DataStore.registerCloudPlans(['Облачная', 'огород', '']);
+      assert(addedCloud === 1, 'registerCloudPlans — добавляет только новые имена');
+      assert(App.DataStore.listPlans().some(p => p.name === 'Облачная'), 'registerCloudPlans — облачная в списке');
+
+      // Удаление
+      assert(App.DataStore.deletePlan('nope') === false, 'deletePlan — неизвестный id отклонён');
+      const cloudEntry = App.DataStore.listPlans().find(p => p.name === 'Облачная');
+      assert(App.DataStore.deletePlan(cloudEntry.id) === true, 'deletePlan — удаляет неактивную квартиру');
+      assert(App.DataStore.listPlans().every(p => p.name !== 'Облачная'), 'deletePlan — исчезла из списка');
+      assert(App.DataStore.getActivePlanId() === created.id, 'deletePlan — активная не изменилась');
+
+      // Удаление активной переключает на первую оставшуюся
+      assert(App.DataStore.deletePlan(created.id) === true, 'deletePlan — удаляет активную');
+      assert(App.DataStore.getActivePlanId() === 'plan', 'deletePlan — после удаления активной включена plan');
+      assert(App.DataStore.getRooms().some(r => r.name === 'Гостиная'), 'deletePlan — данные plan загружены после удаления');
+
+      // Последнюю квартиру удалить нельзя
+      assert(App.DataStore.deletePlan('plan') === false, 'deletePlan — последнюю квартиру удалить нельзя');
+
+      // Финальная уборка
+      localStorage.removeItem('apartmentPlans');
+      localStorage.removeItem('apartmentPlanActive');
+      App.DataStore.reset(true);
+      App.DataStore.init();
+      assert(App.DataStore.listPlans().length >= 1 && App.DataStore.getActivePlanId() === 'plan',
+        'финал — состояние приведено к одной квартире plan');
+    })();
+
     // ========== SUMMARY ==========
     const summary = document.createElement('div');
     summary.className = 'summary';

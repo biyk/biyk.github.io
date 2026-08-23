@@ -1,13 +1,2 @@
-# OS
-Thumbs.db
-.DS_Store
-
-# Editor
-*.swp
-*.swo
-*~
-
-# No temp files anywhere
-*.tmp
-
-temp/
+﻿.idea/
+__pycache__/

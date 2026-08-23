@@ -176,7 +176,11 @@ class BrowserSession:
             "width": 1920, "height": 1080,
             "deviceScaleFactor": 1, "mobile": False,
         })
-        js = f"localStorage.setItem('apartmentPlan', {json.dumps(json.dumps(data_dict))})"
+        js = (
+            f"localStorage.setItem('apartmentPlan', {json.dumps(json.dumps(data_dict))});"
+            "localStorage.removeItem('apartmentPlans');"
+            "localStorage.removeItem('apartmentPlanActive');"
+        )
         try:
             self.evaluate(js)
         except Exception:

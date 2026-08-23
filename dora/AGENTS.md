@@ -4,7 +4,7 @@ Vanilla JS SPA (SVG apartment plan editor + item inventory). Russian UI. No buil
 
 ## Quickstart
 - Open `index.html` in any browser directly (no server needed)
-- Data persists in `localStorage` under key `apartmentPlan`
+- Data persists in `localStorage` (see Multi-plan storage below)
 - Tests: `python tests/run_tests.py` (all), `--unit`, `--integration`, `--headless`
 
 ## Architecture
@@ -18,10 +18,28 @@ index.html  ← loads 12 scripts (dependency order)
 ```
 
 - **Global namespace**: all modules attach to `window.App` via IIFE closures. Never use `const App` or `let App` — always `window.App`.
-- **Communication**: `App.EventBus` (observer pattern) — events: `data:changed`, `drag:start|moving|end`, `search:*`, `guide:*`, `room:*`, `object:*`, `container:*`, `item:*`
+- **Communication**: `App.EventBus` (observer pattern) — events: `data:changed`, `drag:start|moving|end`, `search:*`, `guide:*`, `room:*`, `object:*`, `container:*`, `item:*`, `plan:created|switched|renamed|deleted|listChanged`
 - **Init order** (`js/app.js:App.init`): Ruler → Renderer → GuideManager → DragManager → Search → Modal → Panel. This sets SVG layer z-order (ruler bottom, plan middle, guides top).
 
-## Data Schema (`DataStore`, localStorage key `apartmentPlan`)
+## Multi-plan storage (`DataStore`)
+Multiple apartments ("квартиры") are supported. Registry and active plan live in localStorage:
+- `apartmentPlans` — JSON array `[{id, name}]` (plan registry)
+- `apartmentPlanActive` — id of the active plan
+- Plan data keys: legacy first plan uses `apartmentPlan`; all others use `apartmentPlan:<id>` (ids generated as `plan_*`, stable across renames)
+- API: `listPlans()`, `getActivePlanId()`, `getActivePlanName()`, `createPlan(name)` (empty doc, auto-switch, rejects empty/duplicate names case-insensitively), `switchPlan(id)`, `renamePlan(id, name)`, `deletePlan(id)` (cannot delete the last one; deleting active switches to the first remaining), `registerCloudPlans(names)` (adds cloud-only names to registry)
+- Events: `plan:created|switched|renamed|deleted|listChanged`. `plan:switched` is always followed by `data:changed`.
+
+## Google Sheets sync (`js/app.js`)
+- Spreadsheet id: `SPREADSHEET_ID` in app.js; sheet/tab `dora`, columns A:B
+- **Row 1 is always the header `key | value`** — data rows start at row 2. All sync ops go through `_fetchPlanData()`/`_writePlanBlock()`: read whole block, split off the header, mutate data rows, rewrite the block with one `values.update`. Never use `deleteDimension` or index-based cell writes (`values` skips empty grid rows, so indices can shift)
+- Each apartment = one data row keyed by current name (A), value = plan JSON (B)
+- A data row counts as an apartment only if its B parses as a plan doc (`_isPlanDoc`: rooms+objects arrays) — stray labels in column A are ignored
+- Export updates/creates the row of the ACTIVE plan (debounced on `data:changed`)
+- On gapi auth: valid plan rows register into the registry, then content of the active row is imported
+- On switch (if authorized): cloud row of the new active plan is imported; auto-export is suppressed during this import so an empty local copy cannot wipe cloud data
+- Rename updates column A of the matching data row; delete removes the row only after content validation (non-plan payloads are kept and skipped, warning logged)
+
+## Data Schema (per plan document)
 ```js
 { scale: 100, // px per meter
   rooms: [{ id, name, x, y, w, h, color? }],
@@ -74,9 +92,10 @@ index.html  ← loads 12 scripts (dependency order)
 - `tests/browser.py` — CDP browser launcher (Chrome DevTools Protocol via WebSocket). Class: `BrowserSession`.
 - `tests/integration.py` — integration tests (render, zoom, drag, resize, guides, ruler, snap).
 - `tests/run_tests.py` — runner entry point. Uses `BrowserSession` context manager.
-- `tests.html` — unit tests (EventBus, utils, DataStore, ExportImport, guides).
+- `tests.html` — unit tests (EventBus, utils, DataStore, ExportImport, guides, multi-plan).
 - Headless window: **1920×1080** via `Emulation.setDeviceMetricsOverride` so rooms at x=650+ are visible.
 - Page scroll: `plan-container.scrollTo(600, 0)` in `inject_data()`.
+- `inject_data()` also removes `apartmentPlans`/`apartmentPlanActive` keys so integration runs always boot into the legacy `plan`.
 
 ## Gotchas
 - **Guide creation**: toolbar buttons (`guide-h`/`guide-v`) set pending state + cursor change. User must **click on canvas** to place the guide. `Esc` cancels pending. Never create guides immediately on button press.

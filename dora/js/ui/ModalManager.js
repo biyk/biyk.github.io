@@ -220,6 +220,81 @@ App.ModalManager = (() => {
     if (html) show(html);
   }
 
+  function _buildAddPlanForm() {
+    return `
+      <h2>🏠 Новая квартира</h2>
+      <label>Название квартиры</label>
+      <input type="text" id="modal-name" placeholder="Например: Дача">
+      <div class="modal-buttons">
+        <button class="btn-primary" onclick="App.ModalManager._submitAddPlan()">Создать</button>
+        <button class="btn-cancel" onclick="App.ModalManager._close()">Отмена</button>
+      </div>
+    `;
+  }
+
+  function showAddPlan() {
+    show(_buildAddPlanForm());
+    const inp = document.getElementById('modal-name');
+    if (inp) inp.focus();
+  }
+
+  function _submitAddPlan() {
+    const name = _inputVal('modal-name').trim();
+    if (!name) { alert('Введите название квартиры'); return; }
+    const res = App.DataStore.createPlan(name);
+    if (!res) { alert('Квартира с таким названием уже существует'); return; }
+    close();
+  }
+
+  function _buildManagePlansForm() {
+    const active = App.DataStore.getActivePlanId();
+    const rows = App.DataStore.listPlans().map(p => `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${App.utils.escapeHtml(p.name)}${p.id === active ? ' <em style="color:#4fc3f7;">— текущая</em>' : ''}</span>
+        <button onclick="App.ModalManager.showRenamePlan('${p.id}')" title="Переименовать">✏</button>
+        <button class="btn-danger" onclick="App.ModalManager._submitDeletePlan('${p.id}')" title="Удалить">🗑</button>
+      </div>
+    `).join('');
+    return `
+      <h2>⚙ Квартиры</h2>
+      ${rows}
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="App.ModalManager._close()">Закрыть</button>
+      </div>
+    `;
+  }
+
+  function showManagePlans() { show(_buildManagePlansForm()); }
+
+  function showRenamePlan(id) {
+    const p = App.DataStore.listPlans().find(x => x.id === id);
+    if (!p) return;
+    show(`
+      <h2>✏ Переименовать квартиру</h2>
+      <label>Новое название</label>
+      <input type="text" id="modal-name" value="${App.utils.escapeHtml(p.name)}">
+      <div class="modal-buttons">
+        <button class="btn-primary" onclick="App.ModalManager._submitRenamePlan('${id}')">Сохранить</button>
+        <button class="btn-cancel" onclick="App.ModalManager._close()">Отмена</button>
+      </div>
+    `);
+  }
+
+  function _submitRenamePlan(id) {
+    const name = _inputVal('modal-name').trim();
+    if (!name) { alert('Введите название'); return; }
+    if (!App.DataStore.renamePlan(id, name)) { alert('Не удалось переименовать: возможно, такое имя уже занято'); return; }
+    showManagePlans();
+  }
+
+  function _submitDeletePlan(id) {
+    const p = App.DataStore.listPlans().find(x => x.id === id);
+    if (!p) return;
+    if (!confirm(`Удалить квартиру «${p.name}» вместе со всеми её данными?`)) return;
+    if (!App.DataStore.deletePlan(id)) { alert('Нельзя удалить последнюю квартиру'); return; }
+    showManagePlans();
+  }
+
   return {
     init() {
       _createDefault();
@@ -235,9 +310,16 @@ App.ModalManager = (() => {
     showEditObject,
     showMoveObject,
 
+    showAddPlan,
+    showManagePlans,
+    showRenamePlan,
+
     _submitRoom,
     _submitObject,
     _pickColor,
-    _submitMoveObject
+    _submitMoveObject,
+    _submitAddPlan,
+    _submitRenamePlan,
+    _submitDeletePlan
   };
 })();

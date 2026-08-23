@@ -2,7 +2,41 @@ window.App = window.App || {};
 
 App.DataStore = (() => {
   const STORAGE_KEY = 'apartmentPlan';
+  const PLANS_KEY = 'apartmentPlans';
+  const ACTIVE_KEY = 'apartmentPlanActive';
   let _data = null;
+  let _plans = [{ id: 'plan', name: 'plan' }];
+  let _activeId = 'plan';
+
+  function _keyFor(id) {
+    return id === 'plan' ? STORAGE_KEY : STORAGE_KEY + ':' + id;
+  }
+
+  function _loadRegistry() {
+    try {
+      const raw = localStorage.getItem(PLANS_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length && arr.every(p => p && p.id && p.name)) {
+          _plans = arr;
+          return;
+        }
+      }
+    } catch (e) { console.warn('[DataStore] corrupt plans registry'); }
+    _plans = [{ id: 'plan', name: 'plan' }];
+  }
+
+  function _saveRegistry() {
+    try { localStorage.setItem(PLANS_KEY, JSON.stringify(_plans)); } catch (e) { console.warn('[DataStore] save registry failed:', e); }
+  }
+
+  function _saveActiveId() {
+    try { localStorage.setItem(ACTIVE_KEY, _activeId); } catch (e) {}
+  }
+
+  function _emptyDoc() {
+    return { scale: 100, rooms: [], objects: [], guides: [] };
+  }
 
   const DEFAULT_DATA = {
     scale: 100,
@@ -131,23 +165,138 @@ App.DataStore = (() => {
   }
 
   function _persist() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_data)); } catch (e) { console.warn('[DataStore] save failed:', e); }
+    try { localStorage.setItem(_keyFor(_activeId), JSON.stringify(_data)); } catch (e) { console.warn('[DataStore] save failed:', e); }
   }
 
   return {
     init() {
+      _loadRegistry();
+      _activeId = localStorage.getItem(ACTIVE_KEY) || _plans[0].id;
+      if (!_plans.some(p => p.id === _activeId)) _activeId = _plans[0].id;
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(_keyFor(_activeId));
         if (raw) {
           _data = JSON.parse(raw);
           _validate();
+          _saveActiveId();
           return;
         }
       } catch (e) { console.warn('[DataStore] corrupt data, using defaults'); }
-      const d = App.utils.deepClone(DEFAULT_DATA);
-      _data = { scale: d.scale, rooms: d.rooms, objects: [], guides: d.guides };
-      _flattenObjects(d.objects, null, null, _data.objects);
+      if (_activeId === 'plan') {
+        const d = App.utils.deepClone(DEFAULT_DATA);
+        _data = { scale: d.scale, rooms: d.rooms, objects: [], guides: d.guides };
+        _flattenObjects(d.objects, null, null, _data.objects);
+        _persist();
+        _saveActiveId();
+        return;
+      }
+      _data = _emptyDoc();
       _persist();
+    },
+
+    listPlans() { return App.utils.deepClone(_plans); },
+    getActivePlanId() { return _activeId; },
+    getActivePlanName() {
+      const p = _plans.find(x => x.id === _activeId);
+      return p ? p.name : '';
+    },
+
+    createPlan(name) {
+      const n = String(name || '').trim();
+      if (!n) return false;
+      if (_plans.some(p => p.name.toLowerCase() === n.toLowerCase())) return false;
+      _persist();
+      const entry = { id: App.utils.generateId('plan'), name: n };
+      _plans.push(entry);
+      _saveRegistry();
+      _activeId = entry.id;
+      _saveActiveId();
+      _data = _emptyDoc();
+      _persist();
+      App.EventBus.emit('plan:created', Object.assign({}, entry));
+      App.EventBus.emit('plan:listChanged');
+      App.EventBus.emit('plan:switched', Object.assign({}, entry));
+      App.EventBus.emit('data:changed', { source: 'plan:created' });
+      return Object.assign({}, entry);
+    },
+
+    switchPlan(id) {
+      const target = _plans.find(p => p.id === id);
+      if (!target || id === _activeId) return false;
+      _persist();
+      _activeId = id;
+      try {
+        const raw = localStorage.getItem(_keyFor(id));
+        _data = raw ? JSON.parse(raw) : _emptyDoc();
+      } catch (e) { _data = _emptyDoc(); }
+      _validate();
+      _saveActiveId();
+      App.EventBus.emit('plan:switched', { id: target.id, name: target.name });
+      App.EventBus.emit('data:changed', { source: 'plan:switched' });
+      return true;
+    },
+
+    renamePlan(id, newName) {
+      const p = _plans.find(x => x.id === id);
+      if (!p) return false;
+      const n = String(newName || '').trim();
+      if (!n) return false;
+      if (_plans.some(x => x.id !== id && x.name.toLowerCase() === n.toLowerCase())) return false;
+      const oldName = p.name;
+      p.name = n;
+      _saveRegistry();
+      App.EventBus.emit('plan:renamed', { id, oldName, name: n });
+      App.EventBus.emit('plan:listChanged');
+      return true;
+    },
+
+    deletePlan(id) {
+      const idx = _plans.findIndex(p => p.id === id);
+      if (idx === -1) return false;
+      if (_plans.length === 1) return false;
+      const removed = _plans.splice(idx, 1)[0];
+      _saveRegistry();
+      try { localStorage.removeItem(_keyFor(id)); } catch (e) {}
+      let switchedTo = null;
+      if (id === _activeId) {
+        _activeId = _plans[0].id;
+        _saveActiveId();
+        try {
+          const raw = localStorage.getItem(_keyFor(_activeId));
+          _data = raw ? JSON.parse(raw) : (_activeId === 'plan' ? null : _emptyDoc());
+        } catch (e) { _data = _emptyDoc(); }
+        if (!_data) {
+          const d = App.utils.deepClone(DEFAULT_DATA);
+          _data = { scale: d.scale, rooms: d.rooms, objects: [], guides: d.guides };
+          _flattenObjects(d.objects, null, null, _data.objects);
+        }
+        _validate();
+        switchedTo = { id: _activeId, name: this.getActivePlanName() };
+      }
+      App.EventBus.emit('plan:deleted', { id: removed.id, name: removed.name });
+      App.EventBus.emit('plan:listChanged');
+      if (switchedTo) {
+        App.EventBus.emit('plan:switched', switchedTo);
+        App.EventBus.emit('data:changed', { source: 'plan:deleted' });
+      }
+      return true;
+    },
+
+    registerCloudPlans(names) {
+      let added = 0;
+      (Array.isArray(names) ? names : []).forEach(n => {
+        if (typeof n !== 'string') return;
+        const t = n.trim();
+        if (!t) return;
+        if (_plans.some(p => p.name.toLowerCase() === t.toLowerCase())) return;
+        _plans.push({ id: App.utils.generateId('plan'), name: t });
+        added++;
+      });
+      if (added) {
+        _saveRegistry();
+        App.EventBus.emit('plan:listChanged');
+      }
+      return added;
     },
 
     getData() { return _data; },

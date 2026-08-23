@@ -294,6 +294,10 @@ export async function makeTaskDone(task, store, options = {}) {
         console.error('money_reward = NaN (minutesSpent=%s, averageCalc=%s)', minutesSpent, avg, new Error().stack);
         money_reward = 0;
     }
+    const date_mode_num = parseFloat(task.date_mode);
+    if (Number.isFinite(date_mode_num)) {
+        money_reward *= date_mode_num;
+    }
 
     const updatedTask = {
         ...task,

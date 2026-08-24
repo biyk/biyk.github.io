@@ -53,6 +53,11 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - `Renderer` draws only `getRootObjects()` (`parentId === null`). Nested objects are never rendered on SVG.
 - `addObject()` with `parentId` inherits `roomId` from parent; root objects auto-detect room by spatial containment at creation if `roomId` not provided.
 - `moveObjectInto(objectId, newParentId)` nests/detaches objects. Guards: rejects self-nesting and nesting into own descendant (cycle protection). `null` detaches to root and recomputes `roomId` by center coordinates.
+- `moveItem(fromObjectId, fromIndex, toObjectId)` transfers an item between objects (splice + push). Guards: valid ids, integer index in range, source ≠ target. Emits `item:moved` + `data:changed`.
+- **Canvas drag-drop nesting**: releasing a dragged root object with the cursor over another root object nests it (`DragManager` tracks `_state.dropTargetId`, target gets `.drop-target` green outline; highlight is applied AFTER `Renderer.render()` because render rebuilds the SVG DOM every mousemove frame).
+- **Panel HTML5 dnd** (`PanelManager`, delegated listeners on `#panel-content` bound once in `init()` — panel innerHTML is rebuilt on every refresh): item rows are draggable (`data-drag-item="objId:idx"`), nested child rows are draggable + droppable (`data-drag-object` / `data-drop-object`), breadcrumb crumbs are drop targets (`data-drop-object`, «🏠 План» = `data-drop-root` detaches to root). Items cannot drop on root crumb.
+- **Canvas item drop** (`DragManager`): an item dragged from the panel can be dropped onto a root object rect on the SVG — `_onCanvasDragOver`/`_onCanvasDrop` listen on the `<svg>`, target via `e.target.closest('[data-draggable]')` with `data-dtype="object"`, highlight `.drop-target`. Panel exposes the in-flight drag via `getActiveItemDrag()`/`clearItemDrag()`.
+- `ModalManager.showMoveItem(objectId, itemIndex)` — fallback dialog («→» button on each item row) with hierarchical target select.
 - `deleteObject()` only works on **empty** objects (no children, no items) — cascade delete is not supported.
 - `moveObject()` skips room recomputation for nested objects (they have no geometry).
 - Objects are **independent** from rooms — `moveRoom()` does NOT shift child objects; `deleteRoom()` does NOT delete objects.
@@ -90,14 +95,18 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 
 ## Testing
 - `tests/browser.py` — CDP browser launcher (Chrome DevTools Protocol via WebSocket). Class: `BrowserSession`.
-- `tests/integration.py` — integration tests (render, zoom, drag, resize, guides, ruler, snap).
+- `tests/integration.py` — integration tests (render, zoom, drag, resize, guides, ruler, snap, dnd).
 - `tests/run_tests.py` — runner entry point. Uses `BrowserSession` context manager.
-- `tests.html` — unit tests (EventBus, utils, DataStore, ExportImport, guides, multi-plan).
+- `tests.html` — unit tests (EventBus, utils, DataStore, ExportImport, guides, multi-plan, moveItem).
 - Headless window: **1920×1080** via `Emulation.setDeviceMetricsOverride` so rooms at x=650+ are visible.
 - Page scroll: `plan-container.scrollTo(600, 0)` in `inject_data()`.
 - `inject_data()` also removes `apartmentPlans`/`apartmentPlanActive` keys so integration runs always boot into the legacy `plan`.
+- **CDP mouse drags cannot start at negative viewport coords** — data x≈250 is off-screen after the (600,0) scroll. Tests that drag left-side elements must `plan-container.scrollTo(0, 0)` first and assert coords > 0.
+- Panel dnd is tested via synthetic `DragEvent('dragstart'/'dragover'/'drop', {dataTransfer: new DataTransfer()})` dispatched on panel rows (bubbles to delegated listeners).
 
 ## Gotchas
+- **Cache-busting**: all script/style tags in `index.html`/`tests.html` carry `?v=YYYYMMDDNN`. The pre-commit hook (`.githooks/pre-commit` → `tools/bump_dora_cache.py`) bumps them automatically when `dora/js/**` or `dora/style.css` is staged — do NOT bump manually. Stale-token symptom: Chrome silently serves old scripts and tests run outdated code (activate hooks after clone: `git config core.hooksPath .githooks`).
+- **`apartmentPlanActive` is stored as a RAW string** (`setItem(ACTIVE_KEY, _activeId)`), not JSON — never `JSON.parse(localStorage.getItem('apartmentPlanActive'))`.
 - **Guide creation**: toolbar buttons (`guide-h`/`guide-v`) set pending state + cursor change. User must **click on canvas** to place the guide. `Esc` cancels pending. Never create guides immediately on button press.
 - **SVG layer z-order**: `plan-wrap` wraps `.ruler-layer`, `.plan-content`, `.guide-layer`. `.resize-layer` is appended to SVG after `plan-wrap`. New SVG layers must be appended in correct z-order.
 - **GuideManager `_render`** listens to `guide:added`, `guide:removed`, `guide:updated`, `data:changed` — all cause re-render.

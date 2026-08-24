@@ -331,6 +331,34 @@ body {
   border-bottom: none;
 }
 
+/* ===== Drag & drop ===== */
+[draggable="true"] {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.dragging-src {
+  opacity: 0.4;
+}
+
+.drop-hover {
+  outline: 2px dashed #4fc3f7;
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.crumb.drop-hover {
+  text-decoration: underline;
+}
+
+.object-rect.drop-target {
+  stroke: #66ff66;
+  stroke-width: 4;
+}
+
 .btn-icon {
   background: none;
   border: none;

@@ -24,6 +24,62 @@ App.DragManager = (() => {
     };
   }
 
+  // Верхний корневой объект под курсором (кроме перетаскиваемого) — цель для вложения
+  function _findDropTarget(px, py) {
+    let found = null;
+    App.DataStore.getRootObjects().forEach(o => {
+      if (_state && o.id === _state.id) return;
+      if (px >= o.x && px <= o.x + o.w && py >= o.y && py <= o.y + o.h) found = o.id;
+    });
+    return found;
+  }
+
+  // Подсветка цели после рендера (render пересоздаёт DOM каждый кадр)
+  function _applyDropHighlight() {
+    if (!_state || !_state.dropTargetId) return;
+    const el = _svg.querySelector(`[data-draggable="${_state.dropTargetId}"]`);
+    if (el) el.classList.add('drop-target');
+  }
+
+  // ===== HTML5 dnd: предмет из панели на объект канвы =====
+
+  function _clearCanvasHighlight() {
+    document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+  }
+
+  function _canvasDropEl(e) {
+    const el = e.target.closest('[data-draggable]');
+    if (!el || el.getAttribute('data-dtype') !== 'object') return null;
+    return App.DataStore.getObject(el.getAttribute('data-draggable')) ? el : null;
+  }
+
+  function _onCanvasDragOver(e) {
+    const dnd = App.PanelManager.getActiveItemDrag && App.PanelManager.getActiveItemDrag();
+    _clearCanvasHighlight();
+    if (!dnd) return;
+    const el = _canvasDropEl(e);
+    if (!el || el.getAttribute('data-draggable') === dnd.objectId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    el.classList.add('drop-target');
+  }
+
+  function _onCanvasDrop(e) {
+    const dnd = App.PanelManager.getActiveItemDrag && App.PanelManager.getActiveItemDrag();
+    _clearCanvasHighlight();
+    if (!dnd) return;
+    const el = _canvasDropEl(e);
+    if (!el) return;
+    const targetId = el.getAttribute('data-draggable');
+    if (targetId === dnd.objectId) return;
+    e.preventDefault();
+    if (App.DataStore.moveItem(dnd.objectId, dnd.index, targetId)) {
+      App.PanelManager.clearItemDrag();
+      App.PanelManager.refresh();
+      App.EventBus.emit('drag:end', { type: 'item', from: dnd.objectId, to: targetId });
+    }
+  }
+
   function _onMouseDown(e) {
     if (e.button !== 0) return;
 
@@ -116,6 +172,9 @@ App.DragManager = (() => {
       );
       App.EventBus.emit('object:moved', { id: obj.id, name: obj.name, room: room ? room.name : null });
       console.log(`[object:moved] ${obj.name} → ${room ? 'комната: ' + room.name : 'вне комнат'}`);
+
+      // Бросок на другой объект = вложить (цель определяется позицией курсора)
+      _state.dropTargetId = _findDropTarget(pt.x / z, pt.y / z);
     } else if (_state.type === 'room') {
       let finalX = newX;
       let finalY = newY;
@@ -155,6 +214,7 @@ App.DragManager = (() => {
 
     App.EventBus.emit('drag:moving', { type: _state.type, id: _state.id });
     App.Renderer.render();
+    _applyDropHighlight();
   }
 
   function _handleResize(dx, dy) {
@@ -190,6 +250,7 @@ App.DragManager = (() => {
     if (!_state) return;
 
     document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
 
     // Click emulation: mousedown + mouseup with no movement = should open panel
     if (!_state.moved && !_state.resizing) {
@@ -198,6 +259,20 @@ App.DragManager = (() => {
       _state = null;
       return;
     }
+
+    // Бросок объекта на другой объект — вложить
+    if (_state.type === 'object' && !_state.resizing && _state.dropTargetId) {
+      const draggedId = _state.id;
+      const targetId = _state.dropTargetId;
+      _state = null;
+      if (App.DataStore.moveObjectInto(draggedId, targetId)) {
+        App.PanelManager.refresh();
+        App.Renderer.render();
+        App.EventBus.emit('drag:end', { type: 'object', id: draggedId, nestedInto: targetId });
+      }
+      return;
+    }
+
     App.DataStore.save();
     App.EventBus.emit('drag:end', App.utils.deepClone(_state));
     _state = null;
@@ -209,12 +284,16 @@ App.DragManager = (() => {
       _svg.addEventListener('mousedown', _onMouseDown);
       document.addEventListener('mousemove', _onMouseMove);
       document.addEventListener('mouseup', _onMouseUp);
+      _svg.addEventListener('dragover', _onCanvasDragOver);
+      _svg.addEventListener('drop', _onCanvasDrop);
     },
 
     destroy() {
       _svg.removeEventListener('mousedown', _onMouseDown);
       document.removeEventListener('mousemove', _onMouseMove);
       document.removeEventListener('mouseup', _onMouseUp);
+      _svg.removeEventListener('dragover', _onCanvasDragOver);
+      _svg.removeEventListener('drop', _onCanvasDrop);
       _state = null;
     }
   };

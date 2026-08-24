@@ -220,6 +220,69 @@ App.ModalManager = (() => {
     if (html) show(html);
   }
 
+  function _buildMoveItemForm(objectId, itemIndex) {
+    const obj = App.DataStore.getObject(objectId);
+    if (!obj || !obj.items || itemIndex < 0 || itemIndex >= obj.items.length) return '';
+    const item = obj.items[itemIndex];
+
+    const targets = App.DataStore.getObjects().filter(o => o.id !== objectId);
+    if (targets.length === 0) return '';
+
+    let opts = '';
+    function _addObjectOptions(parentId, depth) {
+      targets.filter(o => o.parentId === parentId).forEach(o => {
+        const indent = '\u00a0\u00a0'.repeat(depth);
+        opts += `<option value="${o.id}">${indent}${depth > 0 ? '└ ' : ''}${App.utils.escapeHtml(o.name)}</option>`;
+        _addObjectOptions(o.id, depth + 1);
+      });
+    }
+    const rooms = App.DataStore.getRooms();
+    rooms.forEach(room => {
+      const roomObjs = targets.filter(o => o.parentId === null && o.roomId === room.id);
+      if (roomObjs.length === 0) return;
+      opts += `<option value="" disabled>── ${App.utils.escapeHtml(room.name)} ──</option>`;
+      roomObjs.forEach(o => {
+        opts += `<option value="${o.id}">${App.utils.escapeHtml(o.name)}</option>`;
+        _addObjectOptions(o.id, 1);
+      });
+    });
+    // Объекты без комнаты
+    const loose = targets.filter(o => o.parentId === null && !rooms.some(r => r.id === o.roomId));
+    if (loose.length > 0) {
+      opts += '<option value="" disabled>── Без комнаты ──</option>';
+      loose.forEach(o => {
+        opts += `<option value="${o.id}">${App.utils.escapeHtml(o.name)}</option>`;
+        _addObjectOptions(o.id, 1);
+      });
+    }
+
+    return `
+      <h2>➡ Переместить предмет</h2>
+      <label>«${App.utils.escapeHtml(item)}» — куда положить</label>
+      <select id="modal-target-item">${opts}</select>
+      <div class="modal-buttons">
+        <button class="btn-primary" onclick="App.ModalManager._submitMoveItem('${objectId}',${itemIndex})">Переместить</button>
+        <button class="btn-cancel" onclick="App.ModalManager._close()">Отмена</button>
+      </div>
+    `;
+  }
+
+  function _submitMoveItem(objectId, itemIndex) {
+    const targetId = document.getElementById('modal-target-item').value;
+    if (!targetId) return;
+    if (App.DataStore.moveItem(objectId, itemIndex, targetId)) {
+      close();
+      App.PanelManager.refresh();
+    } else {
+      alert('Не удалось переместить предмет');
+    }
+  }
+
+  function showMoveItem(objectId, itemIndex) {
+    const html = _buildMoveItemForm(objectId, itemIndex);
+    if (html) show(html);
+  }
+
   function _buildAddPlanForm() {
     return `
       <h2>🏠 Новая квартира</h2>
@@ -309,6 +372,7 @@ App.ModalManager = (() => {
     showAddObject,
     showEditObject,
     showMoveObject,
+    showMoveItem,
 
     showAddPlan,
     showManagePlans,
@@ -318,6 +382,7 @@ App.ModalManager = (() => {
     _submitObject,
     _pickColor,
     _submitMoveObject,
+    _submitMoveItem,
     _submitAddPlan,
     _submitRenamePlan,
     _submitDeletePlan

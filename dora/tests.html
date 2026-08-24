@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -20,18 +20,18 @@
   <div id="panel-default" style="display:none;"></div>
   <div id="panel-content" style="display:none;"></div>
 
-  <script src="js/core/EventBus.js?v=2026082301"></script>
-  <script src="js/core/utils.js?v=2026082301"></script>
-  <script src="js/core/DataStore.js?v=2026082301"></script>
-  <script src="js/ui/Ruler.js?v=2026082301"></script>
-  <script src="js/ui/GuideManager.js?v=2026082301"></script>
-  <script src="js/interaction/SearchManager.js?v=2026082301"></script>
-  <script src="js/io/ExportImport.js?v=2026082301"></script>
-  <script src="js/interaction/DragManager.js?v=2026082301"></script>
-  <script src="js/ui/ModalManager.js?v=2026082301"></script>
-  <script src="js/ui/PanelManager.js?v=2026082301"></script>
-  <script src="js/ui/Renderer.js?v=2026082301"></script>
-  <script src="js/app.js?v=2026082301"></script>
+  <script src="js/core/EventBus.js?v=2026082403"></script>
+  <script src="js/core/utils.js?v=2026082403"></script>
+  <script src="js/core/DataStore.js?v=2026082403"></script>
+  <script src="js/ui/Ruler.js?v=2026082403"></script>
+  <script src="js/ui/GuideManager.js?v=2026082403"></script>
+  <script src="js/interaction/SearchManager.js?v=2026082403"></script>
+  <script src="js/io/ExportImport.js?v=2026082403"></script>
+  <script src="js/interaction/DragManager.js?v=2026082403"></script>
+  <script src="js/ui/ModalManager.js?v=2026082403"></script>
+  <script src="js/ui/PanelManager.js?v=2026082403"></script>
+  <script src="js/ui/Renderer.js?v=2026082403"></script>
+  <script src="js/app.js?v=2026082403"></script>
 
   <script>
     const out = document.getElementById('output');
@@ -522,7 +522,7 @@
       assert(App.DataStore.getRooms().some(r => r.name === 'Веранда'), 'switchPlan — комната веранды на месте');
       assert(App.DataStore.switchPlan(created.id) === false, 'switchPlan — переключение на активную запрещено');
       assert(App.DataStore.switchPlan('nope') === false, 'switchPlan — неизвестный id отклонён');
-      assert(JSON.parse(localStorage.getItem('apartmentPlanActive')) === undefined || true, 'активная квартира сохраняется');
+      assert(localStorage.getItem('apartmentPlanActive') !== null, 'активная квартира сохраняется');
 
       // Переименование
       assert(App.DataStore.renamePlan(created.id, 'Огород') === true, 'renamePlan — переименовывает');
@@ -556,6 +556,52 @@
       App.DataStore.init();
       assert(App.DataStore.listPlans().length >= 1 && App.DataStore.getActivePlanId() === 'plan',
         'финал — состояние приведено к одной квартире plan');
+    })();
+
+    group('16. DataStore — moveItem (перенос предметов между объектами)');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      const a = App.DataStore.addObject({ name: 'ШкафА' });
+      const b = App.DataStore.addObject({ name: 'КоробкаБ' });
+      assert(a !== false && b !== false, 'подготовка — два объекта созданы');
+
+      App.DataStore.addObjectItem(a.id, 'Книга');
+      App.DataStore.addObjectItem(a.id, 'Ручка');
+      App.DataStore.addObjectItem(b.id, 'Скотч');
+
+      // События
+      let movedEvent = null, changed = 0;
+      const off1 = App.EventBus.on('item:moved', (e) => { movedEvent = e; });
+      const off2 = App.EventBus.on('data:changed', () => { changed++; });
+
+      // Успешный перенос
+      const ok = App.DataStore.moveItem(a.id, 0, b.id);
+      assert(ok === true, 'moveItem — успешный перенос возвращает true');
+      const aAfter = App.DataStore.getObject(a.id);
+      const bAfter = App.DataStore.getObject(b.id);
+      assert(aAfter.items.length === 1 && aAfter.items[0] === 'Ручка',
+        'moveItem — предмет удалён из источника');
+      assert(bAfter.items.length === 2 && bAfter.items[1] === 'Книга',
+        'moveItem — предмет добавлен в приёмник');
+      assert(movedEvent && movedEvent.item === 'Книга' && movedEvent.fromObjectId === a.id
+        && movedEvent.toObjectId === b.id, 'moveItem — событие item:moved с данными');
+      assert(changed >= 1, 'moveItem — событие data:changed');
+
+      // Ошибочные случаи
+      assert(App.DataStore.moveItem('nope', 0, b.id) === false, 'moveItem — несуществующий источник');
+      assert(App.DataStore.moveItem(a.id, 0, 'nope') === false, 'moveItem — несуществующий приёмник');
+      assert(App.DataStore.moveItem(a.id, 5, b.id) === false, 'moveItem — индекс за границей');
+      assert(App.DataStore.moveItem(a.id, -1, b.id) === false, 'moveItem — отрицательный индекс');
+      assert(App.DataStore.moveItem(a.id, 0, a.id) === false, 'moveItem — в тот же объект отклонён');
+
+      // Счётчики не изменились после ошибок
+      assert(App.DataStore.getObjectTotalItems(a.id) === 1, 'moveItem — ошибки не мутировали источник');
+      assert(App.DataStore.getObjectTotalItems(b.id) === 2, 'moveItem — ошибки не мутировали приёмник');
+
+      off1(); off2();
+      App.DataStore.reset(true);
     })();
 
     // ========== SUMMARY ==========

@@ -552,6 +552,21 @@ App.DataStore = (() => {
       return true;
     },
 
+    // Перенос предмета из одного объекта в другой
+    moveItem(fromObjectId, fromIndex, toObjectId) {
+      if (fromObjectId === toObjectId) return false;
+      const src = _data.objects.find(o => o.id === fromObjectId);
+      const dst = _data.objects.find(o => o.id === toObjectId);
+      if (!src || !dst) return false;
+      if (!Number.isInteger(fromIndex) || fromIndex < 0 || fromIndex >= src.items.length) return false;
+      const item = src.items.splice(fromIndex, 1)[0];
+      dst.items.push(item);
+      _persist();
+      App.EventBus.emit('item:moved', { fromObjectId, toObjectId, item });
+      App.EventBus.emit('data:changed', { source: 'item:moved' });
+      return true;
+    },
+
     addGuide(orientation, position) {
       const entry = { id: App.utils.generateId('g'), orientation, position: Math.round(position) };
       _data.guides.push(entry);

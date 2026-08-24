@@ -453,4 +453,231 @@ def run_all(session):
 
     test("27. Multi-plan create/switch/rename/delete", multi_plan_crud)
 
+    # --- 28. Canvas drop: object dropped onto another nests into it ---
+    def canvas_drop_nests():
+        session.evaluate("""
+            (() => {
+                App.setZoom(1);
+                App.DataStore.addObject({ name: 'ДропА', x: 200, y: 150, w: 100, h: 60 });
+                App.DataStore.addObject({ name: 'ДропБ', x: 420, y: 150, w: 100, h: 60 });
+                App.Renderer.render();
+            })()
+        """)
+        ids = session.evaluate("""
+            (() => {
+                const a = App.DataStore.getObjects().find(o => o.name === 'ДропА');
+                const b = App.DataStore.getObjects().find(o => o.name === 'ДропБ');
+                return { a: a.id, b: b.id };
+            })()
+        """)
+        roots_before = session.evaluate("App.DataStore.getRootObjects().length")
+
+        coords = session.evaluate(f"""
+            (() => {{
+                const c = document.getElementById('plan-container');
+                if (c) c.scrollTo(0, 0);
+                const svg = document.getElementById('plan');
+                const r = svg.getBoundingClientRect();
+                const a = App.DataStore.getObject('{ids["a"]}');
+                const b = App.DataStore.getObject('{ids["b"]}');
+                return {{
+                    fx: r.left + (a.x + a.w / 2), fy: r.top + (a.y + a.h / 2),
+                    tx: r.left + (b.x + b.w / 2), ty: r.top + (b.y + b.h / 2)
+                }};
+            }})()
+        """)
+        assert coords["fx"] > 0 and coords["fy"] > 0, f"Drag source off-screen: {coords}"
+
+        session.simulate_drag(coords["fx"], coords["fy"], coords["tx"], coords["ty"], steps=20)
+        time.sleep(0.3)
+
+        a_after = session.evaluate(f"App.DataStore.getObject('{ids['a']}')")
+        assert a_after["parentId"] == ids["b"], \
+            f"Dropped object must nest into target, got parentId={a_after.get('parentId')}"
+        roots_after = session.evaluate("App.DataStore.getRootObjects().length")
+        assert roots_after == roots_before - 1, f"Root count must decrease: {roots_before} -> {roots_after}"
+        rects = session.evaluate(f"document.querySelectorAll('[data-draggable=\"{ids['a']}\"]').length")
+        assert rects == 0, "Nested object must disappear from SVG"
+
+        # Highlight was applied during drag hover at some point; after release nothing stays highlighted
+        highlighted = session.evaluate("document.querySelectorAll('.drop-target').length")
+        assert highlighted == 0, f"No drop-target residue after mouseup, got {highlighted}"
+
+        # Cleanup
+        session.evaluate(f"""
+            (() => {{
+                App.DataStore.deleteObject('{ids["a"]}');
+                App.DataStore.deleteObject('{ids["b"]}');
+            }})()
+        """)
+        assert session.evaluate(
+            f"App.DataStore.getObject('{ids['a']}') === null && App.DataStore.getObject('{ids['b']}') === null"
+        ), "Cleanup failed"
+
+    test("28. Canvas drop nests object into another", canvas_drop_nests)
+
+    # --- 29. Panel drag&drop: item onto child, child onto root crumb ---
+    def panel_dnd():
+        session.evaluate("""
+            (() => {
+                App.DataStore.addObjectItem('o_test_2', 'Ложка');
+                App.DataStore.addObject({ name: 'ПанельЯщик', parentId: 'o_test_2' });
+                App.PanelManager.showObject('o_test_2');
+            })()
+        """)
+        child_id = session.evaluate(
+            "App.DataStore.getObjects().find(o => o.name === 'ПанельЯщик').id"
+        )
+
+        def dispatch_dnd(from_sel_js, to_sel_js):
+            session.evaluate(f"""
+                (() => {{
+                    const content = document.getElementById('panel-content');
+                    const src = {from_sel_js};
+                    const dst = {to_sel_js};
+                    if (!src || !dst) throw new Error('dnd elements not found');
+                    const dt = new DataTransfer();
+                    src.dispatchEvent(new DragEvent('dragstart', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                    dst.dispatchEvent(new DragEvent('dragover', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                    dst.dispatchEvent(new DragEvent('drop', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                    src.dispatchEvent(new DragEvent('dragend', {{ bubbles: true, dataTransfer: dt }}));
+                }})()
+            """)
+            time.sleep(0.2)
+
+        # Item row -> child object row
+        dispatch_dnd(
+            "content.querySelector('[data-drag-item]')",
+            f"content.querySelector('[data-drop-object=\"{child_id}\"]')"
+        )
+        item_moved = session.evaluate(
+            f"App.DataStore.getObject('{child_id}').items.includes('Ложка')"
+        )
+        assert item_moved, "Item must move into child object via panel dnd"
+        parent_items = session.evaluate("App.DataStore.getObject('o_test_2').items.length")
+        assert parent_items == 0, f"Source items must be empty after move, got {parent_items}"
+
+        # Child object row -> «🏠 План» crumb (detach to root)
+        dispatch_dnd(
+            f"content.querySelector('[data-drag-object=\"{child_id}\"]')",
+            "content.querySelector('[data-drop-root]')"
+        )
+        detached = session.evaluate(f"App.DataStore.getObject('{child_id}').parentId")
+        assert detached is None, f"Drop on plan crumb must detach object, got parentId={detached}"
+
+        # Cleanup
+        session.evaluate(f"""
+            (() => {{
+                const c = App.DataStore.getObject('{child_id}');
+                if (c.items.length) App.DataStore.removeObjectItem(c.id, 0);
+                App.DataStore.deleteObject(c.id);
+                App.PanelManager.showDefault();
+            }})()
+        """)
+
+    test("29. Panel dnd moves item and detaches object", panel_dnd)
+
+    # --- 30. Modal moveItem via «→» button ---
+    def modal_move_item():
+        session.evaluate("""
+            (() => {
+                App.DataStore.addObjectItem('o_test_2', 'Кружка');
+                App.DataStore.addObject({ name: 'МодалЦель', x: 200, y: 300, w: 80, h: 50 });
+            })()
+        """)
+        target_id = session.evaluate(
+            "App.DataStore.getObjects().find(o => o.name === 'МодалЦель').id"
+        )
+        session.evaluate("App.ModalManager.showMoveItem('o_test_2', 0)")
+        visible = session.evaluate("document.getElementById('modal-overlay').style.display !== 'none'")
+        assert visible, "showMoveItem modal must open"
+
+        has_select = session.evaluate("document.getElementById('modal-target-item') !== null")
+        assert has_select, "modal-target-item select missing"
+
+        session.evaluate(f"""
+            (() => {{
+                document.getElementById('modal-target-item').value = '{target_id}';
+                App.ModalManager._submitMoveItem('o_test_2', 0);
+            }})()
+        """)
+        moved = session.evaluate(f"App.DataStore.getObject('{target_id}').items.includes('Кружка')")
+        assert moved, "Item must appear in target after modal submit"
+        closed = session.evaluate("document.getElementById('modal-overlay').style.display === 'none'")
+        assert closed, "Modal must close after successful move"
+
+        # Cleanup
+        session.evaluate(f"""
+            (() => {{
+                App.DataStore.removeObjectItem('{target_id}', 0);
+                App.DataStore.deleteObject('{target_id}');
+            }})()
+        """)
+
+    test("30. Modal moveItem transfers item", modal_move_item)
+
+    # --- 31. Panel item dropped onto canvas root object ---
+    def panel_item_to_canvas():
+        session.evaluate("""
+            (() => {
+                App.setZoom(1);
+                const shkaf = App.DataStore.addObject({ name: 'ШкафТест', x: 700, y: 150, w: 100, h: 80 });
+                const polka = App.DataStore.addObject({ name: 'ПолкаТест', parentId: shkaf.id });
+                App.DataStore.addObjectItem(polka.id, 'ОдеялоТест');
+                App.DataStore.addObject({ name: 'КроватьТест', x: 700, y: 300, w: 100, h: 60 });
+                App.PanelManager.showObject(polka.id);
+            })()
+        """)
+        ids = session.evaluate("""
+            (() => ({
+                polka: App.DataStore.getObjects().find(o => o.name === 'ПолкаТест').id,
+                bed: App.DataStore.getObjects().find(o => o.name === 'КроватьТест').id
+            }))()
+        """)
+
+        # Synthetic HTML5 dnd: panel item row -> SVG root object rect
+        moved = session.evaluate(f"""
+            (() => {{
+                const content = document.getElementById('panel-content');
+                const src = content.querySelector('[data-drag-item]');
+                const dst = document.querySelector('[data-draggable="{ids["bed"]}"]');
+                if (!src || !dst) return {{ error: 'src=' + !!src + ' dst=' + !!dst }};
+                const dt = new DataTransfer();
+                src.dispatchEvent(new DragEvent('dragstart', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                const overOk = dst.dispatchEvent(new DragEvent('dragover', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                dst.dispatchEvent(new DragEvent('drop', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                src.dispatchEvent(new DragEvent('dragend', {{ bubbles: true, dataTransfer: dt }}));
+                return {{ overOk }};
+            }})()
+        """)
+        assert "error" not in moved, f"dnd elements missing: {moved}"
+        # dispatchEvent возвращает false, если preventDefault вызван — это и есть разрешённый drop
+        assert moved["overOk"] is False, "dragover must be preventDefault'ed on canvas object (drop allowed)"
+
+        in_bed = session.evaluate(
+            f"App.DataStore.getObject('{ids['bed']}').items.includes('ОдеялоТест')"
+        )
+        assert in_bed, "Item must land on canvas target object"
+        polka_items = session.evaluate(f"App.DataStore.getObject('{ids['polka']}').items.length")
+        assert polka_items == 0, f"Source shelf must be empty after drop, got {polka_items}"
+
+        # No highlight residue after drop
+        residue = session.evaluate("document.querySelectorAll('.drop-target').length")
+        assert residue == 0, f"No .drop-target residue after canvas drop, got {residue}"
+
+        # Cleanup
+        session.evaluate(f"""
+            (() => {{
+                App.DataStore.removeObjectItem('{ids['bed']}', 0);
+                App.DataStore.deleteObject('{ids['polka']}');
+                App.DataStore.deleteObject('{ids['bed']}');
+                App.DataStore.deleteObject(App.DataStore.getObjects().find(o => o.name === 'ШкафТест').id);
+                App.PanelManager.showDefault();
+            }})()
+        """)
+        left = session.evaluate("App.DataStore.getObjects().some(o => ['ШкафТест','ПолкаТест','КроватьТест'].includes(o.name))")
+        assert not left, "Cleanup failed"
+
+    test("31. Panel item drops onto canvas root object", panel_item_to_canvas)
+
     return results

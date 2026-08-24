@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# ===== 1. version.js (dnd) — patch bump при каждом коммите =====
+
+VERSION_FILE="dnd/static/js/version.js"
+
+# Если файл не существует, создаем его с начальной версией
+if [ ! -f "$VERSION_FILE" ]; then
+  echo "window.version = '0.0.0'" > "$VERSION_FILE"
+fi
+
+# Извлекаем текущую версию
+CURRENT_VERSION=$(grep -oP "(?<=window\.version = ')[0-9]+\.[0-9]+\.[0-9]+(?=')" "$VERSION_FILE")
+
+# Разбиваем версию на части
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+# Увеличиваем PATCH на 1
+PATCH=$((PATCH + 1))
+
+# Формируем новую версию
+NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+# Обновляем файл version.js
+echo "window.version = '$NEW_VERSION'" > "$VERSION_FILE"
+
+# Добавляем файл в индекс для следующего коммита
+git add "$VERSION_FILE"
+
+# ===== 2. dora — bump ?v= кеш-токенов, если изменены dora/js/** или dora/style.css =====
+
+python tools/bump_dora_cache.py || exit 1
+
+# ===== 3. todo — production build и стейдж ассетов =====
+
+cd todo/src && npm run build
+
+cd ../.. && git add todo

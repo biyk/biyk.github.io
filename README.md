@@ -1,4 +1,36 @@
 
+## Хуки Git (обязательно после clone!) ##
+
+Хуки репозитория лежат в каталоге `.githooks/` и подключаются одной командой:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Без этого **коммиты будут проходить без сборки и авто-версионирования** — сайт на GitHub Pages обновится некорректно.
+
+### Что делают хуки
+
+| Хук | Действие |
+|-----|----------|
+| `pre-commit` | 1) поднимает patch-версию в `dnd/static/js/version.js`; 2) если в коммите есть изменения `dora/js/**` или `dora/style.css` — поднимает `?v=` кеш-токены в `dora/index.html` и `dora/tests.html` (`tools/bump_dora_cache.py`); 3) пересобирает `todo/src` (`npm run build`) и добавляет ассеты в коммит |
+| `post-checkout`, `post-commit`, `post-merge`, `pre-push` | служебные хуки Git LFS (видео `*.MP4`/`*.mov`) — устанавливаются автоматически через `git lfs install`, скопированы в `.githooks`, чтобы работать при переопределённом `hooksPath` |
+
+### Требования на машине
+
+- **Git Bash** (входит в Git for Windows) — хуки написаны под bash
+- **Python 3** в PATH — нужен для `tools/bump_dora_cache.py`
+- **Node.js/npm** в PATH — нужна сборка todo
+- **git-lfs** — для видео; ставится один раз: `git lfs install`
+
+### Проверка, что хуки активны
+
+```bash
+git config core.hooksPath   # должно вывести: .githooks
+```
+
+Если вывело пусто — выполните команду подключения выше. Старые хуки в `.git/hooks` при этом игнорируются.
+
 ## Должно быть установлено ##
 
 node.js - https://nodejs.org/ Версию лучше последнюю скачать

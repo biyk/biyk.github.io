@@ -35,6 +35,9 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - Each apartment = one data row keyed by current name (A), value = plan JSON (B)
 - A data row counts as an apartment only if its B parses as a plan doc (`_isPlanDoc`: rooms+objects arrays) — stray labels in column A are ignored
 - Export updates/creates the row of the ACTIVE plan (debounced on `data:changed`)
+- **Auth auto-renewal**: `_renewAuth()` silently refreshes an expired token via `tokenClient.requestAccessToken({prompt:''})` (shared promise guards parallel calls; 90s timeout settles blocked popups). `_doSheetsExport` renews before writing and retries once on 401/403 (`utils.isAuthError`). On failure it sets `dora_unsynced=1` and shows the «☁ Восстановить синхронизацию» banner — its click is a user gesture, so the popup is not blocked. Success clears the flag and hides the banner.
+- **Boot protection**: if `dora_unsynced` is set at load, export runs BEFORE import; import is skipped entirely until local edits are safely pushed (prevents stale cloud data from overwriting newer local edits).
+- Preventive renewal on the `doAuth` body event only fires when `gapi_token` exists in localStorage (never pop up for anonymous visitors).
 - On gapi auth: valid plan rows register into the registry, then content of the active row is imported
 - On switch (if authorized): cloud row of the new active plan is imported; auto-export is suppressed during this import so an empty local copy cannot wipe cloud data
 - Rename updates column A of the matching data row; delete removes the row only after content validation (non-plan payloads are kept and skipped, warning logged)
@@ -103,6 +106,8 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - `inject_data()` also removes `apartmentPlans`/`apartmentPlanActive` keys so integration runs always boot into the legacy `plan`.
 - **CDP mouse drags cannot start at negative viewport coords** — data x≈250 is off-screen after the (600,0) scroll. Tests that drag left-side elements must `plan-container.scrollTo(0, 0)` first and assert coords > 0.
 - Panel dnd is tested via synthetic `DragEvent('dragstart'/'dragover'/'drop', {dataTransfer: new DataTransfer()})` dispatched on panel rows (bubbles to delegated listeners).
+- **Google-layer tests (32–33) need an http-origin**: on `file://` the dynamic `import()` of google.js is CORS-blocked and `_gsReady` never rises. `integration.py` starts a localhost `http.server` (repo root) and reconnects the tab.
+- GIS token requests are stubbed by patching the EXISTING `App._gsdb.tokenClient.requestAccessToken` via a `setInterval` document-script (`Page.addScriptToEvaluateOnNewDocument`) — wrapping `initTokenClient` races against gsi script load. Real popups hang forever in headless; never let tests hit real GIS.
 
 ## Gotchas
 - **Cache-busting**: all script/style tags in `index.html`/`tests.html` carry `?v=YYYYMMDDNN`. The pre-commit hook (`.githooks/pre-commit` → `tools/bump_dora_cache.py`) bumps them automatically when `dora/js/**` or `dora/style.css` is staged — do NOT bump manually. Stale-token symptom: Chrome silently serves old scripts and tests run outdated code (activate hooks after clone: `git config core.hooksPath .githooks`).

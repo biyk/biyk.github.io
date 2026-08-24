@@ -50,10 +50,22 @@ App.init = () => {
     import('../../dnd/static/js/db/google.js').then(function(imports) {
       var GoogleSheetDB = imports.GoogleSheetDB;
       App._gsdb = new GoogleSheetDB();
-      App._gsdb.waitGoogle().then(function() {
+      App._gsdb.waitGoogle().then(async function() {
         _gsReady = true;
-        _doSheetsImport(true);
+        // Есть несинхронизированные правки — сначала выталкиваем их в облако,
+        // иначе импорт затрёт локальные данные старой версией из таблицы
+        if (localStorage.getItem('dora_unsynced')) {
+          await _doSheetsExport();
+        }
+        if (!localStorage.getItem('dora_unsynced')) {
+          _doSheetsImport(true);
+        }
         App.EventBus.on('data:changed', _debouncedExport);
+      });
+      // Таймер GoogleSheetDB диспатчит doAuth при истечении токена — тихо продлеваем,
+      // но только если пользователь ранее авторизовался (не дёргаем попапом анонимов)
+      document.body.addEventListener('doAuth', function() {
+        if (localStorage.getItem('gapi_token')) _renewAuth();
       });
     }).catch(function(err) { console.warn('[App] Google API:', err); });
 
@@ -81,6 +93,71 @@ let _exportTimer = null;
 function _debouncedExport() {
   clearTimeout(_exportTimer);
   _exportTimer = setTimeout(function() { _doSheetsExport(); }, 1000);
+}
+
+// Тихое продление токена (prompt:'' — попап только если Google потребует интеракцию).
+// Общий Promise: параллельные вызовы ждут один и тот же запрос токена.
+// Таймаут: попап могли заблокировать или проигнорировать — не висим вечно.
+const RENEW_TIMEOUT_MS = 90000;
+let _authPromise = null;
+function _renewAuth() {
+  if (_authPromise) return _authPromise;
+  _authPromise = new Promise(function(resolve) {
+    var tc = App._gsdb && App._gsdb.tokenClient;
+    if (!tc || !window.google || !window.gapi || !gapi.client) {
+      _authPromise = null;
+      return resolve(false);
+    }
+    var settled = false;
+    var prev = tc.callback;
+    function settle(ok) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      tc.callback = prev;
+      _authPromise = null;
+      resolve(ok);
+    }
+    var timer = setTimeout(function() { settle(false); }, RENEW_TIMEOUT_MS);
+    tc.callback = function(resp) {
+      if (!resp || resp.error) return settle(false);
+      try {
+        localStorage.setItem('gapi_token', JSON.stringify(gapi.client.getToken()));
+        localStorage.setItem('gapi_token_expires',
+          JSON.stringify(App._gsdb.getTime() + resp.expires_in));
+      } catch (e) { /* ignore */ }
+      settle(true);
+    };
+    tc.requestAccessToken({ prompt: '' });
+  });
+  return _authPromise;
+}
+
+// Баннер «восстановить синхронизацию»: клик даёт user-gesture,
+// поэтому попап авторизации не блокируется браузером
+function _showSyncBanner() {
+  var b = document.getElementById('dora-sync-banner');
+  if (!b) {
+    b = document.createElement('button');
+    b.id = 'dora-sync-banner';
+    b.className = 'sync-banner';
+    b.textContent = '☁ Вход Google истёк — нажмите, чтобы восстановить синхронизацию';
+    b.addEventListener('click', function() {
+      _renewAuth().then(function(ok) {
+        if (ok) {
+          b.classList.remove('visible');
+          _doSheetsExport();
+        }
+      });
+    });
+    document.body.appendChild(b);
+  }
+  b.classList.add('visible');
+}
+
+function _hideSyncBanner() {
+  var b = document.getElementById('dora-sync-banner');
+  if (b) b.classList.remove('visible');
 }
 
 function _bindToolbar() {
@@ -167,9 +244,17 @@ async function _writePlanBlock(header, rows) {
   });
 }
 
-async function _doSheetsExport() {
-  if (!_gsReady || !window.gapi || !gapi.client || !gapi.client.getToken()) return;
+async function _doSheetsExport(_retried) {
+  if (!_gsReady || !window.gapi || !gapi.client) return;
   try {
+    if (!gapi.client.getToken()) {
+      // Токена нет (истёк/не авторизован) — тихо продлеваем и продолжаем
+      if (!(await _renewAuth())) {
+        localStorage.setItem('dora_unsynced', '1');
+        _showSyncBanner();
+        return;
+      }
+    }
     var keyName = App.DataStore.getActivePlanName();
     if (!keyName) return;
     var json = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
@@ -180,8 +265,17 @@ async function _doSheetsExport() {
     }
     if (!found) data.rows.push([keyName, json]);
     await _writePlanBlock(data.header, data.rows);
+    localStorage.removeItem('dora_unsynced');
+    _hideSyncBanner();
   } catch (err) {
-    console.warn('[Sheets] auto-export error:', err);
+    if (App.utils.isAuthError(err)) {
+      // Токен протух между проверкой и записью — продлеваем и ретраим один раз
+      if (!_retried && await _renewAuth()) return _doSheetsExport(true);
+      localStorage.setItem('dora_unsynced', '1');
+      _showSyncBanner();
+    } else {
+      console.warn('[Sheets] auto-export error:', err);
+    }
   }
 }
 
@@ -304,5 +398,12 @@ function _defineGlobals() {
     event.target.value = '';
   };
 }
+
+// Минимальный хэндл для интеграционных тестов (tests/integration.py)
+App._sheetsDebug = {
+  isReady: () => _gsReady,
+  renewAuth: () => _renewAuth(),
+  doExport: (_retried) => _doSheetsExport(_retried)
+};
 
 document.addEventListener('DOMContentLoaded', App.init);

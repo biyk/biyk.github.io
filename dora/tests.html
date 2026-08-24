@@ -20,18 +20,18 @@
   <div id="panel-default" style="display:none;"></div>
   <div id="panel-content" style="display:none;"></div>
 
-  <script src="js/core/EventBus.js?v=2026082403"></script>
-  <script src="js/core/utils.js?v=2026082403"></script>
-  <script src="js/core/DataStore.js?v=2026082403"></script>
-  <script src="js/ui/Ruler.js?v=2026082403"></script>
-  <script src="js/ui/GuideManager.js?v=2026082403"></script>
-  <script src="js/interaction/SearchManager.js?v=2026082403"></script>
-  <script src="js/io/ExportImport.js?v=2026082403"></script>
-  <script src="js/interaction/DragManager.js?v=2026082403"></script>
-  <script src="js/ui/ModalManager.js?v=2026082403"></script>
-  <script src="js/ui/PanelManager.js?v=2026082403"></script>
-  <script src="js/ui/Renderer.js?v=2026082403"></script>
-  <script src="js/app.js?v=2026082403"></script>
+  <script src="js/core/EventBus.js?v=2026082404"></script>
+  <script src="js/core/utils.js?v=2026082404"></script>
+  <script src="js/core/DataStore.js?v=2026082404"></script>
+  <script src="js/ui/Ruler.js?v=2026082404"></script>
+  <script src="js/ui/GuideManager.js?v=2026082404"></script>
+  <script src="js/interaction/SearchManager.js?v=2026082404"></script>
+  <script src="js/io/ExportImport.js?v=2026082404"></script>
+  <script src="js/interaction/DragManager.js?v=2026082404"></script>
+  <script src="js/ui/ModalManager.js?v=2026082404"></script>
+  <script src="js/ui/PanelManager.js?v=2026082404"></script>
+  <script src="js/ui/Renderer.js?v=2026082404"></script>
+  <script src="js/app.js?v=2026082404"></script>
 
   <script>
     const out = document.getElementById('output');
@@ -602,6 +602,38 @@
 
       off1(); off2();
       App.DataStore.reset(true);
+    })();
+
+    group('17. Utils — isAuthError (распознавание ошибок авторизации Google)');
+
+    (function() {
+      const isAuthError = App.utils.isAuthError;
+
+      assert(typeof isAuthError === 'function', 'isAuthError — функция существует');
+
+      // gapi: ошибка приходит как объект со status
+      assert(isAuthError({ status: 401 }) === true, 'isAuthError — status 401');
+      assert(isAuthError({ status: 403 }) === true, 'isAuthError — status 403');
+      assert(isAuthError({ status: 404 }) === false, 'isAuthError — status 404 не авторизация');
+      assert(isAuthError({ status: 500 }) === false, 'isAuthError — status 500 не авторизация');
+
+      // gapi: err.result.error.code
+      assert(isAuthError({ result: { error: { code: 401, message: 'Invalid Credentials' } } }) === true,
+        'isAuthError — result.error.code 401');
+      assert(isAuthError({ result: { error: { code: 403, status: 'PERMISSION_DENIED' } } }) === true,
+        'isAuthError — result.error.code 403');
+
+      // GIS token client: resp.error как строка
+      assert(isAuthError({ error: 'invalid_token' }) === true, 'isAuthError — error строка (GIS)');
+      assert(isAuthError({ error: 'access_denied' }) === true, 'isAuthError — access_denied');
+      assert(isAuthError({ error: 'popup_closed_by_user' }) === true, 'isAuthError — попап закрыт пользователем');
+
+      // Не ошибки авторизации
+      assert(isAuthError(null) === false, 'isAuthError — null безопасен');
+      assert(isAuthError(undefined) === false, 'isAuthError — undefined безопасен');
+      assert(isAuthError(new TypeError('x is not a function')) === false, 'isAuthError — обычный Error не авторизация');
+      assert(isAuthError({}) === false, 'isAuthError — пустой объект не авторизация');
+      assert(isAuthError('строка') === false, 'isAuthError — строка не авторизация');
     })();
 
     // ========== SUMMARY ==========

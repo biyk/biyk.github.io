@@ -51,9 +51,19 @@ App.utils = (() => {
     return d.innerHTML;
   }
 
+  // Ошибка авторизации Google? (gapi status / result.error.code / GIS resp.error)
+  function isAuthError(err) {
+    if (!err || typeof err !== 'object') return false;
+    if (err.status === 401 || err.status === 403) return true;
+    const code = err.result && err.result.error && err.result.error.code;
+    if (code === 401 || code === 403) return true;
+    if (typeof err.error === 'string') return true;
+    return false;
+  }
+
   const COLORS = ['#4a90d9', '#e94560', '#4fc3f7', '#66bb6a', '#ffa726', '#ab47bc', '#ef5350', '#26c6da', '#8d6e63', '#78909c'];
   let _colorIdx = 0;
   function nextColor() { const c = COLORS[_colorIdx % COLORS.length]; _colorIdx++; return c; }
 
-  return { generateId, clamp, roundTo, isNear, createSvgElement, svgPointFromEvent, deepClone, throttle, escapeHtml, nextColor, COLORS };
+  return { generateId, clamp, roundTo, isNear, createSvgElement, svgPointFromEvent, deepClone, throttle, escapeHtml, isAuthError, nextColor, COLORS };
 })();

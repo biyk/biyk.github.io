@@ -3,6 +3,8 @@ Integration tests: open index.html, inject test data, verify SVG rendering,
 zoom, drag/resize, guides, and ruler via CDP.
 """
 
+import functools
+import http.server
 import json
 import os
 import sys
@@ -12,6 +14,19 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 # wrap time.sleep so it's accessible inside test closures
 time = _time
+
+
+def start_http_server(root):
+    """HTTP-сервер для тестов Google-слоя: на file:// динамический import()
+    google.js блокируется CORS, нужен http-origin."""
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=root)
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    return httpd, httpd.server_address[1]
+
+
+import threading
 
 # Test data: simplified plan with 2 rooms + 2 objects
 TEST_DATA = {
@@ -679,5 +694,167 @@ def run_all(session):
         assert not left, "Cleanup failed"
 
     test("31. Panel item drops onto canvas root object", panel_item_to_canvas)
+
+    # --- 32. Export silently renews auth and retries when token missing ---
+    def export_renews_and_retries():
+        from browser import send_cdp
+
+        # Патчер БЕЗ гонки: интервалом ловим УЖЕ созданный GIS-клиент и подменяем
+        # requestAccessToken на мгновенный "успех" (реальный попап в headless висит).
+        # Ставится до reload и переживает его.
+        resp = send_cdp(session.ws, "Page.addScriptToEvaluateOnNewDocument", {"source": """
+            setInterval(function(){
+              const tc = window.App && window.App._gsdb && window.App._gsdb.tokenClient;
+              if (tc && typeof tc.requestAccessToken === 'function' && !tc.__testPatched) {
+                tc.__testPatched = true;
+                tc.requestAccessToken = function() {
+                  window.__gisRequests = (window.__gisRequests || 0) + 1;
+                  if (window.gapi && gapi.client) {
+                    gapi.client.setToken({ access_token: 'fake_test_token' });
+                  }
+                  const cb = this.callback;
+                  setTimeout(() => cb && cb({ expires_in: 3600 }), 0);
+                };
+              }
+            }, 5);
+        """})
+        sid = (resp.get("result") or {}).get("identifier")
+        send_cdp(session.ws, "Page.reload")
+
+        ready = False
+        for _ in range(40):
+            try:
+                if session.evaluate("(window.App && App._sheetsDebug && App._sheetsDebug.isReady()) === true"):
+                    ready = True
+                    break
+            except Exception:
+                pass
+            time.sleep(0.5)
+        assert ready, "Google layer never became ready (_gsReady)"
+
+        session.evaluate("""
+            (() => {
+                window.__updCalls = 0;
+                const values = gapi.client.sheets.spreadsheets.values;
+                values.get = () => Promise.resolve({ result: { values:
+                    [['key', 'value'], [App.DataStore.getActivePlanName(), '']] } });
+                values.update = () => { window.__updCalls++; return Promise.resolve({ result: {} }); };
+            })()
+        """)
+        session.evaluate("gapi.client.setToken('')")
+        session.evaluate("localStorage.setItem('dora_unsynced', '1')")
+
+        # doExport возвращает промис — evaluate дожидается его (awaitPromise)
+        session.evaluate("App._sheetsDebug.doExport()")
+
+        gis = session.evaluate("window.__gisRequests || 0")
+        upd = session.evaluate("window.__updCalls")
+        flag = session.evaluate("localStorage.getItem('dora_unsynced')")
+        saved = session.evaluate(
+            "(function(){ try { return JSON.parse(localStorage.getItem('gapi_token')).access_token; } catch(e){ return null; } })()"
+        )
+        assert gis >= 1, f"Renewal must have been requested, got {gis}"
+        assert upd == 1, f"Write must happen exactly once, got {upd}"
+        assert flag is None, f"dora_unsynced must be cleared after successful export, got {flag}"
+        assert saved == "fake_test_token", f"Renewed token must persist to localStorage, got {saved}"
+
+        banner_visible = session.evaluate(
+            "document.getElementById('dora-sync-banner')?.classList.contains('visible') || false"
+        )
+        assert not banner_visible, "Sync banner must stay hidden after successful export"
+
+        session.evaluate("localStorage.removeItem('dora_unsynced')")
+        if sid:
+            send_cdp(session.ws, "Page.removeScriptToEvaluateOnNewDocument",
+                     {"identifier": sid})
+
+    # --- 33. Unsynced local edits survive page reload (import skipped) ---
+    def unsynced_survives_reload():
+        from browser import send_cdp
+
+        # Патчер-отказник: любой запрос токена мгновенно возвращает access_denied
+        resp = send_cdp(session.ws, "Page.addScriptToEvaluateOnNewDocument", {"source": """
+            setInterval(function(){
+              const tc = window.App && window.App._gsdb && window.App._gsdb.tokenClient;
+              if (tc && typeof tc.requestAccessToken === 'function' && !tc.__testPatched) {
+                tc.__testPatched = true;
+                tc.requestAccessToken = function() {
+                  window.__gisRequests = (window.__gisRequests || 0) + 1;
+                  const cb = this.callback;
+                  setTimeout(() => cb && cb({ error: 'access_denied' }), 0);
+                };
+              }
+            }, 5);
+        """})
+        sid = (resp.get("result") or {}).get("identifier")
+
+        session.evaluate("""
+            (() => {
+                App.DataStore.addRoom({ name: 'МаркерНесинк', x: 10, y: 10, w: 100, h: 100 });
+                localStorage.setItem('dora_unsynced', '1');
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                if (window.gapi && gapi.client) gapi.client.setToken('');
+            })()
+        """)
+        from browser import send_cdp
+        send_cdp(session.ws, "Page.reload")
+        time.sleep(1)
+
+        # Ждём завершения boot-ветки (экспорт при невозможности продления)
+        booted = False
+        for _ in range(40):
+            try:
+                v = session.evaluate("(window.App && App._sheetsDebug && App._sheetsDebug.isReady()) === true")
+            except Exception:
+                v = False
+            if v:
+                booted = True
+                break
+            time.sleep(0.5)
+        assert booted, "App never became ready after reload"
+        time.sleep(1)
+
+        survived = session.evaluate(
+            "App.DataStore.getRooms().some(r => r.name === 'МаркерНесинк')"
+        )
+        assert survived, "Unsynced local edit was wiped by cloud import after reload"
+
+        flag_still = session.evaluate("localStorage.getItem('dora_unsynced')")
+        assert flag_still == "1", f"dora_unsynced must persist while renewal fails, got {flag_still}"
+
+        gis_hits = session.evaluate("window.__gisRequests || 0")
+        assert gis_hits >= 1, "Boot export should have attempted token renewal"
+
+        banner_visible = session.evaluate(
+            "document.getElementById('dora-sync-banner')?.classList.contains('visible') || false"
+        )
+        assert banner_visible, "Sync banner must be shown when renewal fails"
+
+        # Cleanup
+        if sid:
+            send_cdp(session.ws, "Page.removeScriptToEvaluateOnNewDocument",
+                     {"identifier": sid})
+        session.evaluate("""
+            (() => {
+                const m = App.DataStore.getRooms().find(r => r.name === 'МаркерНесинк');
+                if (m) App.DataStore.deleteRoom(m.id);
+                localStorage.removeItem('dora_unsynced');
+                const b = document.getElementById('dora-sync-banner');
+                if (b) b.classList.remove('visible');
+                App.Renderer.render();
+            })()
+        """)
+
+    # Google-слой тестируется только с http-origin: на file:// динамический
+    # import() google.js блокируется CORS, _gsReady никогда не поднимется
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    httpd, port = start_http_server(repo_root)
+    try:
+        session.connect_page(f"http://127.0.0.1:{port}/dora/index.html")
+        test("32. Export renews auth and retries", export_renews_and_retries)
+        test("33. Unsynced edits survive reload", unsynced_survives_reload)
+    finally:
+        httpd.shutdown()
 
     return results

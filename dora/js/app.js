@@ -179,20 +179,12 @@ function _resolveAction(action) {
     'zoom-out':      () => App.zoomOut(),
     'export':        () => App.ExportImport.exportData(),
     'import':        () => document.getElementById('importFile').click(),
-    'reset':         () => _handleReset(),
     'search-clear':  () => App.SearchManager.clear(),
     'gdrive-auth':   () => _handleGDriveAuth(),
     'add-plan':      () => App.ModalManager.showAddPlan(),
     'manage-plans':  () => App.ModalManager.showManagePlans(),
   };
   return map[action] || null;
-}
-
-function _handleReset() {
-  if (!confirm('Очистить все данные? Это действие необратимо.')) return;
-  App.DataStore.reset(true);
-  App.PanelManager.showDefault();
-  App.SearchManager.clear();
 }
 
 function _handleGDriveAuth() {

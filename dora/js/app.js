@@ -52,20 +52,17 @@ App.init = () => {
       App._gsdb = new GoogleSheetDB();
       App._gsdb.waitGoogle().then(async function() {
         _gsReady = true;
-        // Есть несинхронизированные правки — сначала выталкиваем их в облако,
-        // иначе импорт затрёт локальные данные старой версией из таблицы
-        if (localStorage.getItem('dora_unsynced')) {
-          await _doSheetsExport();
-        }
-        if (!localStorage.getItem('dora_unsynced')) {
-          _doSheetsImport(true);
-        }
+        // Google Sheets — источник истины: при запуске (если есть токен) скачиваем
+        // облако и перезаписываем локальные данные, чтобы устройства синхронизировались.
+        await _doSheetsImport(true);
         App.EventBus.on('data:changed', _debouncedExport);
       });
       // Таймер GoogleSheetDB диспатчит doAuth при истечении токена — тихо продлеваем,
       // но только если пользователь ранее авторизовался (не дёргаем попапом анонимов)
       document.body.addEventListener('doAuth', function() {
-        if (localStorage.getItem('gapi_token')) _renewAuth();
+        if (localStorage.getItem('gapi_token')) {
+          _renewAuth().then(function(ok) { if (ok) _doSheetsImport(true); });
+        }
       });
     }).catch(function(err) { console.warn('[App] Google API:', err); });
 
@@ -281,6 +278,8 @@ async function _doSheetsImport(silent) {
       .map(function(r) { return r[0]; });
     App.DataStore.registerCloudPlans(names);
     await _importActiveRow(data.rows, silent);
+    // Облако теперь совпадает с локальным — отметку «есть неслитые правки» снимаем
+    localStorage.removeItem('dora_unsynced');
   } catch (err) {
     console.warn('[Sheets] auto-import error:', err);
   }
@@ -395,7 +394,8 @@ function _defineGlobals() {
 App._sheetsDebug = {
   isReady: () => _gsReady,
   renewAuth: () => _renewAuth(),
-  doExport: (_retried) => _doSheetsExport(_retried)
+  doExport: (_retried) => _doSheetsExport(_retried),
+  doImport: () => _doSheetsImport(true)
 };
 
 document.addEventListener('DOMContentLoaded', App.init);

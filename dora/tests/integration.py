@@ -768,11 +768,12 @@ def run_all(session):
             send_cdp(session.ws, "Page.removeScriptToEvaluateOnNewDocument",
                      {"identifier": sid})
 
-    # --- 33. Unsynced local edits survive page reload (import skipped) ---
-    def unsynced_survives_reload():
+    # --- 33. Cloud (Google Sheets) wins on boot: import overwrites local (priority) ---
+    def cloud_wins_on_boot():
         from browser import send_cdp
 
-        # Патчер-отказник: любой запрос токена мгновенно возвращает access_denied
+        # Патчер: токен выдаётся сразу, а values.get возвращает облачный план
+        # с маркером «ИзОблака». Переживает reload (addScriptToEvaluateOnNewDocument).
         resp = send_cdp(session.ws, "Page.addScriptToEvaluateOnNewDocument", {"source": """
             setInterval(function(){
               const tc = window.App && window.App._gsdb && window.App._gsdb.tokenClient;
@@ -780,56 +781,48 @@ def run_all(session):
                 tc.__testPatched = true;
                 tc.requestAccessToken = function() {
                   window.__gisRequests = (window.__gisRequests || 0) + 1;
+                  if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 'fake_test_token' });
                   const cb = this.callback;
-                  setTimeout(() => cb && cb({ error: 'access_denied' }), 0);
+                  setTimeout(() => cb && cb({ expires_in: 3600 }), 0);
                 };
+              }
+              if (window.gapi && gapi.client && gapi.client.sheets && gapi.client.sheets.spreadsheets && !window.__valuesPatched) {
+                window.__valuesPatched = true;
+                window.__cloudJson = JSON.stringify({ scale: 100, rooms: [{ id: 'r1', name: 'ИзОблака', x: 0, y: 0, w: 50, h: 50 }], objects: [] });
+                const values = gapi.client.sheets.spreadsheets.values;
+                values.get = () => Promise.resolve({ result: { values: [['key', 'value'], [App.DataStore.getActivePlanName(), window.__cloudJson]] } });
+                values.update = () => { window.__updCalls = (window.__updCalls || 0) + 1; return Promise.resolve({ result: {} }); };
               }
             }, 5);
         """})
         sid = (resp.get("result") or {}).get("identifier")
 
+        # Локальная «неслитая» правка + флаг, имитирующие старые данные устройства
         session.evaluate("""
             (() => {
                 App.DataStore.addRoom({ name: 'МаркерНесинк', x: 10, y: 10, w: 100, h: 100 });
                 localStorage.setItem('dora_unsynced', '1');
-                localStorage.removeItem('gapi_token');
-                localStorage.removeItem('gapi_token_expires');
-                if (window.gapi && gapi.client) gapi.client.setToken('');
             })()
         """)
-        from browser import send_cdp
         send_cdp(session.ws, "Page.reload")
-        time.sleep(1)
 
-        # Ждём завершения boot-ветки (экспорт при невозможности продления)
-        booted = False
+        # Ждём, пока облако «победит» (импорт перезапишет локальные данные)
+        won = False
         for _ in range(40):
             try:
-                v = session.evaluate("(window.App && App._sheetsDebug && App._sheetsDebug.isReady()) === true")
+                if session.evaluate("App.DataStore.getRooms().some(r => r.name === 'ИзОблака')"):
+                    won = True
+                    break
             except Exception:
-                v = False
-            if v:
-                booted = True
-                break
+                pass
             time.sleep(0.5)
-        assert booted, "App never became ready after reload"
-        time.sleep(1)
+        assert won, "Cloud plan must overwrite local on boot (cloud priority)"
 
-        survived = session.evaluate(
-            "App.DataStore.getRooms().some(r => r.name === 'МаркерНесинк')"
-        )
-        assert survived, "Unsynced local edit was wiped by cloud import after reload"
+        local_gone = session.evaluate("!App.DataStore.getRooms().some(r => r.name === 'МаркерНесинк')")
+        assert local_gone, "Stale local edit must be replaced by cloud version"
 
-        flag_still = session.evaluate("localStorage.getItem('dora_unsynced')")
-        assert flag_still == "1", f"dora_unsynced must persist while renewal fails, got {flag_still}"
-
-        gis_hits = session.evaluate("window.__gisRequests || 0")
-        assert gis_hits >= 1, "Boot export should have attempted token renewal"
-
-        banner_visible = session.evaluate(
-            "document.getElementById('dora-sync-banner')?.classList.contains('visible') || false"
-        )
-        assert banner_visible, "Sync banner must be shown when renewal fails"
+        flag = session.evaluate("localStorage.getItem('dora_unsynced')")
+        assert flag is None, f"dora_unsynced must clear after cloud import, got {flag}"
 
         # Cleanup
         if sid:
@@ -837,11 +830,9 @@ def run_all(session):
                      {"identifier": sid})
         session.evaluate("""
             (() => {
-                const m = App.DataStore.getRooms().find(r => r.name === 'МаркерНесинк');
+                const m = App.DataStore.getRooms().find(r => r.name === 'ИзОблака');
                 if (m) App.DataStore.deleteRoom(m.id);
                 localStorage.removeItem('dora_unsynced');
-                const b = document.getElementById('dora-sync-banner');
-                if (b) b.classList.remove('visible');
                 App.Renderer.render();
             })()
         """)
@@ -853,7 +844,7 @@ def run_all(session):
     try:
         session.connect_page(f"http://127.0.0.1:{port}/dora/index.html")
         test("32. Export renews auth and retries", export_renews_and_retries)
-        test("33. Unsynced edits survive reload", unsynced_survives_reload)
+        test("33. Cloud wins on boot (import overwrites local)", cloud_wins_on_boot)
     finally:
         httpd.shutdown()
 

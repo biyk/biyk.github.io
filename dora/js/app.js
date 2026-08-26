@@ -54,6 +54,7 @@ App.init = () => {
         _gsReady = true;
         // Google Sheets — источник истины: при запуске (если есть токен) скачиваем
         // облако и перезаписываем локальные данные, чтобы устройства синхронизировались.
+        _refreshAuthButton();
         await _doSheetsImport(true);
         App.EventBus.on('data:changed', _debouncedExport);
       });
@@ -61,7 +62,12 @@ App.init = () => {
       // но только если пользователь ранее авторизовался (не дёргаем попапом анонимов)
       document.body.addEventListener('doAuth', function() {
         if (localStorage.getItem('gapi_token')) {
-          _renewAuth().then(function(ok) { if (ok) _doSheetsImport(true); });
+          _renewAuth().then(function(ok) {
+            if (ok) _doSheetsImport(true);
+            _refreshAuthButton();
+          });
+        } else {
+          _refreshAuthButton();
         }
       });
     }).catch(function(err) { console.warn('[App] Google API:', err); });
@@ -193,9 +199,20 @@ function _handleGDriveAuth() {
     }
     localStorage.removeItem('gapi_token');
     localStorage.removeItem('gapi_token_expires');
+    _refreshAuthButton();
     return;
   }
   document.getElementById('authorize_button').click();
+}
+
+// Кнопка «Войти/Выйти» отражает реальное состояние авторизации:
+// пока токен валиден — «Выйти», иначе — «Войти» (а не всегда «Войти»).
+function _refreshAuthButton() {
+  var btn = document.getElementById('gdrive-auth-btn');
+  if (!btn) return;
+  var loggedIn = !!(localStorage.getItem('gapi_token') && App._gsdb && !App._gsdb.expired());
+  btn.textContent = loggedIn ? '🔓 Выйти' : '🔐 Войти';
+  btn.title = loggedIn ? 'Выйти из Google' : 'Вход Google';
 }
 
 async function _fetchPlanData() {

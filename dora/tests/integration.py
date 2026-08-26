@@ -837,6 +837,58 @@ def run_all(session):
             })()
         """)
 
+    # --- 34. Auth button reflects login state (Войти/Выйти) ---
+    def auth_button_reflects_state():
+        from browser import send_cdp
+
+        # Патчер: любой запрос токена сразу «успешен» (переживает reload)
+        resp = send_cdp(session.ws, "Page.addScriptToEvaluateOnNewDocument", {"source": """
+            setInterval(function(){
+              const tc = window.App && window.App._gsdb && window.App._gsdb.tokenClient;
+              if (tc && typeof tc.requestAccessToken === 'function' && !tc.__testPatched) {
+                tc.__testPatched = true;
+                tc.requestAccessToken = function() {
+                  if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 'fake_test_token' });
+                  const cb = this.callback;
+                  setTimeout(() => cb && cb({ expires_in: 3600 }), 0);
+                };
+              }
+            }, 5);
+        """})
+        sid = (resp.get("result") or {}).get("identifier")
+
+        # Валидный (не протухший) токен в localStorage -> кнопка «Выйти»
+        session.evaluate(
+            "localStorage.setItem('gapi_token', JSON.stringify({access_token:'x'}));"
+            "localStorage.setItem('gapi_token_expires', String(Math.floor(Date.now()/1000)+3600));"
+        )
+        send_cdp(session.ws, "Page.reload")
+        for _ in range(40):
+            try:
+                if session.evaluate("window.App && App._sheetsDebug && App._sheetsDebug.isReady() === true"):
+                    break
+            except Exception:
+                pass
+            time.sleep(0.5)
+        logged_in = session.evaluate("document.getElementById('gdrive-auth-btn').textContent")
+        assert 'Выйти' in logged_in, f"Button must show logout state when token valid, got {logged_in}"
+
+        # Без токена -> кнопка «Войти»
+        session.evaluate("localStorage.removeItem('gapi_token'); localStorage.removeItem('gapi_token_expires');")
+        send_cdp(session.ws, "Page.reload")
+        for _ in range(40):
+            try:
+                if session.evaluate("window.App && App._sheetsDebug && App._sheetsDebug.isReady() === true"):
+                    break
+            except Exception:
+                pass
+            time.sleep(0.5)
+        logged_out = session.evaluate("document.getElementById('gdrive-auth-btn').textContent")
+        assert 'Войти' in logged_out, f"Button must show login state when no token, got {logged_out}"
+
+        if sid:
+            send_cdp(session.ws, "Page.removeScriptToEvaluateOnNewDocument", {"identifier": sid})
+
     # Google-слой тестируется только с http-origin: на file:// динамический
     # import() google.js блокируется CORS, _gsReady никогда не поднимется
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -845,6 +897,7 @@ def run_all(session):
         session.connect_page(f"http://127.0.0.1:{port}/dora/index.html")
         test("32. Export renews auth and retries", export_renews_and_retries)
         test("33. Cloud wins on boot (import overwrites local)", cloud_wins_on_boot)
+        test("34. Auth button reflects login state", auth_button_reflects_state)
     finally:
         httpd.shutdown()
 

@@ -889,15 +889,141 @@ def run_all(session):
         if sid:
             send_cdp(session.ws, "Page.removeScriptToEvaluateOnNewDocument", {"identifier": sid})
 
+    # --- 35. Sync-error indicator (⚠️) shows on save failure, hides on success ---
+    def sync_error_indicator():
+        # Гасим все возможные остаточные состояния и ломаем продление токена:
+        # экспорт обязан провалиться и показать индикатор
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                localStorage.removeItem('dora_unsynced');
+                if (window.gapi && gapi.client) gapi.client.setToken('');
+                const tc = window.App && window.App._gsdb && window.App._gsdb.tokenClient;
+                if (tc) {
+                    tc.requestAccessToken = function() {
+                        const cb = this.callback;
+                        setTimeout(() => cb && cb({ error: 'access_denied' }), 0);
+                    };
+                }
+            })()
+        """)
+        session.evaluate("App._sheetsDebug.doExport()")
+
+        flag = session.evaluate("localStorage.getItem('dora_unsynced')")
+        assert flag == "1", f"dora_unsynced must be set after failed export, got {flag}"
+        shown = session.evaluate(
+            "(function(){ var b = document.getElementById('sync-error-btn');"
+            " return !!b && b.style.display !== 'none'; })()"
+        )
+        assert shown, "Sync-error indicator must be visible after failed export"
+
+        # Чиним авторизацию и повторяем — индикатор обязан погаснуть
+        session.evaluate("""
+            (() => {
+                const tc = window.App._gsdb.tokenClient;
+                tc.requestAccessToken = function() {
+                    if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 'fake_retry_ok' });
+                    const cb = this.callback;
+                    setTimeout(() => cb && cb({ expires_in: 3600 }), 0);
+                };
+                const values = gapi.client.sheets.spreadsheets.values;
+                values.get = () => Promise.resolve({ result: { values: [['key', 'value']] } });
+                values.update = () => Promise.resolve({ result: {} });
+            })()
+        """)
+        session.evaluate("App._sheetsDebug.doExport()")
+
+        flag_ok = session.evaluate("localStorage.getItem('dora_unsynced')")
+        assert flag_ok is None, f"dora_unsynced must clear after successful retry, got {flag_ok}"
+        hidden = session.evaluate(
+            "(function(){ var b = document.getElementById('sync-error-btn');"
+            " return !!b && b.style.display === 'none'; })()"
+        )
+        assert hidden, "Sync-error indicator must hide after successful export"
+        banner_gone = session.evaluate(
+            "!document.getElementById('dora-sync-banner')?.classList.contains('visible')"
+        )
+        assert banner_gone, "Sync banner must stay hidden after successful retry"
+
+        # cleanup
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('dora_unsynced');
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                document.getElementById('sync-error-btn').style.display = 'none';
+                const b = document.getElementById('dora-sync-banner');
+                if (b) b.classList.remove('visible');
+            })()
+        """)
+
     # Google-слой тестируется только с http-origin: на file:// динамический
     # import() google.js блокируется CORS, _gsReady никогда не поднимется
+    #
+    # Герметичный стаб gapi/GIS: тесты никогда не ходят в реальный Google
+    # (ни попапов, ни сети). loadScriptOnce в google.js ищет <script> по точному
+    # src через getElementsByTagName — патчим его, подсовывая фейковые теги:
+    # onload вызывается синхронно, сеть и живой CDN не нужны вовсе.
+    GIS_STUB_SOURCE = """
+(function(){
+  if (window.__gisStubInstalled) return;
+  window.__gisStubInstalled = true;
+  function makeTokenClient(cfg){
+    return { callback: (cfg && cfg.callback) || null, __stub: true,
+             requestAccessToken(){ const c=this.callback; setTimeout(function(){ c && c({ expires_in: 3600 }); },0); } };
+  }
+  const gapiStub = {
+    __stub: true,
+    load(name, cb){ setTimeout(function(){ cb && cb(); }, 0); },
+    client: {
+      init(){ return Promise.resolve(); },
+      _token: null,
+      setToken(t){ this._token = t; },
+      getToken(){ return this._token; },
+      sheets: { spreadsheets: { values: {
+        get(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: values.get not stubbed' } } }); },
+        update(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: values.update not stubbed' } } }); }
+      } } }
+    }
+  };
+  const googleStub = { accounts: { oauth2: {
+    initTokenClient(cfg){ return makeTokenClient(cfg); },
+    revoke(){}
+  } } };
+  try { Object.defineProperty(window, 'gapi', { value: gapiStub, writable: false, configurable: false }); }
+  catch(e) { window.gapi = gapiStub; }
+  try { Object.defineProperty(window, 'google', { value: googleStub, writable: false, configurable: false }); }
+  catch(e) { window.google = googleStub; }
+  const STUB_SRCS = ['https://apis.google.com/js/api.js','https://accounts.google.com/gsi/client'];
+  const origGEBTN = Document.prototype.getElementsByTagName;
+  Document.prototype.getElementsByTagName = function(name){
+    const real = origGEBTN.call(this, name);
+    if (name !== 'script') return real;
+    return STUB_SRCS.map(function(s){ return { src: s }; }).concat(Array.from(real));
+  };
+})();
+"""
+    from browser import send_cdp as _send_cdp
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     httpd, port = start_http_server(repo_root)
     try:
         session.connect_page(f"http://127.0.0.1:{port}/dora/index.html")
+        # Стаб ставится ПОСЛЕ переподключения (регистрации привязаны к сессии WS),
+        # затем перезагружаем страницу, чтобы документ родился уже со стабом
+        _send_cdp(session.ws, "Page.addScriptToEvaluateOnNewDocument", {"source": GIS_STUB_SOURCE})
+        _send_cdp(session.ws, "Page.reload")
+        for _ in range(40):
+            try:
+                if session.evaluate("window.App && App._sheetsDebug && App._sheetsDebug.isReady() === true"):
+                    break
+            except Exception:
+                pass
+            time.sleep(0.5)
         test("32. Export renews auth and retries", export_renews_and_retries)
         test("33. Cloud wins on boot (import overwrites local)", cloud_wins_on_boot)
         test("34. Auth button reflects login state", auth_button_reflects_state)
+        test("35. Sync-error indicator on save failure", sync_error_indicator)
     finally:
         httpd.shutdown()
 

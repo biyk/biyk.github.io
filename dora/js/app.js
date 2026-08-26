@@ -56,6 +56,7 @@ App.init = () => {
         // облако и перезаписываем локальные данные, чтобы устройства синхронизировались.
         _refreshAuthButton();
         await _doSheetsImport(true);
+        if (localStorage.getItem('dora_unsynced')) _showSyncError();
         App.EventBus.on('data:changed', _debouncedExport);
       });
       // Таймер GoogleSheetDB диспатчит doAuth при истечении токена — тихо продлеваем,
@@ -163,6 +164,17 @@ function _hideSyncBanner() {
   if (b) b.classList.remove('visible');
 }
 
+// Индикатор ⚠️ рядом с кнопкой входа: горит, пока есть непушенные изменения
+// (любая ошибка сохранения), клик — повторить выгрузку
+function _showSyncError() {
+  var el = document.getElementById('sync-error-btn');
+  if (el) el.style.display = '';
+}
+function _hideSyncError() {
+  var el = document.getElementById('sync-error-btn');
+  if (el) el.style.display = 'none';
+}
+
 function _bindToolbar() {
   document.querySelectorAll('[data-action]').forEach(el => {
     const action = el.getAttribute('data-action');
@@ -184,6 +196,7 @@ function _resolveAction(action) {
     'import':        () => document.getElementById('importFile').click(),
     'search-clear':  () => App.SearchManager.clear(),
     'gdrive-auth':   () => _handleGDriveAuth(),
+    'retry-sync':    () => _doSheetsExport(),
     'add-plan':      () => App.ModalManager.showAddPlan(),
     'manage-plans':  () => App.ModalManager.showManagePlans(),
   };
@@ -258,6 +271,7 @@ async function _doSheetsExport(_retried) {
       if (!(await _renewAuth())) {
         localStorage.setItem('dora_unsynced', '1');
         _showSyncBanner();
+        _showSyncError();
         return;
       }
     }
@@ -273,14 +287,19 @@ async function _doSheetsExport(_retried) {
     await _writePlanBlock(data.header, data.rows);
     localStorage.removeItem('dora_unsynced');
     _hideSyncBanner();
+    _hideSyncError();
   } catch (err) {
     if (App.utils.isAuthError(err)) {
       // Токен протух между проверкой и записью — продлеваем и ретраим один раз
       if (!_retried && await _renewAuth()) return _doSheetsExport(true);
       localStorage.setItem('dora_unsynced', '1');
       _showSyncBanner();
+      _showSyncError();
     } else {
+      // Сетевой сбой и прочее — изменения не ушли, держим индикатор до успеха
       console.warn('[Sheets] auto-export error:', err);
+      localStorage.setItem('dora_unsynced', '1');
+      _showSyncError();
     }
   }
 }
@@ -297,6 +316,7 @@ async function _doSheetsImport(silent) {
     await _importActiveRow(data.rows, silent);
     // Облако теперь совпадает с локальным — отметку «есть неслитые правки» снимаем
     localStorage.removeItem('dora_unsynced');
+    _hideSyncError();
   } catch (err) {
     console.warn('[Sheets] auto-import error:', err);
   }

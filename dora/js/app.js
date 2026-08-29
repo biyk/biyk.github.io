@@ -52,8 +52,8 @@ App.init = () => {
       App._gsdb = new GoogleSheetDB();
       App._gsdb.waitGoogle().then(async function() {
         _gsReady = true;
-        // Google Sheets — источник истины: при запуске (если есть токен) скачиваем
-        // облако и перезаписываем локальные данные, чтобы устройства синхронизировались.
+        // При запуске (если есть токен) объединяем облако с локальными данными:
+        // ничего не теряем — local ∪ облачные добавки против базы (см. mergePlan).
         _refreshAuthButton();
         await _doSheetsImport(true);
         if (localStorage.getItem('dora_unsynced')) _showSyncError();
@@ -95,6 +95,7 @@ App.init = () => {
 
 let _exportTimer = null;
 function _debouncedExport() {
+  if (_exportSuppress) return;
   clearTimeout(_exportTimer);
   _exportTimer = setTimeout(function() { _doSheetsExport(); }, 1000);
 }
@@ -263,6 +264,17 @@ async function _writePlanBlock(header, rows) {
   });
 }
 
+// Замена/добавление строки активного плана в облаке (header сохранён в data)
+function _upsertRow(data, keyName, json) {
+  var rows = data.rows;
+  var found = false;
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i][0] === keyName) { rows[i] = [keyName, json]; found = true; break; }
+  }
+  if (!found) rows.push([keyName, json]);
+  return _writePlanBlock(data.header, rows);
+}
+
 async function _doSheetsExport(_retried) {
   if (!_gsReady || !window.gapi || !gapi.client) return;
   try {
@@ -277,14 +289,43 @@ async function _doSheetsExport(_retried) {
     }
     var keyName = App.DataStore.getActivePlanName();
     if (!keyName) return;
-    var json = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
+    var planId = App.DataStore.getActivePlanId();
+    var localJson = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
     var data = await _fetchPlanData();
-    var found = false;
+
+    // Облако могло уйти вперёд с другой машины — сливаем, а не затираем.
+    // Если база == облако, merge ничего не добавляет: локальные удаления уходят.
+    var cloudContent = null;
     for (var i = 0; i < data.rows.length; i++) {
-      if (data.rows[i][0] === keyName) { data.rows[i] = [keyName, json]; found = true; break; }
+      if (data.rows[i][0] === keyName) { cloudContent = data.rows[i][1]; break; }
     }
-    if (!found) data.rows.push([keyName, json]);
-    await _writePlanBlock(data.header, data.rows);
+    var toWrite = localJson;
+    if (cloudContent) {
+      try {
+        var cloudDoc = JSON.parse(cloudContent);
+        if (cloudDoc && Array.isArray(cloudDoc.objects)) {
+          var localDoc = JSON.parse(localJson);
+          var baseDoc = App.DataStore.getSyncBase(planId);
+          var merged = App.DataStore.mergePlan(localDoc, cloudDoc, baseDoc);
+          var mergedJson = JSON.stringify(merged);
+          if (mergedJson !== JSON.stringify(localDoc)) {
+            // Облако принесло новое — применяем локально, чтобы UI не отставал.
+            // Подавляем автоэкспорт: importData эмитит data:changed.
+            var wasSuppressed = _exportSuppress;
+            _exportSuppress = true;
+            var res = App.DataStore.importData(mergedJson);
+            if (res.ok) App.Renderer.render();
+            _exportSuppress = wasSuppressed;
+          }
+          toWrite = mergedJson;
+        }
+      } catch (e) {
+        // Битый облачный JSON — пишем свою версию
+        console.warn('[Sheets] cloud row unparsable, overwriting:', e);
+      }
+    }
+    await _upsertRow(data, keyName, toWrite);
+    App.DataStore.setSyncBase(planId, JSON.parse(toWrite));
     localStorage.removeItem('dora_unsynced');
     _hideSyncBanner();
     _hideSyncError();
@@ -313,8 +354,8 @@ async function _doSheetsImport(silent) {
       .filter(function(r) { return r && r[0] && _isPlanDoc(r[1]); })
       .map(function(r) { return r[0]; });
     App.DataStore.registerCloudPlans(names);
-    await _importActiveRow(data.rows, silent);
-    // Облако теперь совпадает с локальным — отметку «есть неслитые правки» снимаем
+    await _mergeActiveRow(data, silent);
+    // Облако теперь слито с локальным — отметку «есть неслитые правки» снимаем
     localStorage.removeItem('dora_unsynced');
     _hideSyncError();
   } catch (err) {
@@ -322,21 +363,48 @@ async function _doSheetsImport(silent) {
   }
 }
 
-async function _importActiveRow(preFetchedRows, silent) {
-  var rows = Array.isArray(preFetchedRows) ? preFetchedRows : (await _fetchPlanData()).rows;
+// Объединение облачной строки активного плана с локальной версией.
+// data: { header, rows } из _fetchPlanData(). Никогда не теряет данные:
+// результат = local + добавки облака против базы (см. DataStore.mergePlan).
+async function _mergeActiveRow(data, silent) {
   var keyName = App.DataStore.getActivePlanName();
-  var content = null;
-  for (var i = 0; i < rows.length; i++) {
-    if (rows[i][0] === keyName) { content = rows[i][1]; break; }
+  if (!keyName) return;
+  var planId = App.DataStore.getActivePlanId();
+  var cloudContent = null;
+  for (var i = 0; i < data.rows.length; i++) {
+    if (data.rows[i][0] === keyName) { cloudContent = data.rows[i][1]; break; }
   }
-  if (!content) return;
-  var result = App.DataStore.importData(content);
-  if (result.ok) {
-    App.Renderer.render();
-    App.GuideManager._render && App.GuideManager._render();
-  } else if (!silent) {
-    alert('Ошибка импорта из Google Sheets: ' + result.error);
+  if (!cloudContent) return;
+  var cloudDoc;
+  try {
+    cloudDoc = JSON.parse(cloudContent);
+    if (!cloudDoc || !Array.isArray(cloudDoc.objects)) return;
+  } catch (e) { return; }
+
+  var localDoc = App.DataStore.getData();
+  var baseDoc = App.DataStore.getSyncBase(planId);
+  var merged = App.DataStore.mergePlan(localDoc, cloudDoc, baseDoc);
+  var mergedJson = JSON.stringify(merged);
+  var localJson = JSON.stringify(localDoc);
+
+  if (mergedJson !== localJson) {
+    var wasSuppressed = _exportSuppress;
+    _exportSuppress = true;
+    var res = App.DataStore.importData(mergedJson);
+    if (res.ok) {
+      App.Renderer.render();
+      App.GuideManager._render && App.GuideManager._render();
+    } else if (!silent) {
+      alert('Ошибка объединения с Google Sheets: ' + res.error);
+    }
+    _exportSuppress = wasSuppressed;
   }
+  if (mergedJson !== cloudContent) {
+    // Наш merge добавил местные предметы — возвращаем результат в облако
+    try { await _upsertRow(data, keyName, mergedJson); }
+    catch (err) { console.warn('[Sheets] merge push-back error:', err); }
+  }
+  App.DataStore.setSyncBase(planId, merged);
 }
 
 // На время загрузки облачной версии при переключении квартиры
@@ -369,8 +437,9 @@ function _onPlanSwitched() {
   App.Renderer.render();
   App.GuideManager._render && App.GuideManager._render();
   if (_gsReady && window.gapi && gapi.client && gapi.client.getToken()) {
-    _importActiveRow(null, true)
-      .catch(function(err) { console.warn('[Sheets] switch import error:', err); })
+    _fetchPlanData()
+      .then(function(data) { return _mergeActiveRow(data, true); })
+      .catch(function(err) { console.warn('[Sheets] switch merge error:', err); })
       .finally(function() { _exportSuppress = false; });
   } else {
     _exportSuppress = false;

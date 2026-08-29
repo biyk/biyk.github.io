@@ -20,18 +20,18 @@
   <div id="panel-default" style="display:none;"></div>
   <div id="panel-content" style="display:none;"></div>
 
-  <script src="js/core/EventBus.js?v=2026082602"></script>
-  <script src="js/core/utils.js?v=2026082602"></script>
-  <script src="js/core/DataStore.js?v=2026082602"></script>
-  <script src="js/ui/Ruler.js?v=2026082602"></script>
-  <script src="js/ui/GuideManager.js?v=2026082602"></script>
-  <script src="js/interaction/SearchManager.js?v=2026082602"></script>
-  <script src="js/io/ExportImport.js?v=2026082602"></script>
-  <script src="js/interaction/DragManager.js?v=2026082602"></script>
-  <script src="js/ui/ModalManager.js?v=2026082602"></script>
-  <script src="js/ui/PanelManager.js?v=2026082602"></script>
-  <script src="js/ui/Renderer.js?v=2026082602"></script>
-  <script src="js/app.js?v=2026082602"></script>
+  <script src="js/core/EventBus.js?v=2026082901"></script>
+  <script src="js/core/utils.js?v=2026082901"></script>
+  <script src="js/core/DataStore.js?v=2026082901"></script>
+  <script src="js/ui/Ruler.js?v=2026082901"></script>
+  <script src="js/ui/GuideManager.js?v=2026082901"></script>
+  <script src="js/interaction/SearchManager.js?v=2026082901"></script>
+  <script src="js/io/ExportImport.js?v=2026082901"></script>
+  <script src="js/interaction/DragManager.js?v=2026082901"></script>
+  <script src="js/ui/ModalManager.js?v=2026082901"></script>
+  <script src="js/ui/PanelManager.js?v=2026082901"></script>
+  <script src="js/ui/Renderer.js?v=2026082901"></script>
+  <script src="js/app.js?v=2026082901"></script>
 
   <script>
     const out = document.getElementById('output');
@@ -634,6 +634,152 @@
       assert(isAuthError(new TypeError('x is not a function')) === false, 'isAuthError — обычный Error не авторизация');
       assert(isAuthError({}) === false, 'isAuthError — пустой объект не авторизация');
       assert(isAuthError('строка') === false, 'isAuthError — строка не авторизация');
+    })();
+
+    group('18. DataStore — mergePlan (объединение облака и локальной версии)');
+
+    (function() {
+      // Собирает план для теста: {rooms, objects(с items), guides}
+      function doc(rooms, itemsById, guides, scale) {
+        return {
+          scale: scale === undefined ? 100 : scale,
+          rooms: rooms || [],
+          objects: Object.keys(itemsById || {}).map(id => ({
+            id, name: 'obj_' + id, roomId: null, parentId: null,
+            x: 0, y: 0, w: 10, h: 10, color: '#000', items: itemsById[id]
+          })),
+          guides: guides || []
+        };
+      }
+      const M = App.DataStore.mergePlan;
+      assert(typeof M === 'function', 'mergePlan — функция существует');
+
+      // 1. Первая синхронизация, содержимое идентично — ничего не удваиваем
+      (function() {
+        const a = doc([{ id: 'r1', name: 'A' }], { o1: ['Кружка'] }, []);
+        const same = doc([{ id: 'r1', name: 'A' }], { o1: ['Кружка'] }, []);
+        const m = M(a, same, null);
+        assert(m.objects[0].items.length === 1, 'первый синк идентичных версий — предмет не удваивается');
+        assert(JSON.stringify(m) === JSON.stringify(a), 'первый синк идентичных версий — результат равен локальной');
+      })();
+
+      // 2. Первая синхронизация расходящихся версий — полная сумма
+      (function() {
+        const local = doc([{ id: 'r1', name: 'Кухня' }], { o1: ['Пальто', 'Ботинки'] }, []);
+        const cloud = doc([{ id: 'r1', name: 'Кухня' }], { o1: ['Пальто', 'Шарф'], o2: ['Книги'] }, []);
+        const m = M(local, cloud, null);
+        const items = m.objects.find(o => o.id === 'o1').items;
+        assert(items.length === 4 && items.filter(t => t === 'Пальто').length === 2,
+          'первый синк — все предметы обеих версий сложены (дубли сохранены), ' + JSON.stringify(items));
+        assert(m.objects.some(o => o.id === 'o2'), 'первый синк — новый объект из облака добавлен');
+        assert(m.rooms.some(r => r.id === 'r1'), 'первый синк — общая комната на месте');
+      })();
+
+      // 3. База есть, облако не менялось (cloud == base) — no-op
+      (function() {
+        const base = doc([{ id: 'r1' }], { o1: ['Кружка'] }, []);
+        const local = doc([{ id: 'r1' }], { o1: ['Кружка', 'Ложка'] }, []);
+        const cloud = JSON.parse(JSON.stringify(base));
+        const m = M(local, cloud, base);
+        assert(m.objects[0].items.join() === ['Кружка', 'Ложка'].join(), 'стабильное состояние — ничего не добавлено');
+        assert(m.objects.length === 1, 'стабильное состояние — объекты не плодятся');
+      })();
+
+      // 4. Расхождение против базы: обе стороны добавили разное
+      (function() {
+        const base = doc([], { o1: ['Пальто'] }, []);
+        const local = doc([], { o1: ['Пальто', 'Ботинки'] }, []);
+        const cloud = doc([], { o1: ['Пальто', 'Шарф'] }, []);
+        const m = M(local, cloud, base);
+        const items = m.objects[0].items;
+        assert(items.join() === ['Пальто', 'Ботинки', 'Шарф'].join(), 'сумма против базы — Пальто один раз, обе добавки, ' + JSON.stringify(items));
+      })();
+
+      // 5. Обе стороны добавили одинаковое название — две штуки
+      (function() {
+        const base = doc([], { o1: [] }, []);
+        const local = doc([], { o1: ['Кружка'] }, []);
+        const cloud = doc([], { o1: ['Кружка'] }, []);
+        const m = M(local, cloud, base);
+        assert(m.objects[0].items.filter(t => t === 'Кружка').length === 2,
+          'две пиалы — одинаковое название, добавленное обеими сторонами, = 2, ' + JSON.stringify(m.objects[0].items));
+      })();
+
+      // 6. Общие объекты: поля из локальной версии побеждают
+      (function() {
+        const base = doc([], { o1: ['Кружка'] }, []);
+        const local = doc([], { o1: ['Кружка', 'Ложка'] }, []);
+        const cloud = doc([], { o1: ['Кружка', 'Ложка', 'Шарф'] }, []);
+        cloud.objects[0].name = 'изоблака';
+        cloud.objects[0].x = 777;
+        const m = M(local, cloud, base);
+        const o = m.objects[0];
+        assert(o.name === 'obj_o1' && o.x === 0, 'конфликт полей — локальная версия объекта победила');
+        assert(o.items.filter(t => t === 'Шарф').length === 1, 'конфликт полей — предметы из облака всё же добавлены');
+      })();
+
+      // 7. Новые комната/объект из облака добавляются (id сохраняются)
+      (function() {
+        const base = doc([{ id: 'r1' }], { o1: [] }, []);
+        const local = doc([{ id: 'r1' }], { o1: [] }, []);
+        const cloud = doc([{ id: 'r1' }, { id: 'r_new', name: 'Гостиная', x: 1, y: 2, w: 100, h: 50 }],
+          { o1: [], o_new: ['Книги'] }, [{ id: 'g_new', orientation: 'horizontal', position: 400 }]);
+        const m = M(local, cloud, base);
+        assert(m.rooms.some(r => r.id === 'r_new'), 'новая комната из облака добавлена');
+        assert(m.objects.some(o => o.id === 'o_new' && o.items[0] === 'Книги'), 'новый объект из облака добавлен с предметами');
+        assert(m.guides.some(g => g.id === 'g_new'), 'новая направляющая из облака добавлена');
+      })();
+
+      // 8. Облако удалило предмет против базы — локальная копия остаётся
+      (function() {
+        const base = doc([], { o1: ['Кружка', 'Шарф'] }, []);
+        const local = doc([], { o1: ['Кружка', 'Шарф'] }, []);
+        const cloud = doc([], { o1: ['Кружка'] }, []);
+        const m = M(local, cloud, base);
+        assert(m.objects[0].items.indexOf('Шарф') !== -1, 'негативная дельта — удалённое в облаке остаётся локально');
+      })();
+
+      // 9. Объект создан обеими сторонами после базы — полная сумма предметов
+      (function() {
+        const base = doc([], {}, []);
+        const local = doc([], { o9: ['Ложка'] }, []);
+        const cloud = doc([], { o9: ['Ложка'] }, []);
+        const m = M(local, cloud, base);
+        assert(m.objects[0].items.filter(t => t === 'Ложка').length === 2,
+          'объект после базы с обеих сторон — обе добавки сохранены, ' + JSON.stringify(m.objects[0].items));
+      })();
+
+      // 10. scale конфликтует — локальное побеждает
+      (function() {
+        const base = doc([], { o1: [] }, [], 100);
+        const local = doc([], { o1: [] }, [], 80);
+        const cloud = doc([], { o1: [] }, [], 120);
+        const m = M(local, cloud, base);
+        assert(m.scale === 80, 'scale конфликт — локальное значение победило');
+      })();
+
+      // 11. Идемпотентность: merge(M, M, M) === M
+      (function() {
+        const base = doc([{ id: 'r1' }], { o1: ['Кружка'] }, [{ id: 'g1' }]);
+        const local = doc([{ id: 'r1' }], { o1: ['Кружка', 'Ботинки'] }, [{ id: 'g1' }]);
+        const cloud = doc([{ id: 'r1' }], { o1: ['Кружка', 'Шарф'] }, [{ id: 'g1' }]);
+        const m1 = M(local, cloud, base);
+        const m2 = M(m1, m1, m1);
+        assert(JSON.stringify(m1) === JSON.stringify(m2), 'идемпотентность — повторный merge ничего не добавляет');
+      })();
+
+      // 12. mergePlan не мутирует входные документы
+      (function() {
+        const base = doc([], { o1: ['Кружка'] }, []);
+        const local = doc([], { o1: ['Кружка', 'Ложка'] }, []);
+        const cloud = doc([], { o1: ['Кружка', 'Шарф'] }, []);
+        const baseBefore = JSON.stringify(base);
+        const localBefore = JSON.stringify(local);
+        const cloudBefore = JSON.stringify(cloud);
+        M(local, cloud, base);
+        assert(JSON.stringify(base) === baseBefore && JSON.stringify(local) === localBefore
+          && JSON.stringify(cloud) === cloudBefore, 'mergePlan — входные документы не мутированы');
+      })();
     })();
 
     // ========== SUMMARY ==========

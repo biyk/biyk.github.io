@@ -768,19 +768,18 @@ def run_all(session):
             send_cdp(session.ws, "Page.removeScriptToEvaluateOnNewDocument",
                      {"identifier": sid})
 
-    # --- 33. Cloud (Google Sheets) wins on boot: import overwrites local (priority) ---
-    def cloud_wins_on_boot():
+    # --- 33. Merge on boot: cloud ∪ local, nothing lost (no overwrite) ---
+    def merge_on_boot():
         from browser import send_cdp
 
-        # Патчер: токен выдаётся сразу, а values.get возвращает облачный план
-        # с маркером «ИзОблака». Переживает reload (addScriptToEvaluateOnNewDocument).
+        # Патчер: токен сразу, values.get возвращает облачный план с комнатой
+        # «ИзОблака» и объектом с предметами. values.update считает вызовы.
         resp = send_cdp(session.ws, "Page.addScriptToEvaluateOnNewDocument", {"source": """
             setInterval(function(){
               const tc = window.App && window.App._gsdb && window.App._gsdb.tokenClient;
               if (tc && typeof tc.requestAccessToken === 'function' && !tc.__testPatched) {
                 tc.__testPatched = true;
                 tc.requestAccessToken = function() {
-                  window.__gisRequests = (window.__gisRequests || 0) + 1;
                   if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 'fake_test_token' });
                   const cb = this.callback;
                   setTimeout(() => cb && cb({ expires_in: 3600 }), 0);
@@ -788,41 +787,67 @@ def run_all(session):
               }
               if (window.gapi && gapi.client && gapi.client.sheets && gapi.client.sheets.spreadsheets && !window.__valuesPatched) {
                 window.__valuesPatched = true;
-                window.__cloudJson = JSON.stringify({ scale: 100, rooms: [{ id: 'r1', name: 'ИзОблака', x: 0, y: 0, w: 50, h: 50 }], objects: [] });
+                window.__cloudJson = JSON.stringify({
+                  scale: 100,
+                  rooms: [{ id: 'r_cloud', name: 'ИзОблака', x: 0, y: 0, w: 50, h: 50 }],
+                  objects: [{ id: 'o_c1', name: 'ОбъектОблака', roomId: 'r_cloud', parentId: null,
+                              x: 0, y: 0, w: 50, h: 50, color: '#000000', items: ['КружкаОблака'] }],
+                  guides: []
+                });
                 const values = gapi.client.sheets.spreadsheets.values;
-                values.get = () => Promise.resolve({ result: { values: [['key', 'value'], [App.DataStore.getActivePlanName(), window.__cloudJson]] } });
-                values.update = () => { window.__updCalls = (window.__updCalls || 0) + 1; return Promise.resolve({ result: {} }); };
+                values.get = () => Promise.resolve({ result: { values:
+                    [['key', 'value'], [App.DataStore.getActivePlanName(), window.__cloudJson]] } });
+                values.update = () => {
+                  window.__updCalls = (window.__updCalls || 0) + 1;
+                  return Promise.resolve({ result: {} });
+                };
               }
             }, 5);
         """})
         sid = (resp.get("result") or {}).get("identifier")
 
-        # Локальная «неслитая» правка + флаг, имитирующие старые данные устройства
+        # Локальная неслитая правка, которая НЕ должна потеряться
         session.evaluate("""
             (() => {
                 App.DataStore.addRoom({ name: 'МаркерНесинк', x: 10, y: 10, w: 100, h: 100 });
+                App.DataStore.addObject({ name: 'ШкафЛокальный', x: 300, y: 300, w: 60, h: 50 });
                 localStorage.setItem('dora_unsynced', '1');
             })()
         """)
         send_cdp(session.ws, "Page.reload")
 
-        # Ждём, пока облако «победит» (импорт перезапишет локальные данные)
-        won = False
+        # Ждём, пока облачная комната приедет после merge
+        merged = False
         for _ in range(40):
             try:
                 if session.evaluate("App.DataStore.getRooms().some(r => r.name === 'ИзОблака')"):
-                    won = True
+                    merged = True
                     break
             except Exception:
                 pass
             time.sleep(0.5)
-        assert won, "Cloud plan must overwrite local on boot (cloud priority)"
+        assert merged, "Cloud room must be merged in on boot"
 
-        local_gone = session.evaluate("!App.DataStore.getRooms().some(r => r.name === 'МаркерНесинк')")
-        assert local_gone, "Stale local edit must be replaced by cloud version"
+        # Локальная неслитая правка выжила
+        local_ok = session.evaluate("""
+            App.DataStore.getRooms().some(r => r.name === 'МаркерНесинк') &&
+            App.DataStore.getObjects().some(o => o.name === 'ШкафЛокальный')
+        """)
+        assert local_ok, "Local unsaved edits must survive boot merge"
+
+        # Облачный объект с предметом тоже на месте
+        cloud_ok = session.evaluate("""
+            (function(){ const o = App.DataStore.getObjects().find(o => o.name === 'ОбъектОблака');
+                         return !!o && o.items.includes('КружкаОблака'); })()
+        """)
+        assert cloud_ok, "Cloud object and its items must be present after merge"
+
+        # Merge изменил облако => push-back произошёл
+        upd = session.evaluate("window.__updCalls || 0")
+        assert upd >= 1, f"Merge result must be pushed back to cloud, got {upd} updates"
 
         flag = session.evaluate("localStorage.getItem('dora_unsynced')")
-        assert flag is None, f"dora_unsynced must clear after cloud import, got {flag}"
+        assert flag is None, f"dora_unsynced must clear after merge, got {flag}"
 
         # Cleanup
         if sid:
@@ -830,9 +855,8 @@ def run_all(session):
                      {"identifier": sid})
         session.evaluate("""
             (() => {
-                const m = App.DataStore.getRooms().find(r => r.name === 'ИзОблака');
-                if (m) App.DataStore.deleteRoom(m.id);
                 localStorage.removeItem('dora_unsynced');
+                App.DataStore.importData(JSON.stringify({ scale: 100, rooms: [], objects: [], guides: [] }));
                 App.Renderer.render();
             })()
         """)
@@ -958,6 +982,121 @@ def run_all(session):
             })()
         """)
 
+    # --- 36. Export merges cloud changes (sum, not overwrite) ---
+    def export_merges_cloud_changes():
+        # Почищенное состояние: локально [Пальто, Ботинки], база/облако знают [Пальто],
+        # облако ушло вперёд на [Пальто, Шарф] — экспорт обязан написать сумму.
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('dora_sync_base:' + App.DataStore.getActivePlanId());
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 'x' });
+                App.DataStore.importData(JSON.stringify({
+                    scale: 100,
+                    rooms: [{ id: 'r1', name: 'Комната', x: 0, y: 0, w: 100, h: 100 }],
+                    objects: [{ id: 'o1', name: 'Шкаф', roomId: 'r1', parentId: null,
+                                x: 0, y: 0, w: 50, h: 50, color: '#000000', items: ['Пальто', 'Ботинки'] }],
+                    guides: []
+                }));
+            })()
+        """)
+        session.evaluate("""
+            (() => {
+                App.DataStore.setSyncBase(App.DataStore.getActivePlanId(), {
+                    scale: 100, rooms: [{ id: 'r1', name: 'Комната', x: 0, y: 0, w: 100, h: 100 }],
+                    objects: [{ id: 'o1', name: 'Шкаф', roomId: 'r1', parentId: null,
+                                x: 0, y: 0, w: 50, h: 50, color: '#000000', items: ['Пальто'] }],
+                    guides: []
+                });
+                window.__updCalls = 0;
+                window.__lastPayload = null;
+                window.__cloudJson = JSON.stringify({
+                    scale: 100, rooms: [{ id: 'r1', name: 'Комната', x: 0, y: 0, w: 100, h: 100 }],
+                    objects: [{ id: 'o1', name: 'Шкаф', roomId: 'r1', parentId: null,
+                                x: 0, y: 0, w: 50, h: 50, color: '#000000', items: ['Пальто', 'Шарф'] }],
+                    guides: []
+                });
+                const values = gapi.client.sheets.spreadsheets.values;
+                values.get = () => Promise.resolve({ result: { values:
+                    [['key', 'value'], [App.DataStore.getActivePlanName(), window.__cloudJson]] } });
+                values.update = (req) => {
+                    window.__updCalls++;
+                    window.__lastPayload = JSON.stringify((req.resource || {}).values);
+                    return Promise.resolve({ result: {} });
+                };
+            })()
+        """)
+        session.evaluate("App._sheetsDebug.doExport()")
+
+        payload = session.evaluate("window.__lastPayload")
+        assert payload, "Export must write to cloud"
+        upd = session.evaluate("window.__updCalls")
+        assert upd >= 1, f"Export must perform a write, got {upd}"
+
+        try:
+            rows = json.loads(payload)
+            row = next(r for r in rows if r and r[0] == 'plan')
+            o1 = next(o for o in json.loads(row[1])['objects'] if o['id'] == 'o1')
+            items = o1['items']
+        except Exception as e:
+            raise AssertionError(f"Cannot parse payload: {payload} :: {e}")
+
+        assert items == ['Пальто', 'Ботинки', 'Шарф'], \
+            f"Export must merge cloud item into local (sum), got {items}"
+
+        local_items = session.evaluate("App.DataStore.getObject('o1').items")
+        assert local_items == ['Пальто', 'Ботинки', 'Шарф'], \
+            f"Local UI must reflect merged items, got {local_items}"
+
+        base_ok = session.evaluate("""
+            (function(){
+                const b = App.DataStore.getSyncBase(App.DataStore.getActivePlanId());
+                return !!b && b.objects.some(o => o.id === 'o1' && o.items.indexOf('Шарф') !== -1);
+            })()
+        """)
+        assert base_ok, "Sync base must be updated to the merged result"
+
+    # --- 37. Repeated syncs are idempotent: no duplication, no resurrection ---
+    def export_idempotent_across_syncs():
+        session.evaluate("""
+            (() => {
+                const doc = () => ({
+                    scale: 100, rooms: [{ id: 'r1', name: 'Комната', x: 0, y: 0, w: 100, h: 100 }],
+                    objects: [{ id: 'o1', name: 'Шкаф', roomId: 'r1', parentId: null,
+                                x: 0, y: 0, w: 50, h: 50, color: '#000000', items: ['Кружка', 'Шарф'] }],
+                    guides: []
+                });
+                App.DataStore.setSyncBase(App.DataStore.getActivePlanId(), doc());
+                App.DataStore.importData(JSON.stringify(doc()));
+                App.DataStore.addObjectItem('o1', 'Ботинки');
+                window.__cloudJson = JSON.stringify(doc());
+                window.__payloads = [];
+                const values = gapi.client.sheets.spreadsheets.values;
+                values.get = () => Promise.resolve({ result: { values:
+                    [['key', 'value'], [App.DataStore.getActivePlanName(), window.__cloudJson]] } });
+                values.update = (req) => {
+                    window.__payloads.push(JSON.stringify((req.resource || {}).values));
+                    return Promise.resolve({ result: {} });
+                };
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 'x' });
+            })()
+        """)
+        session.evaluate("App._sheetsDebug.doExport()")
+        time.sleep(0.3)
+        session.evaluate("App._sheetsDebug.doExport()")
+
+        payloads = session.evaluate("window.__payloads || []")
+        assert len(payloads) == 2, f"Two exports expected, got {len(payloads)}"
+        assert payloads[0] == payloads[1], \
+            "Repeated sync must not grow data: first and second payloads differ"
+
+        row = next(r for r in json.loads(payloads[0]) if r and r[0] == 'plan')
+        o1 = next(o for o in json.loads(row[1])['objects'] if o['id'] == 'o1')
+        counts = {}
+        for t in o1['items']:
+            counts[t] = counts.get(t, 0) + 1
+        assert counts.get('Кружка') == 1 and counts.get('Шарф') == 1 and counts.get('Ботинки') == 1, \
+            f"Items must not duplicate across syncs, got {o1['items']}"
+
     # Google-слой тестируется только с http-origin: на file:// динамический
     # import() google.js блокируется CORS, _gsReady никогда не поднимется
     #
@@ -1021,9 +1160,11 @@ def run_all(session):
                 pass
             time.sleep(0.5)
         test("32. Export renews auth and retries", export_renews_and_retries)
-        test("33. Cloud wins on boot (import overwrites local)", cloud_wins_on_boot)
+        test("33. Merge on boot (cloud ∪ local, nothing lost)", merge_on_boot)
         test("34. Auth button reflects login state", auth_button_reflects_state)
         test("35. Sync-error indicator on save failure", sync_error_indicator)
+        test("36. Export merges cloud changes (sum, not overwrite)", export_merges_cloud_changes)
+        test("37. Repeated syncs are idempotent", export_idempotent_across_syncs)
     finally:
         httpd.shutdown()
 

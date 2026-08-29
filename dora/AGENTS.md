@@ -36,10 +36,15 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - A data row counts as an apartment only if its B parses as a plan doc (`_isPlanDoc`: rooms+objects arrays) — stray labels in column A are ignored
 - Export updates/creates the row of the ACTIVE plan (debounced on `data:changed`)
 - **Auth auto-renewal**: `_renewAuth()` silently refreshes an expired token via `tokenClient.requestAccessToken({prompt:''})` (shared promise guards parallel calls; 90s timeout settles blocked popups). `_doSheetsExport` renews before writing and retries once on 401/403 (`utils.isAuthError`). On failure it sets `dora_unsynced=1` and shows the «☁ Восстановить синхронизацию» banner — its click is a user gesture, so the popup is not blocked. Success clears the flag and hides the banner.
-- **Cloud is the source of truth (priority)**: Google Sheets always wins. On launch (`waitGoogle` resolves, token present) dora downloads the cloud and **overwrites** local data via `_doSheetsImport` — `dora_unsynced` never blocks import. On `doAuth` (token renewal) the same download runs. Local edits still auto-export on `data:changed`, but a fresh launch or re-authorization always takes the cloud version, so multiple devices converge on Google Sheets. `dora_unsynced` is only set when a *push* fails (banner shown) and is cleared after a successful import or export.
+- **Merge sync (never overwrite, never lose data)**: cloud and local are **united**, not replaced. On launch/`doAuth`/switch, `_doSheetsImport` → `_mergeActiveRow` merges the cloud row of the active plan into local; on `data:changed` (debounced), `_doSheetsExport` reads cloud, merges, writes. Merge rules (pure `DataStore.mergePlan(local, cloud, base)`):
+  - entities (`rooms`/`objects`/`guides`) — union by id; on id conflict local fields win
+  - items — `local.items ++ (cloud deltas vs base)`; negative delta (deletion) is ignored, so removals stay on the local side (naive union: deleted-on-other-device things resurrect — accepted)
+  - **base** = per-device snapshot of the cloud row from the last sync (`localStorage` key `dora_sync_base:<planId>`, helpers `getSyncBase`/`setSyncBase`). Without it, naive concat would double the list on every sync. `base == null` (first sync): identical docs → identity (no doubling); divergent docs → full concat (duplicates allowed — dup over data loss)
+  - `scale` — local wins
+- After a merge that changed the cloud row, the result is **pushed back** to the sheet and `base` is updated to the merged doc. `dora_unsynced` is only set when a *push* fails (banner shown) and is cleared after a successful import/export. Local deletions propagate to the cloud only when the cloud equals `base` (plain overwrite).
 - Preventive renewal on the `doAuth` body event only fires when `gapi_token` exists in localStorage (never pop up for anonymous visitors).
-- On gapi auth: valid plan rows register into the registry, then content of the active row is imported
-- On switch (if authorized): cloud row of the new active plan is imported; auto-export is suppressed during this import so an empty local copy cannot wipe cloud data
+- On gapi auth: valid plan rows register into the registry, then the active row is **merged** (`_mergeActiveRow`), not imported-over
+- On switch (if authorized): cloud row of the new active plan is merged via `_mergeActiveRow`; auto-export is suppressed during the merge so an empty local copy cannot wipe cloud data
 - Rename updates column A of the matching data row; delete removes the row only after content validation (non-plan payloads are kept and skipped, warning logged)
 
 ## Data Schema (per plan document)

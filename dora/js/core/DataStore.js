@@ -168,6 +168,92 @@ App.DataStore = (() => {
     try { localStorage.setItem(_keyFor(_activeId), JSON.stringify(_data)); } catch (e) { console.warn('[DataStore] save failed:', e); }
   }
 
+  const SYNC_BASE_PREFIX = 'dora_sync_base:';
+
+  function _itemCounts(list) {
+    const m = {};
+    (list || []).forEach(t => { m[t] = (m[t] || 0) + 1; });
+    return m;
+  }
+
+  // Объединение сущностей по id: локальная (listA) побеждает при конфликте,
+  // облачные (listB) добавляются в конец, id сохраняются.
+  function _unionById(listA, listB) {
+    const seen = new Set();
+    const out = [];
+    (listA || []).forEach(item => { out.push(item); seen.add(item.id); });
+    (listB || []).forEach(item => { if (!seen.has(item.id)) out.push(item); });
+    return out;
+  }
+
+  // Сумма предметов против базы: локальный список + добавки облака относительно базы.
+  // Отрицательная дельта (кто-то удалил) игнорируется — ничего не вычёркиваем.
+  // Базы нет / объект создан после базы — полный конкатенат обеих версий.
+  function _mergeItems(localItems, cloudItems, baseItems) {
+    const res = (localItems || []).slice();
+    if (!baseItems) {
+      (cloudItems || []).forEach(t => res.push(t));
+      return res;
+    }
+    const cloud = _itemCounts(cloudItems);
+    const base = _itemCounts(baseItems);
+    Object.keys(cloud).forEach(t => {
+      const add = cloud[t] - (base[t] || 0);
+      for (let i = 0; i < add; i++) res.push(t);
+    });
+    return res;
+  }
+
+  // Объединение облачной и локальной версий плана.
+  // base — снимок облака от прошлой синхронизации (null если её не было).
+  // Правила: union по id, поля конфликтующих сущностей — из локальной версии,
+  // предметы — сумма против базы, предметы объектов-новинок и первого синка — сложение.
+  function mergePlan(local, cloud, base) {
+    if (!Array.isArray(cloud.objects) || !Array.isArray(local.objects)) return local;
+    // Первый синк идентичных версий — не удваиваем содержимое
+    if (!base && JSON.stringify(cloud) === JSON.stringify(local)) return local;
+
+    const out = {
+      scale: (typeof local.scale === 'number' && local.scale > 0) ? local.scale : 100,
+      rooms: _unionById(local.rooms, cloud.rooms),
+      objects: [],
+      guides: _unionById(local.guides, cloud.guides)
+    };
+
+    const cloudObj = {};
+    (cloud.objects || []).forEach(o => { if (o && o.id !== undefined) cloudObj[o.id] = o; });
+    const baseObj = {};
+    (base && base.objects || []).forEach(o => { if (o && o.id !== undefined) baseObj[o.id] = o; });
+
+    const seen = new Set();
+    (local.objects || []).forEach(o => {
+      const entry = Object.assign({}, o);
+      const c = cloudObj[o.id];
+      if (c) {
+        const b = baseObj[o.id];
+        entry.items = _mergeItems(o.items, c.items, b ? b.items : null);
+      }
+      out.objects.push(entry);
+      seen.add(o.id);
+    });
+    (cloud.objects || []).forEach(o => {
+      if (o && o.id !== undefined && !seen.has(o.id)) out.objects.push(o);
+    });
+
+    return out;
+  }
+
+  function getSyncBase(planId) {
+    try { return JSON.parse(localStorage.getItem(SYNC_BASE_PREFIX + planId)) || null; } catch (e) { return null; }
+  }
+
+  function setSyncBase(planId, doc) {
+    try {
+      if (!doc) { localStorage.removeItem(SYNC_BASE_PREFIX + planId); return; }
+      localStorage.setItem(SYNC_BASE_PREFIX + planId, JSON.stringify(doc));
+    } catch (e) { console.warn('[DataStore] save sync base failed:', e); }
+  }
+
   return {
     init() {
       _loadRegistry();
@@ -257,6 +343,7 @@ App.DataStore = (() => {
       const removed = _plans.splice(idx, 1)[0];
       _saveRegistry();
       try { localStorage.removeItem(_keyFor(id)); } catch (e) {}
+      setSyncBase(id, null);
       let switchedTo = null;
       if (id === _activeId) {
         _activeId = _plans[0].id;
@@ -633,6 +720,13 @@ App.DataStore = (() => {
 
     exportData() {
       return JSON.stringify(_data, null, 2);
-    }
+    },
+
+    // Чистое объединение облака и локальной версии (см. mergePlan-хелпер выше)
+    mergePlan: mergePlan,
+
+    // Снимок облака от прошлой синхронизации (водяной знак) по id квартиры
+    getSyncBase: getSyncBase,
+    setSyncBase: setSyncBase
   };
 })();

@@ -7,6 +7,7 @@ App.PanelManager = (() => {
   let _selectedRoomId = null;
   let _searchQuery = '';
   let _searchMatchedItems = {};
+  let _sortItemsAlpha = false;
   let _dnd = null; // { kind: 'item'|'object', objectId, index }
 
   function _showDefault() {
@@ -60,8 +61,18 @@ App.PanelManager = (() => {
     // Предметы объекта
     if (obj.items && obj.items.length > 0) {
       html += `<div class="container-block">
-        <h4>📎 Предметы</h4>`;
-      obj.items.forEach((item, i) => {
+        <h4>📎 Предметы
+          <label class="sort-toggle" title="Сортировать по алфавиту">
+            <input type="checkbox" data-sort-items${_sortItemsAlpha ? ' checked' : ''} onchange="App.PanelManager.toggleSortItems(this.checked)">
+            <span>А–Я</span>
+          </label>
+        </h4>`;
+      const indices = obj.items.map((_, i) => i);
+      if (_sortItemsAlpha) {
+        indices.sort((a, b) => obj.items[a].localeCompare(obj.items[b], 'ru'));
+      }
+      indices.forEach(i => {
+        const item = obj.items[i];
         const itemHl = matchedItems.has(item) ? ' search-highlight' : '';
         html += `<div class="item-row" draggable="true" data-drag-item="${obj.id}:${i}">
           <span class="item-name${itemHl}" title="Переименовать" onclick="App.PanelManager._renameObjectItem('${obj.id}',${i})">· ${App.utils.escapeHtml(item)}</span>
@@ -308,6 +319,13 @@ App.PanelManager = (() => {
       else if (_selectedRoomId) this.showRoom(_selectedRoomId);
       else _showDefault();
     },
+
+    toggleSortItems(enabled) {
+      _sortItemsAlpha = !!enabled;
+      this.refresh();
+    },
+
+    isSortAlpha() { return _sortItemsAlpha; },
 
     _addObjectItem,
     _removeObjectItem,

@@ -20,18 +20,18 @@
   <div id="panel-default" style="display:none;"></div>
   <div id="panel-content" style="display:none;"></div>
 
-  <script src="js/core/EventBus.js?v=2026090102"></script>
-  <script src="js/core/utils.js?v=2026090102"></script>
-  <script src="js/core/DataStore.js?v=2026090102"></script>
-  <script src="js/ui/Ruler.js?v=2026090102"></script>
-  <script src="js/ui/GuideManager.js?v=2026090102"></script>
-  <script src="js/interaction/SearchManager.js?v=2026090102"></script>
-  <script src="js/io/ExportImport.js?v=2026090102"></script>
-  <script src="js/interaction/DragManager.js?v=2026090102"></script>
-  <script src="js/ui/ModalManager.js?v=2026090102"></script>
-  <script src="js/ui/PanelManager.js?v=2026090102"></script>
-  <script src="js/ui/Renderer.js?v=2026090102"></script>
-  <script src="js/app.js?v=2026090102"></script>
+  <script src="js/core/EventBus.js?v=2026090103"></script>
+  <script src="js/core/utils.js?v=2026090103"></script>
+  <script src="js/core/DataStore.js?v=2026090103"></script>
+  <script src="js/ui/Ruler.js?v=2026090103"></script>
+  <script src="js/ui/GuideManager.js?v=2026090103"></script>
+  <script src="js/interaction/SearchManager.js?v=2026090103"></script>
+  <script src="js/io/ExportImport.js?v=2026090103"></script>
+  <script src="js/interaction/DragManager.js?v=2026090103"></script>
+  <script src="js/ui/ModalManager.js?v=2026090103"></script>
+  <script src="js/ui/PanelManager.js?v=2026090103"></script>
+  <script src="js/ui/Renderer.js?v=2026090103"></script>
+  <script src="js/app.js?v=2026090103"></script>
 
   <script>
     const out = document.getElementById('output');
@@ -644,6 +644,68 @@
       assert(isAuthError(new TypeError('x is not a function')) === false, 'isAuthError — обычный Error не авторизация');
       assert(isAuthError({}) === false, 'isAuthError — пустой объект не авторизация');
       assert(isAuthError('строка') === false, 'isAuthError — строка не авторизация');
+    })();
+
+    group('18. PanelManager — сортировка предметов по алфавиту');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      const room = App.DataStore.addRoom({ name: 'SortRoom', x: 0, y: 0, w: 400, h: 400 });
+      const obj = App.DataStore.addObject({ name: 'Коробка', roomId: room.id, x: 50, y: 50, w: 80, h: 40 });
+      const itemOrder = ['Зонт', 'Арбуз', 'Ботинки', 'Тапки'];
+      itemOrder.forEach(n => App.DataStore.addObjectItem(obj.id, n));
+      // исходный порядок сохранён в данных (не отсортирован)
+      assert(JSON.stringify(obj.items) === JSON.stringify(itemOrder),
+        'sort — данные хранятся в порядке добавления, без сортировки');
+
+      // Чекбокс сортировки присутствует в панели
+      App.PanelManager.showObject(obj.id);
+      const panel = document.getElementById('panel-content');
+      assert(panel.innerHTML.includes('data-sort-items'), 'sort — в списке предметов есть чекбокс сортировки');
+
+      // По умолчанию порядок как в данных
+      const names1 = Array.from(panel.querySelectorAll('.item-name'))
+        .map(el => el.textContent.trim().replace(/^·\s*/, ''));
+      assert(JSON.stringify(names1) === JSON.stringify(itemOrder), 'sort — по умолчанию порядок добавления');
+
+      // Включаем сортировку по алфавиту
+      const cb = panel.querySelector('[data-sort-items]');
+      cb.checked = true;
+      cb.dispatchEvent(new Event('change'));
+      const names2 = Array.from(panel.querySelectorAll('.item-name'))
+        .map(el => el.textContent.trim().replace(/^·\s*/, ''));
+      assert(JSON.stringify(names2) === JSON.stringify(['Арбуз', 'Ботинки', 'Зонт', 'Тапки']),
+        'sort — после включения список отсортирован по алфавиту');
+      assert(JSON.stringify(obj.items) === JSON.stringify(itemOrder),
+        'sort — сортировка отображения не меняет данные');
+
+      // Сортировка переживает повторный рендер (refresh)
+      App.PanelManager.showObject(obj.id);
+      const names3 = Array.from(panel.querySelectorAll('.item-name'))
+        .map(el => el.textContent.trim().replace(/^·\s*/, ''));
+      assert(JSON.stringify(names3) === JSON.stringify(['Арбуз', 'Ботинки', 'Зонт', 'Тапки']),
+        'sort — состояние сортировки сохраняется при повторном рендере');
+
+      // data-drag-item хранит оригинальный индекс, а не порядок вывода
+      const rows = Array.from(panel.querySelectorAll('[data-drag-item]'));
+      const first = rows[0].getAttribute('data-drag-item');
+      assert(first === obj.id + ':' + obj.items.indexOf('Арбуз'),
+        'sort — data-drag-item указывает на исходный индекс предмета');
+
+      // Выключаем сортировку — возвращаем порядок добавления
+      cb = panel.querySelector('[data-sort-items]');
+      cb.checked = false;
+      cb.dispatchEvent(new Event('change'));
+      const names4 = Array.from(panel.querySelectorAll('.item-name'))
+        .map(el => el.textContent.trim().replace(/^·\s*/, ''));
+      assert(JSON.stringify(names4) === JSON.stringify(itemOrder),
+        'sort — выключение возвращает порядок добавления');
+
+      // Cleanup
+      App.DataStore.deleteObject(obj.id);
+      App.DataStore.deleteRoom(room.id);
+      App.DataStore.reset(true);
     })();
 
     // ========== SUMMARY ==========

@@ -66,7 +66,7 @@ App.PanelManager = (() => {
         html += `<div class="item-row" draggable="true" data-drag-item="${obj.id}:${i}">
           <span class="item-name${itemHl}" title="Переименовать" onclick="App.PanelManager._renameObjectItem('${obj.id}',${i})">· ${App.utils.escapeHtml(item)}</span>
           <button class="btn-icon" onclick="App.ModalManager.showMoveItem('${obj.id}',${i})" title="Переместить в другой объект">→</button>
-          <button class="btn-icon" onclick="App.DataStore.removeObjectItem('${obj.id}',${i})" title="Удалить">✕</button>
+          <button class="btn-icon" onclick="App.PanelManager._removeObjectItem('${obj.id}',${i})" title="Удалить">✕</button>
         </div>`;
       });
       html += `</div>`;
@@ -114,6 +114,11 @@ App.PanelManager = (() => {
       App.DataStore.addObjectItem(objectId, name.trim());
       this.showObject(objectId);
     }
+  }
+
+  function _removeObjectItem(objectId, itemIndex) {
+    App.DataStore.removeObjectItem(objectId, itemIndex);
+    this.showObject(objectId);
   }
 
   function _addNestedObject(objectId) {
@@ -305,6 +310,7 @@ App.PanelManager = (() => {
     },
 
     _addObjectItem,
+    _removeObjectItem,
     _addNestedObject,
     _initMoveObject,
     _renameObjectItem,

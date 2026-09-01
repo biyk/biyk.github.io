@@ -52,8 +52,8 @@ App.init = () => {
       App._gsdb = new GoogleSheetDB();
       App._gsdb.waitGoogle().then(async function() {
         _gsReady = true;
-        // При запуске (если есть токен) объединяем облако с локальными данными:
-        // ничего не теряем — local ∪ облачные добавки против базы (см. mergePlan).
+        // При запуске (если есть токен) подгружаем облачную версию:
+        // облако — источник истины, локальная копия на этом устройстве перезаписывается.
         _refreshAuthButton();
         await _doSheetsImport(true);
         if (localStorage.getItem('dora_unsynced')) _showSyncError();
@@ -289,43 +289,9 @@ async function _doSheetsExport(_retried) {
     }
     var keyName = App.DataStore.getActivePlanName();
     if (!keyName) return;
-    var planId = App.DataStore.getActivePlanId();
-    var localJson = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
+    var json = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
     var data = await _fetchPlanData();
-
-    // Облако могло уйти вперёд с другой машины — сливаем, а не затираем.
-    // Если база == облако, merge ничего не добавляет: локальные удаления уходят.
-    var cloudContent = null;
-    for (var i = 0; i < data.rows.length; i++) {
-      if (data.rows[i][0] === keyName) { cloudContent = data.rows[i][1]; break; }
-    }
-    var toWrite = localJson;
-    if (cloudContent) {
-      try {
-        var cloudDoc = JSON.parse(cloudContent);
-        if (cloudDoc && Array.isArray(cloudDoc.objects)) {
-          var localDoc = JSON.parse(localJson);
-          var baseDoc = App.DataStore.getSyncBase(planId);
-          var merged = App.DataStore.mergePlan(localDoc, cloudDoc, baseDoc);
-          var mergedJson = JSON.stringify(merged);
-          if (mergedJson !== JSON.stringify(localDoc)) {
-            // Облако принесло новое — применяем локально, чтобы UI не отставал.
-            // Подавляем автоэкспорт: importData эмитит data:changed.
-            var wasSuppressed = _exportSuppress;
-            _exportSuppress = true;
-            var res = App.DataStore.importData(mergedJson);
-            if (res.ok) App.Renderer.render();
-            _exportSuppress = wasSuppressed;
-          }
-          toWrite = mergedJson;
-        }
-      } catch (e) {
-        // Битый облачный JSON — пишем свою версию
-        console.warn('[Sheets] cloud row unparsable, overwriting:', e);
-      }
-    }
-    await _upsertRow(data, keyName, toWrite);
-    App.DataStore.setSyncBase(planId, JSON.parse(toWrite));
+    await _upsertRow(data, keyName, json);
     localStorage.removeItem('dora_unsynced');
     _hideSyncBanner();
     _hideSyncError();
@@ -354,8 +320,8 @@ async function _doSheetsImport(silent) {
       .filter(function(r) { return r && r[0] && _isPlanDoc(r[1]); })
       .map(function(r) { return r[0]; });
     App.DataStore.registerCloudPlans(names);
-    await _mergeActiveRow(data, silent);
-    // Облако теперь слито с локальным — отметку «есть неслитые правки» снимаем
+    await _importActiveRow(data, silent);
+    // Облако — источник истины: отметку «есть неслитые правки» снимаем
     localStorage.removeItem('dora_unsynced');
     _hideSyncError();
   } catch (err) {
@@ -363,48 +329,27 @@ async function _doSheetsImport(silent) {
   }
 }
 
-// Объединение облачной строки активного плана с локальной версией.
-// data: { header, rows } из _fetchPlanData(). Никогда не теряет данные:
-// результат = local + добавки облака против базы (см. DataStore.mergePlan).
-async function _mergeActiveRow(data, silent) {
+// Импорт облачной строки активного плана: облако перезаписывает локальную копию.
+// data: { header, rows } из _fetchPlanData(). Не сливает — cloud wins.
+async function _importActiveRow(data, silent) {
   var keyName = App.DataStore.getActivePlanName();
   if (!keyName) return;
-  var planId = App.DataStore.getActivePlanId();
   var cloudContent = null;
   for (var i = 0; i < data.rows.length; i++) {
     if (data.rows[i][0] === keyName) { cloudContent = data.rows[i][1]; break; }
   }
   if (!cloudContent) return;
-  var cloudDoc;
-  try {
-    cloudDoc = JSON.parse(cloudContent);
-    if (!cloudDoc || !Array.isArray(cloudDoc.objects)) return;
-  } catch (e) { return; }
-
-  var localDoc = App.DataStore.getData();
-  var baseDoc = App.DataStore.getSyncBase(planId);
-  var merged = App.DataStore.mergePlan(localDoc, cloudDoc, baseDoc);
-  var mergedJson = JSON.stringify(merged);
-  var localJson = JSON.stringify(localDoc);
-
-  if (mergedJson !== localJson) {
-    var wasSuppressed = _exportSuppress;
-    _exportSuppress = true;
-    var res = App.DataStore.importData(mergedJson);
-    if (res.ok) {
-      App.Renderer.render();
-      App.GuideManager._render && App.GuideManager._render();
-    } else if (!silent) {
-      alert('Ошибка объединения с Google Sheets: ' + res.error);
-    }
-    _exportSuppress = wasSuppressed;
+  if (!_isPlanDoc(cloudContent)) return;
+  var wasSuppressed = _exportSuppress;
+  _exportSuppress = true;
+  var res = App.DataStore.importData(cloudContent);
+  if (res.ok) {
+    App.Renderer.render();
+    App.GuideManager._render && App.GuideManager._render();
+  } else if (!silent) {
+    alert('Ошибка загрузки из Google Sheets: ' + res.error);
   }
-  if (mergedJson !== cloudContent) {
-    // Наш merge добавил местные предметы — возвращаем результат в облако
-    try { await _upsertRow(data, keyName, mergedJson); }
-    catch (err) { console.warn('[Sheets] merge push-back error:', err); }
-  }
-  App.DataStore.setSyncBase(planId, merged);
+  _exportSuppress = wasSuppressed;
 }
 
 // На время загрузки облачной версии при переключении квартиры
@@ -438,8 +383,8 @@ function _onPlanSwitched() {
   App.GuideManager._render && App.GuideManager._render();
   if (_gsReady && window.gapi && gapi.client && gapi.client.getToken()) {
     _fetchPlanData()
-      .then(function(data) { return _mergeActiveRow(data, true); })
-      .catch(function(err) { console.warn('[Sheets] switch merge error:', err); })
+      .then(function(data) { return _importActiveRow(data, true); })
+      .catch(function(err) { console.warn('[Sheets] switch import error:', err); })
       .finally(function() { _exportSuppress = false; });
   } else {
     _exportSuppress = false;

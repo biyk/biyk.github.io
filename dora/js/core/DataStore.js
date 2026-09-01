@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 App.DataStore = (() => {
   const STORAGE_KEY = 'apartmentPlan';
@@ -36,74 +36,6 @@ App.DataStore = (() => {
 
   function _emptyDoc() {
     return { scale: 100, rooms: [], objects: [], guides: [] };
-  }
-
-  const DEFAULT_DATA = {
-    scale: 100,
-    rooms: [
-      { id: 'r_1', name: 'Гостиная', x: 50, y: 50, w: 500, h: 300 },
-      { id: 'r_2', name: 'Кухня', x: 580, y: 50, w: 370, h: 300 },
-      { id: 'r_3', name: 'Спальня', x: 50, y: 380, w: 350, h: 280 },
-      { id: 'r_4', name: 'Прихожая', x: 430, y: 380, w: 200, h: 140 },
-      { id: 'r_5', name: 'Ванная', x: 660, y: 380, w: 290, h: 140 },
-      { id: 'r_6', name: 'Коридор', x: 430, y: 550, w: 520, h: 110 },
-    ],
-    objects: [
-      { id: 'o_1', name: 'Стеллаж', roomId: 'r_1', x: 80, y: 80, w: 120, h: 40, color: '#4a90d9',
-        items: [], children: [
-          { id: 'o_1a', name: 'Верхняя полка', items: ['Книги', 'Фотоальбомы'] },
-          { id: 'o_1b', name: 'Средняя полка', items: ['Документы', 'Папки'] },
-          { id: 'o_1c', name: 'Нижняя полка', items: ['Коробка с проводами', 'Инструменты'] }
-        ] },
-      { id: 'o_2', name: 'Диван', roomId: 'r_1', x: 280, y: 200, w: 200, h: 80, color: '#8d6e63',
-        items: [], children: [
-          { id: 'o_2a', name: 'Ящик для белья', items: ['Плед', 'Подушки'] }
-        ] },
-      { id: 'o_3', name: 'Шкаф кухонный', roomId: 'r_2', x: 600, y: 70, w: 100, h: 250, color: '#66bb6a',
-        items: [], children: [
-          { id: 'o_3a', name: 'Верхняя секция', items: ['Тарелки', 'Чашки', 'Кружки'] },
-          { id: 'o_3b', name: 'Нижняя секция', items: ['Кастрюли', 'Сковородки'] }
-        ] },
-      { id: 'o_4', name: 'Холодильник', roomId: 'r_2', x: 830, y: 200, w: 80, h: 120, color: '#4fc3f7',
-        items: [], children: [
-          { id: 'o_4a', name: 'Холодильная камера', items: ['Молоко', 'Яйца', 'Овощи'] },
-          { id: 'o_4b', name: 'Морозилка', items: ['Мясо', 'Пельмени'] }
-        ] },
-      { id: 'o_5', name: 'Кровать', roomId: 'r_3', x: 70, y: 400, w: 200, h: 160, color: '#ab47bc',
-        items: [], children: [
-          { id: 'o_5a', name: 'Ящик под кроватью', items: ['Одеяло', 'Запасные простыни'] }
-        ] },
-      { id: 'o_6', name: 'Шкаф-купе', roomId: 'r_3', x: 300, y: 400, w: 80, h: 230, color: '#78909c',
-        items: [], children: [
-          { id: 'o_6a', name: 'Левая половина', items: ['Куртки', 'Платья', 'Рубашки'] },
-          { id: 'o_6b', name: 'Правая половина', items: ['Джинсы', 'Свитера', 'Носки'] },
-          { id: 'o_6c', name: 'Антресоль', items: ['Чемоданы', 'Коробки'] }
-        ] },
-      { id: 'o_7', name: 'Тумба', roomId: 'r_4', x: 450, y: 400, w: 60, h: 50, color: '#ffa726',
-        items: [], children: [
-          { id: 'o_7a', name: 'Выдвижной ящик', items: ['Ключи', 'Кошелёк', 'Маска'] }
-        ] },
-      { id: 'o_8', name: 'Аптечка', roomId: 'r_5', x: 700, y: 400, w: 60, h: 50, color: '#ef5350',
-        items: [], children: [
-          { id: 'o_8a', name: 'Аптечка', items: ['Бинт', 'Пластырь', 'Йод', 'Парацетамол'] }
-        ] },
-    ],
-    guides: []
-  };
-
-  // Раскрывает DEFAULT_DATA: children -> parentId в плоском массиве
-  function _flattenObjects(objs, parentId, roomId, out) {
-    objs.forEach(o => {
-      const kids = o.children || [];
-      delete o.children;
-      o.parentId = parentId || null;
-      if (o.roomId === undefined || o.roomId === null) o.roomId = roomId || null;
-      if (!('x' in o)) { o.x = 0; o.y = 0; o.w = 10; o.h = 10; }
-      if (!('color' in o)) o.color = '#4a90d9';
-      if (!Array.isArray(o.items)) o.items = [];
-      out.push(o);
-      if (kids.length) _flattenObjects(kids, o.id, o.roomId, out);
-    });
   }
 
   function _validate() {
@@ -168,92 +100,6 @@ App.DataStore = (() => {
     try { localStorage.setItem(_keyFor(_activeId), JSON.stringify(_data)); } catch (e) { console.warn('[DataStore] save failed:', e); }
   }
 
-  const SYNC_BASE_PREFIX = 'dora_sync_base:';
-
-  function _itemCounts(list) {
-    const m = {};
-    (list || []).forEach(t => { m[t] = (m[t] || 0) + 1; });
-    return m;
-  }
-
-  // Объединение сущностей по id: локальная (listA) побеждает при конфликте,
-  // облачные (listB) добавляются в конец, id сохраняются.
-  function _unionById(listA, listB) {
-    const seen = new Set();
-    const out = [];
-    (listA || []).forEach(item => { out.push(item); seen.add(item.id); });
-    (listB || []).forEach(item => { if (!seen.has(item.id)) out.push(item); });
-    return out;
-  }
-
-  // Сумма предметов против базы: локальный список + добавки облака относительно базы.
-  // Отрицательная дельта (кто-то удалил) игнорируется — ничего не вычёркиваем.
-  // Базы нет / объект создан после базы — полный конкатенат обеих версий.
-  function _mergeItems(localItems, cloudItems, baseItems) {
-    const res = (localItems || []).slice();
-    if (!baseItems) {
-      (cloudItems || []).forEach(t => res.push(t));
-      return res;
-    }
-    const cloud = _itemCounts(cloudItems);
-    const base = _itemCounts(baseItems);
-    Object.keys(cloud).forEach(t => {
-      const add = cloud[t] - (base[t] || 0);
-      for (let i = 0; i < add; i++) res.push(t);
-    });
-    return res;
-  }
-
-  // Объединение облачной и локальной версий плана.
-  // base — снимок облака от прошлой синхронизации (null если её не было).
-  // Правила: union по id, поля конфликтующих сущностей — из локальной версии,
-  // предметы — сумма против базы, предметы объектов-новинок и первого синка — сложение.
-  function mergePlan(local, cloud, base) {
-    if (!Array.isArray(cloud.objects) || !Array.isArray(local.objects)) return local;
-    // Первый синк идентичных версий — не удваиваем содержимое
-    if (!base && JSON.stringify(cloud) === JSON.stringify(local)) return local;
-
-    const out = {
-      scale: (typeof local.scale === 'number' && local.scale > 0) ? local.scale : 100,
-      rooms: _unionById(local.rooms, cloud.rooms),
-      objects: [],
-      guides: _unionById(local.guides, cloud.guides)
-    };
-
-    const cloudObj = {};
-    (cloud.objects || []).forEach(o => { if (o && o.id !== undefined) cloudObj[o.id] = o; });
-    const baseObj = {};
-    (base && base.objects || []).forEach(o => { if (o && o.id !== undefined) baseObj[o.id] = o; });
-
-    const seen = new Set();
-    (local.objects || []).forEach(o => {
-      const entry = Object.assign({}, o);
-      const c = cloudObj[o.id];
-      if (c) {
-        const b = baseObj[o.id];
-        entry.items = _mergeItems(o.items, c.items, b ? b.items : null);
-      }
-      out.objects.push(entry);
-      seen.add(o.id);
-    });
-    (cloud.objects || []).forEach(o => {
-      if (o && o.id !== undefined && !seen.has(o.id)) out.objects.push(o);
-    });
-
-    return out;
-  }
-
-  function getSyncBase(planId) {
-    try { return JSON.parse(localStorage.getItem(SYNC_BASE_PREFIX + planId)) || null; } catch (e) { return null; }
-  }
-
-  function setSyncBase(planId, doc) {
-    try {
-      if (!doc) { localStorage.removeItem(SYNC_BASE_PREFIX + planId); return; }
-      localStorage.setItem(SYNC_BASE_PREFIX + planId, JSON.stringify(doc));
-    } catch (e) { console.warn('[DataStore] save sync base failed:', e); }
-  }
-
   return {
     init() {
       _loadRegistry();
@@ -267,17 +113,12 @@ App.DataStore = (() => {
           _saveActiveId();
           return;
         }
-      } catch (e) { console.warn('[DataStore] corrupt data, using defaults'); }
-      if (_activeId === 'plan') {
-        const d = App.utils.deepClone(DEFAULT_DATA);
-        _data = { scale: d.scale, rooms: d.rooms, objects: [], guides: d.guides };
-        _flattenObjects(d.objects, null, null, _data.objects);
-        _persist();
-        _saveActiveId();
-        return;
-      }
+      } catch (e) { console.warn('[DataStore] corrupt data, using empty'); }
+      // Нет демо-данных: новое устройство стартует с пустого плана,
+      // настоящие данные подгружаются из облака (см. _doSheetsImport в app.js)
       _data = _emptyDoc();
       _persist();
+      _saveActiveId();
     },
 
     listPlans() { return App.utils.deepClone(_plans); },
@@ -343,20 +184,14 @@ App.DataStore = (() => {
       const removed = _plans.splice(idx, 1)[0];
       _saveRegistry();
       try { localStorage.removeItem(_keyFor(id)); } catch (e) {}
-      setSyncBase(id, null);
       let switchedTo = null;
       if (id === _activeId) {
         _activeId = _plans[0].id;
         _saveActiveId();
         try {
           const raw = localStorage.getItem(_keyFor(_activeId));
-          _data = raw ? JSON.parse(raw) : (_activeId === 'plan' ? null : _emptyDoc());
+          _data = raw ? JSON.parse(raw) : _emptyDoc();
         } catch (e) { _data = _emptyDoc(); }
-        if (!_data) {
-          const d = App.utils.deepClone(DEFAULT_DATA);
-          _data = { scale: d.scale, rooms: d.rooms, objects: [], guides: d.guides };
-          _flattenObjects(d.objects, null, null, _data.objects);
-        }
         _validate();
         switchedTo = { id: _activeId, name: this.getActivePlanName() };
       }
@@ -691,13 +526,8 @@ App.DataStore = (() => {
     },
 
     reset(toDefault = true) {
-      if (toDefault) {
-        const d = App.utils.deepClone(DEFAULT_DATA);
-        _data = { scale: d.scale, rooms: d.rooms, objects: [], guides: d.guides };
-        _flattenObjects(d.objects, null, null, _data.objects);
-      } else {
-        _data = { scale: 100, rooms: [], objects: [], guides: [] };
-      }
+      // Демо-данных нет: сброс всегда очищает план (toDefault сохранён для совместимости вызова)
+      _data = { scale: 100, rooms: [], objects: [], guides: [] };
       _persist();
       App.EventBus.emit('data:reset');
       App.EventBus.emit('data:changed', { source: 'reset' });
@@ -720,13 +550,6 @@ App.DataStore = (() => {
 
     exportData() {
       return JSON.stringify(_data, null, 2);
-    },
-
-    // Чистое объединение облака и локальной версии (см. mergePlan-хелпер выше)
-    mergePlan: mergePlan,
-
-    // Снимок облака от прошлой синхронизации (водяной знак) по id квартиры
-    getSyncBase: getSyncBase,
-    setSyncBase: setSyncBase
+    }
   };
 })();

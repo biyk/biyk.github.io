@@ -36,15 +36,11 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - A data row counts as an apartment only if its B parses as a plan doc (`_isPlanDoc`: rooms+objects arrays) — stray labels in column A are ignored
 - Export updates/creates the row of the ACTIVE plan (debounced on `data:changed`)
 - **Auth auto-renewal**: `_renewAuth()` silently refreshes an expired token via `tokenClient.requestAccessToken({prompt:''})` (shared promise guards parallel calls; 90s timeout settles blocked popups). `_doSheetsExport` renews before writing and retries once on 401/403 (`utils.isAuthError`). On failure it sets `dora_unsynced=1` and shows the «☁ Восстановить синхронизацию» banner — its click is a user gesture, so the popup is not blocked. Success clears the flag and hides the banner.
-- **Merge sync (never overwrite, never lose data)**: cloud and local are **united**, not replaced. On launch/`doAuth`/switch, `_doSheetsImport` → `_mergeActiveRow` merges the cloud row of the active plan into local; on `data:changed` (debounced), `_doSheetsExport` reads cloud, merges, writes. Merge rules (pure `DataStore.mergePlan(local, cloud, base)`):
-  - entities (`rooms`/`objects`/`guides`) — union by id; on id conflict local fields win
-  - items — `local.items ++ (cloud deltas vs base)`; negative delta (deletion) is ignored, so removals stay on the local side (naive union: deleted-on-other-device things resurrect — accepted)
-  - **base** = per-device snapshot of the cloud row from the last sync (`localStorage` key `dora_sync_base:<planId>`, helpers `getSyncBase`/`setSyncBase`). Without it, naive concat would double the list on every sync. `base == null` (first sync): identical docs → identity (no doubling); divergent docs → full concat (duplicates allowed — dup over data loss)
-  - `scale` — local wins
-- After a merge that changed the cloud row, the result is **pushed back** to the sheet and `base` is updated to the merged doc. `dora_unsynced` is only set when a *push* fails (banner shown) and is cleared after a successful import/export. Local deletions propagate to the cloud only when the cloud equals `base` (plain overwrite).
+- **Cloud is the source of truth** (never merge): on launch/`doAuth`/switch, `_doSheetsImport` → `_importActiveRow` **overwrites** the local copy of the active plan with the cloud row; on `data:changed` (debounced), `_doSheetsExport` **overwrites** the cloud row with the local plan. No merge, no union, no per-device base snapshot. This is deliberate: staged merge-sync caused objects to resurrect after deletion and demo data to leak into/from the cloud, so it was reverted.
+- `dora_unsynced` is set only when a *push* fails (banner shown) and is cleared after a successful import/export.
 - Preventive renewal on the `doAuth` body event only fires when `gapi_token` exists in localStorage (never pop up for anonymous visitors).
-- On gapi auth: valid plan rows register into the registry, then the active row is **merged** (`_mergeActiveRow`), not imported-over
-- On switch (if authorized): cloud row of the new active plan is merged via `_mergeActiveRow`; auto-export is suppressed during the merge so an empty local copy cannot wipe cloud data
+- On gapi auth: valid plan rows register into the registry, then the active row is **imported-over** (`_importActiveRow`), not merged
+- On switch (if authorized): cloud row of the new active plan is imported-over via `_importActiveRow`; auto-export is suppressed during the import so an empty local copy cannot wipe cloud data
 - Rename updates column A of the matching data row; delete removes the row only after content validation (non-plan payloads are kept and skipped, warning logged)
 
 ## Data Schema (per plan document)
@@ -115,6 +111,7 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - **Google layer is fully stubbed (`GIS_STUB_SOURCE` in `integration.py`)**: a document-script defines non-writable `window.gapi`/`window.google` fakes and patches `getElementsByTagName('script')` so `loadScriptOnce` finds fake tags with real CDN srcs — `onload` fires synchronously and NO network/GIS is ever touched (tests stay green even when accounts.google.com is unreachable). Tests then patch `tokenClient.requestAccessToken` / `sheets values.*` per scenario as needed. Never let tests hit real GIS.
 
 ## Gotchas
+- **No demo data**: there is no `DEFAULT_DATA` anymore — a fresh device starts with an empty plan, and real data is pulled from the cloud on auth (`_doSheetsImport`). `DataStore.reset()` always clears to empty regardless of the `toDefault` arg. Never reintroduce seed rooms/objects: the demo-clutter bug came from merging demo data with the cloud.
 - **Cache-busting**: all script/style tags in `index.html`/`tests.html` carry `?v=YYYYMMDDNN`. The pre-commit hook (`.githooks/pre-commit` → `tools/bump_dora_cache.py`) bumps them automatically when `dora/js/**` or `dora/style.css` is staged — do NOT bump manually. Stale-token symptom: Chrome silently serves old scripts and tests run outdated code (activate hooks after clone: `git config core.hooksPath .githooks`).
 - **`apartmentPlanActive` is stored as a RAW string** (`setItem(ACTIVE_KEY, _activeId)`), not JSON — never `JSON.parse(localStorage.getItem('apartmentPlanActive'))`.
 - **Guide creation**: toolbar buttons (`guide-h`/`guide-v`) set pending state + cursor change. User must **click on canvas** to place the guide. `Esc` cancels pending. Never create guides immediately on button press.

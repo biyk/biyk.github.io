@@ -77,6 +77,11 @@ App.PanelManager = (() => {
             <span>А–Я</span>
           </label>
         </h4>`;
+      const nameCounts = {};
+      obj.items.forEach(it => {
+        const k = it.toLowerCase();
+        nameCounts[k] = (nameCounts[k] || 0) + 1;
+      });
       const indices = obj.items.map((_, i) => i);
       if (_sortItemsAlpha) {
         indices.sort((a, b) => obj.items[a].localeCompare(obj.items[b], 'ru'));
@@ -84,8 +89,9 @@ App.PanelManager = (() => {
       indices.forEach(i => {
         const item = obj.items[i];
         const itemHl = matchedItems.has(item) ? ' search-highlight' : '';
+        const itemDup = nameCounts[item.toLowerCase()] > 1 ? ' duplicate' : '';
         html += `<div class="item-row" draggable="true" data-drag-item="${obj.id}:${i}">
-          <span class="item-name${itemHl}" title="Переименовать" onclick="App.PanelManager._renameObjectItem('${obj.id}',${i})">· ${App.utils.escapeHtml(item)}</span>
+          <span class="item-name${itemHl}${itemDup}" title="${itemDup ? 'Дубль' : 'Переименовать'}" onclick="App.PanelManager._renameObjectItem('${obj.id}',${i})">· ${App.utils.escapeHtml(item)}</span>
           <button class="btn-icon" onclick="App.ModalManager.showMoveItem('${obj.id}',${i})" title="Переместить в другой объект">→</button>
           <button class="btn-icon" onclick="App.PanelManager._removeObjectItem('${obj.id}',${i})" title="Удалить">✕</button>
         </div>`;

@@ -334,6 +334,12 @@ body {
   text-decoration: underline;
 }
 
+.item-name.duplicate {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.12);
+  border-radius: 4px;
+}
+
 .item-row {
   display: flex;
   justify-content: space-between;

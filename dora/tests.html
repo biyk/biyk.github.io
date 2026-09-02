@@ -29,7 +29,7 @@
   <script src="js/io/ExportImport.js?v=2026090103"></script>
   <script src="js/interaction/DragManager.js?v=2026090103"></script>
   <script src="js/ui/ModalManager.js?v=2026090103"></script>
-  <script src="js/ui/PanelManager.js?v=2026090201"></script>
+  <script src="js/ui/PanelManager.js?v=2026090203"></script>
   <script src="js/ui/Renderer.js?v=2026090103"></script>
   <script src="js/app.js?v=2026090103"></script>
 
@@ -761,6 +761,49 @@
 
       // Cleanup
       App.DataStore.deleteObject(root.id);
+      App.DataStore.deleteRoom(room.id);
+      App.DataStore.reset(true);
+    })();
+
+    group('20. PanelManager — подсветка дублей предметов');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      const room = App.DataStore.addRoom({ name: 'DupRoom', x: 0, y: 0, w: 400, h: 400 });
+      const obj = App.DataStore.addObject({ name: 'Ящик', roomId: room.id, x: 50, y: 50, w: 80, h: 40 });
+      App.DataStore.addObjectItem(obj.id, 'Книга');
+      App.DataStore.addObjectItem(obj.id, 'Мяч');
+      App.DataStore.addObjectItem(obj.id, 'книга');
+      App.DataStore.addObjectItem(obj.id, 'Стол');
+      App.DataStore.addObjectItem(obj.id, 'Мяч');
+
+      App.PanelManager.showObject(obj.id);
+      const panel = document.getElementById('panel-content');
+      const items = Array.from(panel.querySelectorAll('.item-name'))
+        .map(el => ({ name: el.textContent.trim().replace(/^·\s*/, ''), cls: el.classList.contains('duplicate') }));
+
+      const dupCls = n => (items.find(x => x.name === n) || {}).cls;
+      const uniqCls = n => (items.find(x => x.name === n) || {}).cls;
+      assert(dupCls('Мяч') === true, 'duplicate — первый «Мяч» подсвечен как дубль');
+      assert(uniqCls('Книга') === true, 'duplicate — «Книга» подсвечена (есть «книга»)');
+      assert(dupCls('Стол') === false, 'duplicate — уникальный «Стол» не подсвечен');
+
+      // Дубль, совпадающий по регистру (полная копия строки)
+      const allM = items.filter(x => x.name === 'Мяч');
+      assert(allM.length === 2 && allM.every(x => x.cls === true),
+        'duplicate — обе копии «Мяч» подсвечены');
+
+      // Добавление уникального предмета не даёт ложных подсветок
+      App.DataStore.addObjectItem(obj.id, 'Полка');
+      App.PanelManager.showObject(obj.id);
+      const items2 = Array.from(panel.querySelectorAll('.item-name'))
+        .map(el => ({ name: el.textContent.trim().replace(/^·\s*/, ''), cls: el.classList.contains('duplicate') }));
+      assert((items2.find(x => x.name === 'Полка') || {}).cls === false,
+        'duplicate — новый уникальный предмет не подсвечен');
+
+      // Cleanup
+      App.DataStore.deleteObject(obj.id);
       App.DataStore.deleteRoom(room.id);
       App.DataStore.reset(true);
     })();

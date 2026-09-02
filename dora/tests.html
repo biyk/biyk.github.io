@@ -29,7 +29,7 @@
   <script src="js/io/ExportImport.js?v=2026090103"></script>
   <script src="js/interaction/DragManager.js?v=2026090103"></script>
   <script src="js/ui/ModalManager.js?v=2026090103"></script>
-  <script src="js/ui/PanelManager.js?v=2026090103"></script>
+  <script src="js/ui/PanelManager.js?v=2026090201"></script>
   <script src="js/ui/Renderer.js?v=2026090103"></script>
   <script src="js/app.js?v=2026090103"></script>
 
@@ -670,7 +670,7 @@
       assert(JSON.stringify(names1) === JSON.stringify(itemOrder), 'sort — по умолчанию порядок добавления');
 
       // Включаем сортировку по алфавиту
-      const cb = panel.querySelector('[data-sort-items]');
+      let cb = panel.querySelector('[data-sort-items]');
       cb.checked = true;
       cb.dispatchEvent(new Event('change'));
       const names2 = Array.from(panel.querySelectorAll('.item-name'))
@@ -704,6 +704,63 @@
 
       // Cleanup
       App.DataStore.deleteObject(obj.id);
+      App.DataStore.deleteRoom(room.id);
+      App.DataStore.reset(true);
+    })();
+
+    group('19. PanelManager — подсветка вложенных объектов с совпадением');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      const room = App.DataStore.addRoom({ name: 'NestRoom', x: 0, y: 0, w: 400, h: 400 });
+      const root = App.DataStore.addObject({ name: 'Суперкоробка', roomId: room.id, x: 50, y: 50, w: 200, h: 100 });
+      const hit = App.DataStore.addObject({ name: 'Стол', parentId: root.id });
+      const miss = App.DataStore.addObject({ name: 'Тумба', parentId: root.id });
+      App.DataStore.addObjectItem(hit.id, 'мебель');
+      App.DataStore.addObjectItem(hit.id, 'доски');
+      App.DataStore.addObjectItem(miss.id, 'плед');
+
+      // Поиск «меб»: совпадает вложенный «Стол» по своим предметам
+      App.EventBus.emit('search:results', {
+        query: 'меб',
+        results: [{ object: hit, matchedItems: ['мебель'], nameMatch: false }]
+      });
+
+      // Открываем корень — вложенные объекты должны подсвечиваться по совпадению
+      App.PanelManager.showObject(root.id);
+      const panel = document.getElementById('panel-content');
+      const hitRow = Array.from(panel.querySelectorAll('.item-row'))
+        .find(r => r.textContent.includes('Стол'));
+      const missRow = Array.from(panel.querySelectorAll('.item-row'))
+        .find(r => r.textContent.includes('Тумба'));
+      assert(hitRow && hitRow.classList.contains('search-highlight') === false
+        && hitRow.querySelector('.item-name').classList.contains('search-highlight'),
+        'nested-hl — вложенный объект с совпадающим предметом подсвечен');
+      assert(missRow && !missRow.querySelector('.item-name').classList.contains('search-highlight'),
+        'nested-hl — вложенный объект без совпадения не подсвечен');
+
+      // Совпадение по имени самого вложенного объекта тоже подсвечивает
+      App.EventBus.emit('search:results', {
+        query: 'тумб',
+        results: [{ object: miss, matchedItems: [], nameMatch: true }]
+      });
+      App.PanelManager.showObject(root.id);
+      const missRow2 = Array.from(panel.querySelectorAll('.item-row'))
+        .find(r => r.textContent.includes('Тумба'));
+      assert(missRow2.querySelector('.item-name').classList.contains('search-highlight'),
+        'nested-hl — вложенный объект с совпадением по имени подсвечен');
+
+      // Очистка поиска убирает подсветку
+      App.EventBus.emit('search:clear');
+      App.PanelManager.showObject(root.id);
+      const hitRow2 = Array.from(panel.querySelectorAll('.item-row'))
+        .find(r => r.textContent.includes('Стол'));
+      assert(!hitRow2.querySelector('.item-name').classList.contains('search-highlight'),
+        'nested-hl — после очистки поиска подсветка снята');
+
+      // Cleanup
+      App.DataStore.deleteObject(root.id);
       App.DataStore.deleteRoom(room.id);
       App.DataStore.reset(true);
     })();

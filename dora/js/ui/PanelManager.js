@@ -7,6 +7,7 @@ App.PanelManager = (() => {
   let _selectedRoomId = null;
   let _searchQuery = '';
   let _searchMatchedItems = {};
+  let _searchMatchedObjectIds = new Set();
   let _sortItemsAlpha = false;
   let _dnd = null; // { kind: 'item'|'object', objectId, index }
 
@@ -21,6 +22,15 @@ App.PanelManager = (() => {
   function _isSearchMatch(name) {
     if (!_searchQuery) return false;
     return name.toLowerCase().includes(_searchQuery.toLowerCase());
+  }
+
+  // Истина, если объект или кто-то внутри него содержит совпадение по поиску
+  function _subtreeHasMatch(objId) {
+    if (_searchMatchedObjectIds.has(objId)) return true;
+    for (const id of _searchMatchedObjectIds) {
+      if (App.DataStore.isDescendant(id, objId)) return true;
+    }
+    return false;
   }
 
   function _buildObjectPanel(obj) {
@@ -49,7 +59,7 @@ App.PanelManager = (() => {
         <h4>📦 Внутри объекта</h4>`;
       children.forEach(child => {
         const cItems = App.DataStore.getObjectTotalItems(child.id);
-        const childHl = _isSearchMatch(child.name) ? ' search-highlight' : '';
+        const childHl = (_isSearchMatch(child.name) || _subtreeHasMatch(child.id)) ? ' search-highlight' : '';
         html += `<div class="item-row" draggable="true" data-drag-object="${child.id}" data-drop-object="${child.id}">
           <span class="item-name${childHl}" onclick="App.PanelManager.showObject('${child.id}')">▸ ${App.utils.escapeHtml(child.name)}</span>
           <span class="meta">${cItems} вещей</span>
@@ -101,7 +111,7 @@ App.PanelManager = (() => {
     roomObjects.forEach(obj => {
       const count = App.DataStore.getObjectTotalItems(obj.id);
       const childCount = App.DataStore.getChildren(obj.id).length;
-      const objHl = _isSearchMatch(obj.name) ? ' search-highlight' : '';
+      const objHl = (_isSearchMatch(obj.name) || _subtreeHasMatch(obj.id)) ? ' search-highlight' : '';
       html += `<div class="container-block clickable${objHl}" onclick="App.PanelManager.showObject('${obj.id}')">
         <h4 style="color:#e94560">📦 ${obj.name}</h4>
         <div class="meta">${childCount > 0 ? childCount + ' влож., ' : ''}${count} вещей</div>
@@ -257,8 +267,10 @@ App.PanelManager = (() => {
       App.EventBus.on('search:results', ({ query, results }) => {
         _searchQuery = query || '';
         _searchMatchedItems = {};
+        _searchMatchedObjectIds = new Set();
         if (results && results.length > 0) {
           results.forEach(r => {
+            _searchMatchedObjectIds.add(r.object.id);
             if (r.matchedItems && r.matchedItems.length > 0) {
               _searchMatchedItems[r.object.id] = new Set(r.matchedItems);
             }
@@ -273,6 +285,7 @@ App.PanelManager = (() => {
       App.EventBus.on('search:clear', () => {
         _searchQuery = '';
         _searchMatchedItems = {};
+        _searchMatchedObjectIds = new Set();
         if (_selectedObjectId) this.refresh();
       });
     },

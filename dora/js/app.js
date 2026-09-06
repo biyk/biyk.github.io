@@ -56,16 +56,21 @@ App.init = () => {
         // облако — источник истины, локальная копия на этом устройстве перезаписывается.
         _refreshAuthButton();
         await _doSheetsImport(true);
+        if (gapi.client && gapi.client.getToken) _fetchUserEmail();
         if (localStorage.getItem('dora_unsynced')) _showSyncError();
         App.EventBus.on('data:changed', _debouncedExport);
       });
       // Таймер GoogleSheetDB диспатчит doAuth при истечении токена — тихо продлеваем,
-      // но только если пользователь ранее авторизовался (не дёргаем попапом анонимов)
+      // но только если пользователь ранее авторизовался (не дёргаем попапом анонимов).
+      // Если в этот момент уже идёт запрос токена (например, открыт consent-попап
+      // по клику) — не пересекаемся: двойной requestAccessToken гасит попап.
       document.body.addEventListener('doAuth', function() {
         if (localStorage.getItem('gapi_token')) {
+          if (_tokenReq) return;
           _renewAuth().then(function(ok) {
             if (ok) {
               _doSheetsImport(true);
+              _hideSyncBanner();
             } else {
               // Тихий рефреш не вышел (нет живой сессии/refresh) — показываем баннер,
               // клик по нему даёт user-gesture и право открыть consent-попап.
@@ -106,58 +111,89 @@ function _debouncedExport() {
   _exportTimer = setTimeout(function() { _doSheetsExport(); }, 1000);
 }
 
-// Тихое продление токена (prompt:'' — попап только если Google потребует интеракцию).
-// Общий Promise: параллельные вызовы ждут один и тот же запрос токена.
-// Таймаут: попап могли заблокировать или проигнорировать — не висим вечно.
+// ЕДИНЫЙ шлюз к tokenClient: и тихое продление (prompt:''), и consent-попап
+// (prompt:'consent') идут через _tokenRequest. Больше никогда не бывает двух
+// одновременных requestAccessToken — иначе GIS гасит попап («окно появилось
+// и тут же пропало»). Таймаут: попап могли заблокировать — не висим вечно.
 const RENEW_TIMEOUT_MS = 90000;
-let _authPromise = null;
-function _renewAuth() {
-  if (_authPromise) return _authPromise;
-  _authPromise = new Promise(function(resolve) {
-    var tc = App._gsdb && App._gsdb.tokenClient;
-    if (!tc || !window.google || !window.gapi || !gapi.client) {
-      _authPromise = null;
-      return resolve(false);
+let _tokenReq = null;
+
+function _persistTokenResponse(resp) {
+  if (!resp || resp.error) return;
+  try {
+    if (resp.access_token && gapi.client && gapi.client.setToken) {
+      var cur = gapi.client.getToken();
+      gapi.client.setToken(Object.assign({}, cur || {}, {
+        access_token: resp.access_token,
+        expires_in: resp.expires_in,
+        scope: resp.scope,
+        token_type: resp.token_type
+      }));
     }
-    var settled = false;
-    var prev = tc.callback;
-    function settle(ok) {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      tc.callback = prev;
-      _authPromise = null;
-      resolve(ok);
+    var t = gapi.client.getToken();
+    if (t && t.access_token) localStorage.setItem('gapi_token', JSON.stringify(t));
+    localStorage.setItem('gapi_token_expires',
+      JSON.stringify(App._gsdb.getTime() + (resp.expires_in || 3600)));
+    // offline-консент отдаёт refresh_token один раз; при тихих продлениях его нет —
+    // уже сохранённый маркер затирать нельзя, иначе потеряется право на рефреш
+    if (resp.refresh_token != null) {
+      localStorage.setItem('gapi_token_refresh', JSON.stringify(resp.refresh_token));
+      localStorage.setItem('gapi_token_refresh_exp',
+        JSON.stringify(App._gsdb.getTime() + (resp.refresh_expires_in != null ? resp.refresh_expires_in : 7 * 86400)));
     }
-    var timer = setTimeout(function() { settle(false); }, RENEW_TIMEOUT_MS);
+  } catch (e) { /* ignore */ }
+}
+
+function _tokenRequest(prompt, timeoutMs) {
+  // Consent важнее фонового тихого продления: прерываем незавершённый silent,
+  // чтобы попап открылся здесь и сейчас — под жестом пользователя.
+  if (prompt === 'consent' && _tokenReq) _tokenReq.abort();
+  if (_tokenReq) return _tokenReq.promise;
+
+  var tc = App._gsdb && App._gsdb.tokenClient;
+  if (!tc || !window.google || !window.gapi || !gapi.client) {
+    return Promise.resolve({ ok: false, resp: null });
+  }
+  var timer = null;
+  var settled = false;
+  var prev = tc.callback;
+  var resolveFn = null;
+  var req = { promise: null, abort: function() {
+    if (settled) return;
+    tc.callback = prev;
+    finish(false, null);
+  } };
+
+  function finish(ok, resp) {
+    if (settled) return;
+    settled = true;
+    if (timer) clearTimeout(timer);
+    tc.callback = prev;
+    _tokenReq = null;
+    resolveFn({ ok: ok, resp: resp || null });
+  }
+
+  req.promise = new Promise(function(resolve) {
+    resolveFn = resolve;
+    timer = setTimeout(function() { req.abort(); }, timeoutMs || RENEW_TIMEOUT_MS);
     tc.callback = function(resp) {
-      if (!resp || resp.error) return settle(false);
-      try {
-        if (resp.access_token && gapi.client && gapi.client.setToken) {
-          var cur = gapi.client.getToken();
-          gapi.client.setToken(Object.assign({}, cur || {}, {
-            access_token: resp.access_token,
-            expires_in: resp.expires_in,
-            scope: resp.scope,
-            token_type: resp.token_type
-          }));
-        }
-        localStorage.setItem('gapi_token', JSON.stringify(gapi.client.getToken()));
-        localStorage.setItem('gapi_token_expires',
-          JSON.stringify(App._gsdb.getTime() + (resp.expires_in || 3600)));
-        // offline-консент отдаёт refresh_token один раз; при тихих продлениях его нет —
-        // уже сохранённый маркер затирать нельзя, иначе потеряется право на рефреш
-        if (resp.refresh_token != null) {
-          localStorage.setItem('gapi_token_refresh', JSON.stringify(resp.refresh_token));
-          localStorage.setItem('gapi_token_refresh_exp',
-            JSON.stringify(App._gsdb.getTime() + (resp.refresh_expires_in != null ? resp.refresh_expires_in : 7 * 86400)));
-        }
-      } catch (e) { /* ignore */ }
-      settle(true);
+      if (settled) return;
+      if (!resp || resp.error) { finish(false, resp || null); return; }
+      _persistTokenResponse(resp);
+      finish(true, resp);
     };
-    tc.requestAccessToken({ prompt: '' });
+    tc.requestAccessToken({ prompt: prompt || '' });
   });
-  return _authPromise;
+  _tokenReq = req;
+  return req.promise;
+}
+
+function _renewAuth() {
+  return _tokenRequest('', RENEW_TIMEOUT_MS).then(function(res) { return !!(res && res.ok); });
+}
+
+function _consentAuth() {
+  return _tokenRequest('consent', 120000).then(function(res) { return !!(res && res.ok); });
 }
 
 // Баннер «восстановить синхронизацию»: клик даёт user-gesture,
@@ -173,7 +209,10 @@ function _showSyncBanner() {
       _doAuthRestore().then(function(ok) {
         if (ok) {
           b.classList.remove('visible');
-          _doSheetsExport();
+          // Были неслитые правки — пушим их после восстановления доступа
+          if (localStorage.getItem('dora_unsynced')) _doSheetsExport();
+        } else {
+          _toast('Авторизация не завершилась — попробуйте ещё раз', true);
         }
       });
     });
@@ -184,23 +223,27 @@ function _showSyncBanner() {
 
 // Восстановление авторизации по действию пользователя: живая сессия — тихий рефреш;
 // нет сессии — явный consent-попап (жест пользователя разрешает его открыть).
+// Возвращает РЕАЛЬНЫЙ исход, чтобы баннер/тост адекватно отреагировали.
 function _doAuthRestore() {
-  return new Promise(function(resolve) {
-    if (!window.gapi || !gapi.client || !App._gsdb) return resolve(false);
-    if (App._gsdb.hasRefreshSession()) {
-      _renewAuth().then(function(ok) {
-        if (ok) _doSheetsImport(true);
-        resolve(ok);
-      });
+  if (!window.gapi || !gapi.client || !App._gsdb) return Promise.resolve(false);
+  if (App._gsdb.hasRefreshSession()) {
+    return _renewAuth().then(function(ok) {
+      if (ok) _doSheetsImport(true);
+      return ok;
+    });
+  }
+  return _consentAuth().then(function(ok) {
+    if (ok) {
+      _doSheetsImport(true);
+      _hideSyncBanner();
+      _refreshAuthButton();
+      _fetchUserEmail();
+      _toast('✓ Авторизация выполнена');
     } else {
-      var ab = document.getElementById('authorize_button');
-      if (ab) {
-        ab.click();
-        resolve(true);
-      } else {
-        resolve(false);
-      }
+      _refreshAuthButton();
+      _toast('Авторизация не завершилась — попробуйте ещё раз', true);
     }
+    return ok;
   });
 }
 
@@ -258,20 +301,38 @@ function _handleGDriveAuth() {
     localStorage.removeItem('gapi_token_expires');
     localStorage.removeItem('gapi_token_refresh');
     localStorage.removeItem('gapi_token_refresh_exp');
+    localStorage.removeItem('gapi_user_email');
     _refreshAuthButton();
+    _toast('Выход из Google выполнен');
     return;
   }
   // Токена нет/протух, но живая сессия (refresh-маркер) есть — тихо продлеваем
   // без повторного согласия
   if (App._gsdb && App._gsdb.hasRefreshSession()) {
     _renewAuth().then(function(ok) {
-      if (ok) _doSheetsImport(true);
+      if (ok) {
+        _doSheetsImport(true);
+        _hideSyncBanner();
+      } else {
+        _showSyncBanner();
+      }
       _refreshAuthButton();
     });
     return;
   }
-  // Первичная (повторная после смерти сессии) авторизация через consent-попап
-  document.getElementById('authorize_button').click();
+  // Первичная (повторная после смерти сессии) авторизация через consent-попап —
+  // открывается прямо по клику, в контексте жеста пользователя
+  _consentAuth().then(function(ok) {
+    if (ok) {
+      _doSheetsImport(true);
+      _hideSyncBanner();
+      _fetchUserEmail();
+      _toast('✓ Авторизация выполнена');
+    } else {
+      _toast('Авторизация не завершилась — попробуйте ещё раз', true);
+    }
+    _refreshAuthButton();
+  });
 }
 
 // Кнопка «Войти/Выйти» отражает реальное состояние авторизации:
@@ -282,6 +343,49 @@ function _refreshAuthButton() {
   var loggedIn = !!(App._gsdb && App._gsdb.hasRefreshSession());
   btn.textContent = loggedIn ? '🔓 Выйти' : '🔐 Войти';
   btn.title = loggedIn ? 'Выйти из Google' : 'Вход Google';
+  _renderSyncStatus();
+}
+
+// Индикатор состояния синхронизации: зелёный «вход Google (you@mail)» или
+// серый «синхр. выкл» — сразу видно, авторизован пользователь или нет.
+function _renderSyncStatus() {
+  var el = document.getElementById('sync-status');
+  if (!el || !App._gsdb) return;
+  var on = App._gsdb.hasRefreshSession();
+  var email = localStorage.getItem('gapi_user_email');
+  el.className = 'sync-status ' + (on ? 'on' : 'off');
+  el.textContent = on
+    ? (email ? '● ' + email : '● вход Google')
+    : '○ синхронизация выкл';
+  el.title = on ? 'Google-синхронизация активна' : 'Нажмите «Войти», чтобы включить синхронизацию';
+}
+
+// Кратковременное всплывающее уведомление (тост)
+function _toast(msg, isError) {
+  if (!document || !document.body) return;
+  var t = document.createElement('div');
+  t.className = 'app-toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() {
+    t.classList.add('hide');
+    setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+  }, 3200);
+}
+
+// Email пользователя для индикатора — тянем один раз по access-токену и кешируем
+function _fetchUserEmail() {
+  var tk = (window.gapi && gapi.client && gapi.client.getToken) ? gapi.client.getToken() : null;
+  if (!tk || !tk.access_token) return;
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: 'Bearer ' + tk.access_token }
+  }).then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(u) {
+      if (u && u.email) {
+        localStorage.setItem('gapi_user_email', u.email);
+        _renderSyncStatus();
+      }
+    }).catch(function() {});
 }
 
 async function _fetchPlanData() {
@@ -475,6 +579,8 @@ async function _doSheetsImport(silent) {
     // Облако — источник истины: отметку «есть неслитые правки» снимаем
     localStorage.removeItem('dora_unsynced');
     _hideSyncError();
+    _hideSyncBanner();
+    _renderSyncStatus();
   } catch (err) {
     console.warn('[Sheets] auto-import error:', err);
   }
@@ -593,8 +699,13 @@ function _defineGlobals() {
 App._sheetsDebug = {
   isReady: () => _gsReady,
   renewAuth: () => _renewAuth(),
+  consentAuth: () => _consentAuth(),
   doExport: (_retried) => _doSheetsExport(_retried),
-  doImport: () => _doSheetsImport(true)
+  doImport: () => _doSheetsImport(true),
+  doAuthRestore: () => _doAuthRestore(),
+  showBanner: () => _showSyncBanner(),
+  hideBanner: () => _hideSyncBanner(),
+  tokenBusy: () => !!_tokenReq
 };
 
 document.addEventListener('DOMContentLoaded', App.init);

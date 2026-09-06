@@ -1331,6 +1331,112 @@ def run_all(session):
         """)
         _drain_debounce()
 
+    # --- 41. Consent-попап из кнопки «Войти»: видимый результат + восстановление баннера ---
+    def consent_from_button_feedback():
+        _drain_debounce()
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                localStorage.removeItem('gapi_token_refresh');
+                localStorage.removeItem('gapi_token_refresh_exp');
+                localStorage.removeItem('gapi_user_email');
+                localStorage.removeItem('dora_unsynced');
+                if (window.gapi && gapi.client) gapi.client.setToken(null);
+                document.querySelectorAll('.app-toast').forEach(t => t.parentNode.removeChild(t));
+            })()
+        """)
+        # Красная плашка (баннер) уже показана — имитируем провальный тихий рефреш
+        session.evaluate("App._sheetsDebug.showBanner()")
+        time.sleep(0.1)
+        vis = session.evaluate("document.getElementById('dora-sync-banner').classList.contains('visible')")
+        assert vis, "Banner must be visible before restore"
+
+        # Клик «Войти» -> consent-попап (стаб отвечает токеном + refresh)
+        session.evaluate("""
+            (() => {
+                const tc = App._gsdb.tokenClient;
+                tc.requestAccessToken = function(opt) {
+                    window.__lastPrompt = opt && opt.prompt;
+                    setTimeout(() => this.callback && this.callback({
+                        access_token: 'consent_btn', expires_in: 3600, scope: 's',
+                        token_type: 'Bearer', refresh_token: 'refresh_btn', refresh_expires_in: 7 * 86400
+                    }), 0);
+                };
+                document.getElementById('gdrive-auth-btn').click();
+            })()
+        """)
+        time.sleep(0.5)
+        r = session.evaluate("""
+            (function(){
+                let stored = null;
+                try { stored = JSON.parse(localStorage.getItem('gapi_token') || 'null') &&
+                      JSON.parse(localStorage.getItem('gapi_token')).access_token; } catch(e){}
+                const st = document.getElementById('sync-status');
+                return {
+                    prompt: window.__lastPrompt,
+                    btn: document.getElementById('gdrive-auth-btn').textContent,
+                    bannerGone: !document.getElementById('dora-sync-banner').classList.contains('visible'),
+                    successToast: !!Array.from(document.querySelectorAll('.app-toast')).find(t => !t.classList.contains('error')),
+                    stored: stored,
+                    ref: localStorage.getItem('gapi_token_refresh'),
+                    status: st ? st.textContent : null
+                };
+            })()
+        """)
+        assert r["prompt"] == 'consent', f"Button click must open consent (prompt='consent'), got {r['prompt']}"
+        assert 'Выйти' in r["btn"], f"After consent button must show logout state, got {r['btn']}"
+        assert r["bannerGone"], "Sync banner must hide after successful consent"
+        assert r["successToast"], "Success toast must be shown after consent"
+        assert r["stored"] == 'consent_btn', f"Consent access token must persist, got {r['stored']}"
+        assert r["ref"] == '"refresh_btn"', f"Consent refresh token must persist, got {r['ref']}"
+        assert 'выкл' not in (r["status"] or ''), f"Status must show logged-in, got {r['status']}"
+
+        # Отменённый консент: resp.error -> кнопка «Войти» + ошибка-тост
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                localStorage.removeItem('gapi_token_refresh');
+                localStorage.removeItem('gapi_token_refresh_exp');
+                if (window.gapi && gapi.client) gapi.client.setToken(null);
+                const tc = App._gsdb.tokenClient;
+                tc.requestAccessToken = function() {
+                    setTimeout(() => this.callback &&
+                        this.callback({ error: 'access_denied', error_subtype: 'user_canceled' }), 0);
+                };
+                document.getElementById('gdrive-auth-btn').click();
+            })()
+        """)
+        time.sleep(0.5)
+        r2 = session.evaluate("""
+            (function(){
+                return {
+                    btn: document.getElementById('gdrive-auth-btn').textContent,
+                    hasErrorToast: !!Array.from(document.querySelectorAll('.app-toast')).find(t => t.classList.contains('error'))
+                };
+            })()
+        """)
+        assert 'Войти' in r2["btn"], f"Canceled consent must leave button at login state, got {r2['btn']}"
+        assert r2["hasErrorToast"], "Canceled consent must show error toast"
+
+        # cleanup
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                localStorage.removeItem('gapi_token_refresh');
+                localStorage.removeItem('gapi_token_refresh_exp');
+                localStorage.removeItem('gapi_user_email');
+                localStorage.removeItem('dora_unsynced');
+                if (window.gapi && gapi.client) gapi.client.setToken('');
+                const b = document.getElementById('dora-sync-banner');
+                if (b) b.classList.remove('visible');
+                document.querySelectorAll('.app-toast').forEach(t => t.parentNode.removeChild(t));
+            })()
+        """)
+        _drain_debounce()
+
     # Google-слой тестируется только с http-origin: на file:// динамический
     # import() google.js блокируется CORS, _gsReady никогда не поднимется
     #
@@ -1406,6 +1512,7 @@ def run_all(session):
         test("38. Half-filled local loses to full cloud on import", half_filled_local_loses_to_full_cloud)
         test("39. Rename/delete are row-targeted", rename_and_delete_are_row_targeted)
         test("40. Consent persists token, silent renew after expiry", consent_persists_and_renews_silently)
+        test("41. Consent from button: visible feedback + banner restore", consent_from_button_feedback)
     finally:
         httpd.shutdown()
 

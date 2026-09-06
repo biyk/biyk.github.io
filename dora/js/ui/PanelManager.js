@@ -7,6 +7,8 @@ App.PanelManager = (() => {
   let _selectedRoomId = null;
   let _searchQuery = '';
   let _searchMatchedItems = {};
+  let _searchMatchedObjectIds = new Set();
+  let _sortItemsAlpha = false;
   let _dnd = null; // { kind: 'item'|'object', objectId, index }
 
   function _showDefault() {
@@ -20,6 +22,15 @@ App.PanelManager = (() => {
   function _isSearchMatch(name) {
     if (!_searchQuery) return false;
     return name.toLowerCase().includes(_searchQuery.toLowerCase());
+  }
+
+  // Истина, если объект или кто-то внутри него содержит совпадение по поиску
+  function _subtreeHasMatch(objId) {
+    if (_searchMatchedObjectIds.has(objId)) return true;
+    for (const id of _searchMatchedObjectIds) {
+      if (App.DataStore.isDescendant(id, objId)) return true;
+    }
+    return false;
   }
 
   function _buildObjectPanel(obj) {
@@ -48,7 +59,7 @@ App.PanelManager = (() => {
         <h4>📦 Внутри объекта</h4>`;
       children.forEach(child => {
         const cItems = App.DataStore.getObjectTotalItems(child.id);
-        const childHl = _isSearchMatch(child.name) ? ' search-highlight' : '';
+        const childHl = (_isSearchMatch(child.name) || _subtreeHasMatch(child.id)) ? ' search-highlight' : '';
         html += `<div class="item-row" draggable="true" data-drag-object="${child.id}" data-drop-object="${child.id}">
           <span class="item-name${childHl}" onclick="App.PanelManager.showObject('${child.id}')">▸ ${App.utils.escapeHtml(child.name)}</span>
           <span class="meta">${cItems} вещей</span>
@@ -60,11 +71,27 @@ App.PanelManager = (() => {
     // Предметы объекта
     if (obj.items && obj.items.length > 0) {
       html += `<div class="container-block">
-        <h4>📎 Предметы</h4>`;
-      obj.items.forEach((item, i) => {
+        <h4>📎 Предметы
+          <label class="sort-toggle" title="Сортировать по алфавиту">
+            <input type="checkbox" data-sort-items${_sortItemsAlpha ? ' checked' : ''} onchange="App.PanelManager.toggleSortItems(this.checked)">
+            <span>А–Я</span>
+          </label>
+        </h4>`;
+      const nameCounts = {};
+      obj.items.forEach(it => {
+        const k = it.toLowerCase();
+        nameCounts[k] = (nameCounts[k] || 0) + 1;
+      });
+      const indices = obj.items.map((_, i) => i);
+      if (_sortItemsAlpha) {
+        indices.sort((a, b) => obj.items[a].localeCompare(obj.items[b], 'ru'));
+      }
+      indices.forEach(i => {
+        const item = obj.items[i];
         const itemHl = matchedItems.has(item) ? ' search-highlight' : '';
+        const itemDup = nameCounts[item.toLowerCase()] > 1 ? ' duplicate' : '';
         html += `<div class="item-row" draggable="true" data-drag-item="${obj.id}:${i}">
-          <span class="item-name${itemHl}" title="Переименовать" onclick="App.PanelManager._renameObjectItem('${obj.id}',${i})">· ${App.utils.escapeHtml(item)}</span>
+          <span class="item-name${itemHl}${itemDup}" title="${itemDup ? 'Дубль' : 'Переименовать'}" onclick="App.PanelManager._renameObjectItem('${obj.id}',${i})">· ${App.utils.escapeHtml(item)}</span>
           <button class="btn-icon" onclick="App.ModalManager.showMoveItem('${obj.id}',${i})" title="Переместить в другой объект">→</button>
           <button class="btn-icon" onclick="App.PanelManager._removeObjectItem('${obj.id}',${i})" title="Удалить">✕</button>
         </div>`;
@@ -90,7 +117,7 @@ App.PanelManager = (() => {
     roomObjects.forEach(obj => {
       const count = App.DataStore.getObjectTotalItems(obj.id);
       const childCount = App.DataStore.getChildren(obj.id).length;
-      const objHl = _isSearchMatch(obj.name) ? ' search-highlight' : '';
+      const objHl = (_isSearchMatch(obj.name) || _subtreeHasMatch(obj.id)) ? ' search-highlight' : '';
       html += `<div class="container-block clickable${objHl}" onclick="App.PanelManager.showObject('${obj.id}')">
         <h4 style="color:#e94560">📦 ${obj.name}</h4>
         <div class="meta">${childCount > 0 ? childCount + ' влож., ' : ''}${count} вещей</div>
@@ -246,8 +273,10 @@ App.PanelManager = (() => {
       App.EventBus.on('search:results', ({ query, results }) => {
         _searchQuery = query || '';
         _searchMatchedItems = {};
+        _searchMatchedObjectIds = new Set();
         if (results && results.length > 0) {
           results.forEach(r => {
+            _searchMatchedObjectIds.add(r.object.id);
             if (r.matchedItems && r.matchedItems.length > 0) {
               _searchMatchedItems[r.object.id] = new Set(r.matchedItems);
             }
@@ -262,6 +291,7 @@ App.PanelManager = (() => {
       App.EventBus.on('search:clear', () => {
         _searchQuery = '';
         _searchMatchedItems = {};
+        _searchMatchedObjectIds = new Set();
         if (_selectedObjectId) this.refresh();
       });
     },
@@ -308,6 +338,13 @@ App.PanelManager = (() => {
       else if (_selectedRoomId) this.showRoom(_selectedRoomId);
       else _showDefault();
     },
+
+    toggleSortItems(enabled) {
+      _sortItemsAlpha = !!enabled;
+      this.refresh();
+    },
+
+    isSortAlpha() { return _sortItemsAlpha; },
 
     _addObjectItem,
     _removeObjectItem,

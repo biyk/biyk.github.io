@@ -735,10 +735,19 @@ def run_all(session):
         session.evaluate("""
             (() => {
                 window.__updCalls = 0;
+                window.__getCalls = 0;
                 const values = gapi.client.sheets.spreadsheets.values;
-                values.get = () => Promise.resolve({ result: { values:
-                    [['key', 'value'], [App.DataStore.getActivePlanName(), '']] } });
+                const spreads = gapi.client.sheets.spreadsheets;
+                values.get = () => { window.__getCalls++; return Promise.resolve({ result: { values:
+                    [['key', 'value'], [App.DataStore.getActivePlanName(), '']] } }); };
                 values.update = () => { window.__updCalls++; return Promise.resolve({ result: {} }); };
+                spreads.get = () => Promise.resolve({ result: { sheets: [{
+                    properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                    data: [{ rowData: [
+                        { values: [{ formattedValue: 'key' }, { formattedValue: 'value' }] },
+                        { values: [{ formattedValue: App.DataStore.getActivePlanName() }] }
+                    ] }]
+                }] } });
             })()
         """)
         session.evaluate("gapi.client.setToken('')")
@@ -952,8 +961,14 @@ def run_all(session):
                     setTimeout(() => cb && cb({ expires_in: 3600 }), 0);
                 };
                 const values = gapi.client.sheets.spreadsheets.values;
+                const spreads = gapi.client.sheets.spreadsheets;
                 values.get = () => Promise.resolve({ result: { values: [['key', 'value']] } });
                 values.update = () => Promise.resolve({ result: {} });
+                values.append = () => Promise.resolve({ result: {} });
+                spreads.get = () => Promise.resolve({ result: { sheets: [{
+                    properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                    data: [{ rowData: [{ values: [{ formattedValue: 'key' }, { formattedValue: 'value' }] }] }]
+                }] } });
             })()
         """)
         session.evaluate("App._sheetsDebug.doExport()")
@@ -982,6 +997,340 @@ def run_all(session):
             })()
         """)
 
+    # --- 36–39. Приоритет облака и точечные записи (только своя строка) ---
+    #
+    # Любой importData() эмитит data:changed -> дебаунс-экспорт через ~1с.
+    # Чтобы отложенный экспорт предыдущего теста не портил счётчики, ставим
+    # «глушилки» (no-op стабы + токен) и ждём ~1.3с до/после сценария.
+    def _drain_debounce():
+        session.evaluate("""
+            (() => {
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 'drain' });
+                if (!window.gapi || !gapi.client || !gapi.client.sheets) return;
+                const s = gapi.client.sheets.spreadsheets;
+                const v = s.values;
+                s.get = () => Promise.resolve({ result: { sheets: [{
+                    properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                    data: [{ rowData: [{ values: [{ formattedValue: 'key' }, { formattedValue: 'value' }] }] }]
+                }] } });
+                v.get = () => Promise.resolve({ result: { values: [['key', 'value']] } });
+                v.update = () => Promise.resolve({ result: {} });
+                v.append = () => Promise.resolve({ result: {} });
+            })()
+        """)
+        time.sleep(1.3)
+
+    def _reset_local_to_empty():
+        session.evaluate("""
+            (() => {
+                App.DataStore.importData(JSON.stringify({ scale: 100, rooms: [], objects: [], guides: [] }));
+                App.Renderer.render();
+            })()
+        """)
+
+    # --- 36. Экспорт пишет ТОЛЬКО строку активного плана (никакой перезаписи блока) ---
+    def export_writes_only_active_plan_row():
+        # Сетка облака: заголовок(1), «Квартира»(2) наполнена, две ПУСТЫЕ строки (3,4)
+        # — ровно тот случай, где values.get сжал бы пустоту и сдвинул данные.
+        # Активный план живёт в строке 5 (индекс 4). Экспорт обязан писать строго
+        # dora!B5 и не трогать ни блок A1:B, ни чужую «Квартиру».
+        _drain_debounce()
+        session.evaluate("""
+            (() => {
+                window.__updates = [];
+                window.__appends = 0;
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 't36' });
+                const s = gapi.client.sheets.spreadsheets;
+                const v = s.values;
+                const active = App.DataStore.getActivePlanName();
+                s.get = () => Promise.resolve({ result: { sheets: [{
+                    properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                    data: [{ rowData: [
+                        { values: [{ formattedValue: 'key' }, { formattedValue: 'value' }] },
+                        { values: [{ formattedValue: 'Квартира' }, { formattedValue: '{"scale":100,"rooms":[{"id":"r_k","name":"КомнатаКв","x":0,"y":0,"w":50,"h":50}],"objects":[],"guides":[]}' }] },
+                        { values: [] },
+                        { values: [] },
+                        { values: [{ formattedValue: active }] }
+                    ] }]
+                }] } });
+                v.get = () => Promise.resolve({ result: { values: [['key', 'value'], [active, '']] } });
+                v.update = (req) => {
+                    window.__updates.push({ range: req.range,
+                        cell: req.resource && req.resource.values && req.resource.values[0] && req.resource.values[0][0] });
+                    return Promise.resolve({ result: {} });
+                };
+                v.append = () => { window.__appends++; return Promise.resolve({ result: {} }); };
+                App.DataStore.addRoom({ name: 'ТестКомната36', x: 0, y: 0, w: 100, h: 100 });
+            })()
+        """)
+        session.evaluate("App._sheetsDebug.doExport()")
+        time.sleep(1.5)  # дополнительно ловим дебаунс-экспорт от addRoom (data:changed)
+        res = session.evaluate("""
+            (function(){
+                const u = window.__updates;
+                return {
+                    count: u.length,
+                    onlyActiveRow: u.length > 0 && u.every(x => x.range === 'dora!B5'),
+                    noBlockRewrite: !u.some(x => /A1:B/.test(x.range)),
+                    kvariraSafe: !u.some(x => x.range === 'dora!B2' || x.range === 'dora!A2:B2'),
+                    appended: window.__appends
+                };
+            })()
+        """)
+        assert res["onlyActiveRow"], f"Export must target ONLY the active plan's row (dora!B5), got count={res['count']}"
+        assert res["noBlockRewrite"], "Export must never rewrite the whole A1:B block"
+        assert res["kvariraSafe"], "Other plan rows (Квартира) must stay untouched"
+        assert res["appended"] == 0, f"Existing row must be updated, not appended, got {res['appended']}"
+        _reset_local_to_empty()
+        _drain_debounce()
+
+    # --- 37. Пустая локальная копия НЕ затирает наполненную облачную строку ---
+    def empty_local_cannot_wipe_cloud():
+        _drain_debounce()
+        session.evaluate("""
+            (() => {
+                window.__updates = [];
+                window.__appends = 0;
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 't37' });
+                const s = gapi.client.sheets.spreadsheets;
+                const v = s.values;
+                const active = App.DataStore.getActivePlanName();
+                window.__cloudJson37 = JSON.stringify({
+                    scale: 100,
+                    rooms: [{ id: 'r_37', name: 'ИзОблака37', x: 0, y: 0, w: 50, h: 50 }],
+                    objects: [{ id: 'o_37', name: 'Шкаф37', roomId: 'r_37', parentId: null,
+                                x: 0, y: 0, w: 40, h: 40, color: '#000000', items: [] }],
+                    guides: []
+                });
+                s.get = () => Promise.resolve({ result: { sheets: [{
+                    properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                    data: [{ rowData: [
+                        { values: [{ formattedValue: 'key' }, { formattedValue: 'value' }] },
+                        { values: [{ formattedValue: active }, { formattedValue: window.__cloudJson37 }] }
+                    ] }]
+                }] } });
+                v.get = () => Promise.resolve({ result: { values: [['key', 'value'], [active, window.__cloudJson37]] } });
+                v.update = (req) => { window.__updates.push(req.range); return Promise.resolve({ result: {} }); };
+                v.append = () => { window.__appends++; return Promise.resolve({ result: {} }); };
+            })()
+        """)
+        assert session.evaluate("App.DataStore.getRooms().length === 0 && App.DataStore.getObjects().length === 0"), \
+            "precondition: local copy must be empty"
+        session.evaluate("App._sheetsDebug.doExport()")
+        time.sleep(0.4)
+        res = session.evaluate("""
+            (function(){
+                const cloudWon = App.DataStore.getRooms().some(r => r.name === 'ИзОблака37') &&
+                                 App.DataStore.getObjects().some(o => o.name === 'Шкаф37');
+                return { updates: window.__updates.length, appends: window.__appends, cloudWon };
+            })()
+        """)
+        assert res["updates"] == 0, f"Empty local must NOT write to a full cloud row, got {res['updates']} updates"
+        assert res["appends"] == 0, f"Empty local must NOT append a new row over a full one, got {res['appends']}"
+        assert res["cloudWon"], "Cloud row must be re-imported locally (cloud wins)"
+        flag = session.evaluate("localStorage.getItem('dora_unsynced')")
+        assert flag is None, f"dora_unsynced must clear after cloud-wins recovery, got {flag}"
+        _reset_local_to_empty()
+        _drain_debounce()
+
+    # --- 38. Полузаполненная локальная копия vs полное облако: импорт (облако) побеждает ---
+    def half_filled_local_loses_to_full_cloud():
+        _drain_debounce()
+        session.evaluate("""
+            (() => {
+                window.__updates = [];
+                window.__appends = 0;
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 't38' });
+                const s = gapi.client.sheets.spreadsheets;
+                const v = s.values;
+                const active = App.DataStore.getActivePlanName();
+                window.__cloudJson38 = JSON.stringify({
+                    scale: 100,
+                    rooms: [
+                        { id: 'r_a38', name: 'ИзОблака38А', x: 0, y: 0, w: 50, h: 50 },
+                        { id: 'r_b38', name: 'ИзОблака38Б', x: 60, y: 0, w: 50, h: 50 }
+                    ],
+                    objects: [],
+                    guides: []
+                });
+                v.get = () => Promise.resolve({ result: { values: [['key', 'value'], [active, window.__cloudJson38]] } });
+                v.update = (req) => { window.__updates.push(req.range); return Promise.resolve({ result: {} }); };
+                v.append = () => { window.__appends++; return Promise.resolve({ result: {} }); };
+                s.get = () => Promise.resolve({ result: { sheets: [{
+                    properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                    data: [{ rowData: [] }]
+                }] } });
+                // локальная копия «полузаполнена» — не совпадает с облаком
+                App.DataStore.importData(JSON.stringify({
+                    scale: 100,
+                    rooms: [{ id: 'r_loc38', name: 'ПолуКомната38', x: 10, y: 10, w: 40, h: 40 }],
+                    objects: [],
+                    guides: []
+                }));
+                App.Renderer.render();
+            })()
+        """)
+        session.evaluate("App._sheetsDebug.doImport()")
+        time.sleep(0.4)
+        res = session.evaluate("""
+            (function(){
+                const rooms = App.DataStore.getRooms().map(r => r.name);
+                return { updates: window.__updates.length, appends: window.__appends,
+                         hasA: rooms.includes('ИзОблака38А'), hasB: rooms.includes('ИзОблака38Б'),
+                         halfGone: !rooms.includes('ПолуКомната38'), roomCount: rooms.length };
+            })()
+        """)
+        assert res["hasA"] and res["hasB"], f"Cloud rooms must be imported, got {res['roomCount']} rooms"
+        assert res["halfGone"], "Cloud-wins import must discard mismatched local rooms"
+        assert res["roomCount"] == 2, f"Local must equal cloud exactly (2 rooms), got {res['roomCount']}"
+        assert res["updates"] == 0 and res["appends"] == 0, "Import must NOT push back to cloud"
+        _reset_local_to_empty()
+        _drain_debounce()
+
+    # --- 39. Переименование и удаление — точечные правки ТОЛЬКО своей строки ---
+    def rename_and_delete_are_row_targeted():
+        _drain_debounce()
+        session.evaluate("""
+            (() => {
+                window.__updates = [];
+                window.__appends = 0;
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 't39' });
+                const s = gapi.client.sheets.spreadsheets;
+                const v = s.values;
+                s.get = () => Promise.resolve({ result: { sheets: [{
+                    properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                    data: [{ rowData: [
+                        { values: [{ formattedValue: 'key' }, { formattedValue: 'value' }] },
+                        { values: [{ formattedValue: 'Квартира' }] },
+                        { values: [{ formattedValue: 'plan' }] },
+                        { values: [{ formattedValue: 'СтароеИмя39' }] }
+                    ] }]
+                }] } });
+                v.get = () => Promise.resolve({ result: { values: [['{"scale":100,"rooms":[],"objects":[],"guides":[]}']] } });
+                v.update = (req) => { window.__updates.push(req.range); return Promise.resolve({ result: {} }); };
+                v.append = () => { window.__appends++; return Promise.resolve({ result: {} }); };
+            })()
+        """)
+        session.evaluate("App.EventBus.emit('plan:renamed', { id: 'x39', oldName: 'СтароеИмя39', name: 'НовоеИмя39' })")
+        time.sleep(0.4)
+        r1 = session.evaluate("window.__updates.slice()")
+        assert r1 == ['dora!A4'], f"Rename must update ONLY column A of the matching row, got {r1}"
+        session.evaluate("""
+            (() => { window.__updates = [];
+                     App.EventBus.emit('plan:deleted', { id: 'x39', name: 'СтароеИмя39' }); })()
+        """)
+        time.sleep(0.4)
+        r2 = session.evaluate("window.__updates.slice()")
+        assert r2 == ['dora!A4:B4'], f"Delete must clear ONLY the plan's own row, got {r2}"
+        nope = session.evaluate("!window.__updates.some(r => /B[0123]/.test(r))")
+        assert nope, "Rename/delete must never touch other plans' rows"
+        _reset_local_to_empty()
+        _drain_debounce()
+
+    # --- 40. Consent сохраняет access+refresh токен; «час спустя» — тихий рефреш
+    # ---     без повторного согласия, refresh-маркер не затирается ---
+    def consent_persists_and_renews_silently():
+        _drain_debounce()
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                localStorage.removeItem('gapi_token_refresh');
+                localStorage.removeItem('gapi_token_refresh_exp');
+                localStorage.removeItem('dora_unsynced');
+                if (window.gapi && gapi.client) {
+                    gapi.client.setToken(null);
+                    const tc = App._gsdb.tokenClient;
+                    // консент-ответ с refresh_token (offline-грант)
+                    tc.requestAccessToken = function(opt) {
+                        setTimeout(() => this.callback && this.callback({
+                            access_token: 'consent_fake', expires_in: 3600, scope: 's',
+                            token_type: 'Bearer', refresh_token: 'refresh_fake',
+                            refresh_expires_in: 7 * 86400
+                        }), 0);
+                    };
+                }
+            })()
+        """)
+        # Первичный вход: кнопка «Войти» -> authorize_button -> consent-попап (стаб)
+        session.evaluate("document.getElementById('authorize_button').click()")
+        time.sleep(0.4)
+        res = session.evaluate("""
+            (function(){
+                let acc = null, accExp = 0, ref = null, refExp = 0;
+                try { acc = JSON.parse(localStorage.getItem('gapi_token') || 'null'); } catch(e){}
+                try { accExp = parseInt(localStorage.getItem('gapi_token_expires') || '0', 10); } catch(e){}
+                try { ref = localStorage.getItem('gapi_token_refresh'); } catch(e){}
+                try { refExp = parseInt(localStorage.getItem('gapi_token_refresh_exp') || '0', 10); } catch(e){}
+                const now = Math.floor(Date.now() / 1000);
+                return {
+                    gapiToken: gapi.client.getToken() && gapi.client.getToken().access_token,
+                    stored: acc && acc.access_token,
+                    accFuture: accExp > now + 3500,
+                    ref: ref, refFuture: refExp > now + (7 * 86400) - 60,
+                    hasSession: App._gsdb.hasRefreshSession(),
+                    btn: document.getElementById('gdrive-auth-btn').textContent
+                };
+            })()
+        """)
+        assert res["stored"] == "consent_fake", f"Consent must persist the access token, got {res['stored']}"
+        assert res["gapiToken"] == "consent_fake", f"gapi.client must hold the fresh token, got {res['gapiToken']}"
+        assert res["accFuture"], f"gapi_token_expires must be ~1h ahead, got {res['accExp']}"
+        assert res["ref"] == '"refresh_fake"', f"Consent must persist the refresh token, got {res['ref']}"
+        assert res["refFuture"], "refresh expiry must be ~7 days ahead"
+        assert res["hasSession"], "hasRefreshSession() must be true after offline consent"
+        assert 'Выйти' in res["btn"], f"Button must show logged-in state, got {res['btn']}"
+
+        # «Час спустя»: access протух, refresh жив. Клик по кнопке — тихий рефреш,
+        # без повторного consent, refresh-маркер НЕ затирается.
+        session.evaluate("""
+            (() => {
+                localStorage.setItem('gapi_token_expires', String(Math.floor(Date.now() / 1000) - 60));
+                const tc = App._gsdb.tokenClient;
+                // тихий рефреш: в ответе access-токена НЕТ refresh_token — старый живёт
+                tc.requestAccessToken = function(opt) {
+                    setTimeout(() => this.callback && this.callback({
+                        access_token: 'silent_fake', expires_in: 3600, scope: 's', token_type: 'Bearer'
+                    }), 0);
+                };
+                document.getElementById('gdrive-auth-btn').click();
+            })()
+        """)
+        time.sleep(0.5)
+        res2 = session.evaluate("""
+            (function(){
+                let acc = null;
+                try { acc = JSON.parse(localStorage.getItem('gapi_token') || 'null'); } catch(e){}
+                return {
+                    stored: acc && acc.access_token,
+                    ref: localStorage.getItem('gapi_token_refresh'),
+                    hasSession: App._gsdb.hasRefreshSession(),
+                    btn: document.getElementById('gdrive-auth-btn').textContent
+                };
+            })()
+        """)
+        assert res2["stored"] == "silent_fake", f"Stale access must be silently renewed, got {res2['stored']}"
+        assert res2["ref"] == '"refresh_fake"', f"Silent renew must NOT wipe the refresh token, got {res2['ref']}"
+        assert res2["hasSession"], "Refresh session must survive silent renewal"
+        assert 'Выйти' in res2["btn"], f"Button must stay logged-in after renewal, got {res2['btn']}"
+
+        # cleanup
+        session.evaluate("""
+            (() => {
+                localStorage.removeItem('gapi_token');
+                localStorage.removeItem('gapi_token_expires');
+                localStorage.removeItem('gapi_token_refresh');
+                localStorage.removeItem('gapi_token_refresh_exp');
+                localStorage.removeItem('dora_unsynced');
+                if (window.gapi && gapi.client) gapi.client.setToken('');
+                const b = document.getElementById('dora-sync-banner');
+                if (b) b.classList.remove('visible');
+                const eb = document.getElementById('sync-error-btn');
+                if (eb) eb.style.display = 'none';
+            })()
+        """)
+        _drain_debounce()
+
     # Google-слой тестируется только с http-origin: на file:// динамический
     # import() google.js блокируется CORS, _gsReady никогда не поднимется
     #
@@ -1005,10 +1354,14 @@ def run_all(session):
       _token: null,
       setToken(t){ this._token = t; },
       getToken(){ return this._token; },
-      sheets: { spreadsheets: { values: {
-        get(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: values.get not stubbed' } } }); },
-        update(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: values.update not stubbed' } } }); }
-      } } }
+      sheets: { spreadsheets: {
+        get(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: spreadsheets.get not stubbed' } } }); },
+        values: {
+          get(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: values.get not stubbed' } } }); },
+          update(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: values.update not stubbed' } } }); },
+          append(){ return Promise.reject({ status:500, result:{ error:{ code:500, message:'gapi stub: values.append not stubbed' } } }); }
+        }
+      } }
     }
   };
   const googleStub = { accounts: { oauth2: {
@@ -1048,6 +1401,11 @@ def run_all(session):
         test("33. Cloud wins on boot (import overwrites local)", cloud_wins_on_boot)
         test("34. Auth button reflects login state", auth_button_reflects_state)
         test("35. Sync-error indicator on save failure", sync_error_indicator)
+        test("36. Export writes only the active plan's row", export_writes_only_active_plan_row)
+        test("37. Empty local cannot wipe a full cloud row", empty_local_cannot_wipe_cloud)
+        test("38. Half-filled local loses to full cloud on import", half_filled_local_loses_to_full_cloud)
+        test("39. Rename/delete are row-targeted", rename_and_delete_are_row_targeted)
+        test("40. Consent persists token, silent renew after expiry", consent_persists_and_renews_silently)
     finally:
         httpd.shutdown()
 

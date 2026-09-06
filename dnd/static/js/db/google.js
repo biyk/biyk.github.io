@@ -682,9 +682,9 @@ export class GoogleSheetDB {
         this.headers = [];
         this.columns = {};
 
-        if (this.expired()){
-            localStorage.setItem('gapi_token', '');
-        }
+        // НЕ вычищаем сохранённый токен при истечении: ниже разберёмся, что с ним
+        // делать — мёртвый доступ на gapi.client не повесим, а тихий рефреш (doAuth
+        // + _renewAuth) сам поднимет свежий токен, если жива сессия/refresh-маркер.
         this.storedToken = localStorage.getItem('gapi_token');
         this.callback = options.callback;
         loadScriptOnce({
@@ -697,21 +697,22 @@ export class GoogleSheetDB {
             onload: this.gisLoaded.bind(this),
         });
 
-        let timer = setInterval(async () => {
-            if (document.getElementById('signout_button')){
-                document.getElementById('signout_button').textContent =
-                    localStorage.getItem('gapi_token_expires') - this.getTime();
-            }
+        // Пульс авторизации: пока доступ валиден — молчим; истёк — диспатчим doAuth
+        // (не чаще раза в минуту, чтобы не долбить рефреш, если без интеракции нельзя).
+        let lastAuthDispatch = 0;
+        setInterval(() => {
             let settingButton = document.querySelector('[onclick="showTab(\'settings-tab\')"]');
             if (this.expired()) {
-                console.log('нужно авторизоваться');
-                document.body.dispatchEvent(new Event('doAuth'));
-                clearInterval(timer);
-                if (settingButton) settingButton.style.backgroundColor = 'red'
+                const now = Date.now();
+                if (now - lastAuthDispatch > 60000) {
+                    lastAuthDispatch = now;
+                    document.body.dispatchEvent(new Event('doAuth'));
+                }
+                if (settingButton) settingButton.style.backgroundColor = 'red';
             } else {
-                if (settingButton) settingButton.style.backgroundColor = ''
+                if (settingButton) settingButton.style.backgroundColor = '';
             }
-        })
+        }, 10000);
         window.GoogleSheetDB = this;
     }
 
@@ -758,6 +759,21 @@ export class GoogleSheetDB {
         return Math.floor(Date.now() / 1000)
     }
 
+    // Жива ли сессия для тихого продления доступа: валидный access-токен ИЛИ
+    // непротухший refresh-маркер (refresh_token сохраняем в localStorage при консенте).
+    hasRefreshSession() {
+        const rExp = parseInt(localStorage.getItem('gapi_token_refresh_exp') || '0', 10);
+        if (rExp > this.getTime()) return true;
+        const stored = localStorage.getItem('gapi_token');
+        if (!stored) return false;
+        try {
+            const t = JSON.parse(stored);
+            return !!(t && t.access_token) && !this.expired();
+        } catch (e) {
+            return false;
+        }
+    }
+
     async gapiLoaded() {
         gapi.load('client', this.initializeGapiClient.bind(this));
     }
@@ -780,7 +796,17 @@ export class GoogleSheetDB {
         if (this.storedToken) {
             try {
                 const parsedToken = JSON.parse(this.storedToken);
-                gapi.client.setToken(parsedToken);
+                // Мёртвый (истёкший) доступ НЕ вешаем на gapi.client: иначе каждый час
+                // бут «уверен», что авторизован, и ходит в API с протухшим токеном (401).
+                // Вместо этого тихий рефреш (doAuth -> _renewAuth) поднимет свежий.
+                const storedExpiry = parseInt(localStorage.getItem('gapi_token_expires') || '0', 10);
+                const alive = parsedToken && parsedToken.access_token &&
+                    (!storedExpiry || storedExpiry > this.getTime() + 30);
+                if (alive) {
+                    gapi.client.setToken(parsedToken);
+                } else if (parsedToken && parsedToken.access_token) {
+                    console.warn('[Auth] stored access token is stale — will silently renew');
+                }
             } catch (e) {
                 console.warn('Failed to parse stored token:', e);
             }
@@ -817,19 +843,40 @@ export class GoogleSheetDB {
     }
 
     handleAuthClick(callback) {
-        this.tokenClient.callback = async (resp) => {
-            if (resp.error !== undefined) {
-                throw (resp);
+        const self = this;
+        this.tokenClient.callback = (resp) => {
+            try {
+                if (resp.error !== undefined) {
+                    console.error('[Auth] consent error:', resp);
+                    return;
+                }
+                if (resp.access_token) {
+                    gapi.client.setToken(resp);
+                }
+                const token = gapi.client.getToken();
+                if (token && token.access_token) {
+                    localStorage.setItem('gapi_token', JSON.stringify(token));
+                } else {
+                    localStorage.removeItem('gapi_token');
+                }
+                if (resp.expires_in != null) {
+                    localStorage.setItem('gapi_token_expires',
+                        JSON.stringify(self.getTime() + resp.expires_in));
+                }
+                // offline-консент отдаёт refresh_token; при тихих продлениях его нет —
+                // уже сохранённый маркер не трогаем
+                if (resp.refresh_token != null) {
+                    localStorage.setItem('gapi_token_refresh', JSON.stringify(resp.refresh_token));
+                    localStorage.setItem('gapi_token_refresh_exp',
+                        JSON.stringify(self.getTime() + (resp.refresh_expires_in != null ? resp.refresh_expires_in : 7 * 86400)));
+                }
+                document.getElementById('signout_button').style.visibility = 'visible';
+                if (self.authorize_button) self.authorize_button.innerText = 'Refresh';
+
+                callback && callback();
+            } catch (e) {
+                console.error('[Auth] consent callback error:', e);
             }
-            document.getElementById('signout_button').style.visibility = 'visible';
-            this.authorize_button.innerText = 'Refresh';
-
-            // Сохраняем токен в localStorage
-            const token = gapi.client.getToken();
-            localStorage.setItem('gapi_token', JSON.stringify(token));
-            localStorage.setItem('gapi_token_expires', JSON.stringify(this.getTime() + resp.expires_in));
-
-            callback();
         };
 
         if (gapi.client.getToken() === null) {
@@ -845,6 +892,9 @@ export class GoogleSheetDB {
             google.accounts.oauth2.revoke(token.access_token);
             gapi.client.setToken('');
             localStorage.removeItem('gapi_token'); // удаляем токен из localStorage
+            localStorage.removeItem('gapi_token_expires');
+            localStorage.removeItem('gapi_token_refresh');
+            localStorage.removeItem('gapi_token_refresh_exp');
             document.getElementById('content').innerText = '';
             this.authorize_button.innerText = 'Authorize';
 

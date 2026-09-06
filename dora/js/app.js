@@ -64,7 +64,13 @@ App.init = () => {
       document.body.addEventListener('doAuth', function() {
         if (localStorage.getItem('gapi_token')) {
           _renewAuth().then(function(ok) {
-            if (ok) _doSheetsImport(true);
+            if (ok) {
+              _doSheetsImport(true);
+            } else {
+              // Тихий рефреш не вышел (нет живой сессии/refresh) — показываем баннер,
+              // клик по нему даёт user-gesture и право открыть consent-попап.
+              _showSyncBanner();
+            }
             _refreshAuthButton();
           });
         } else {
@@ -127,9 +133,25 @@ function _renewAuth() {
     tc.callback = function(resp) {
       if (!resp || resp.error) return settle(false);
       try {
+        if (resp.access_token && gapi.client && gapi.client.setToken) {
+          var cur = gapi.client.getToken();
+          gapi.client.setToken(Object.assign({}, cur || {}, {
+            access_token: resp.access_token,
+            expires_in: resp.expires_in,
+            scope: resp.scope,
+            token_type: resp.token_type
+          }));
+        }
         localStorage.setItem('gapi_token', JSON.stringify(gapi.client.getToken()));
         localStorage.setItem('gapi_token_expires',
-          JSON.stringify(App._gsdb.getTime() + resp.expires_in));
+          JSON.stringify(App._gsdb.getTime() + (resp.expires_in || 3600)));
+        // offline-консент отдаёт refresh_token один раз; при тихих продлениях его нет —
+        // уже сохранённый маркер затирать нельзя, иначе потеряется право на рефреш
+        if (resp.refresh_token != null) {
+          localStorage.setItem('gapi_token_refresh', JSON.stringify(resp.refresh_token));
+          localStorage.setItem('gapi_token_refresh_exp',
+            JSON.stringify(App._gsdb.getTime() + (resp.refresh_expires_in != null ? resp.refresh_expires_in : 7 * 86400)));
+        }
       } catch (e) { /* ignore */ }
       settle(true);
     };
@@ -148,7 +170,7 @@ function _showSyncBanner() {
     b.className = 'sync-banner';
     b.textContent = '☁ Вход Google истёк — нажмите, чтобы восстановить синхронизацию';
     b.addEventListener('click', function() {
-      _renewAuth().then(function(ok) {
+      _doAuthRestore().then(function(ok) {
         if (ok) {
           b.classList.remove('visible');
           _doSheetsExport();
@@ -158,6 +180,28 @@ function _showSyncBanner() {
     document.body.appendChild(b);
   }
   b.classList.add('visible');
+}
+
+// Восстановление авторизации по действию пользователя: живая сессия — тихий рефреш;
+// нет сессии — явный consent-попап (жест пользователя разрешает его открыть).
+function _doAuthRestore() {
+  return new Promise(function(resolve) {
+    if (!window.gapi || !gapi.client || !App._gsdb) return resolve(false);
+    if (App._gsdb.hasRefreshSession()) {
+      _renewAuth().then(function(ok) {
+        if (ok) _doSheetsImport(true);
+        resolve(ok);
+      });
+    } else {
+      var ab = document.getElementById('authorize_button');
+      if (ab) {
+        ab.click();
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    }
+  });
 }
 
 function _hideSyncBanner() {
@@ -205,26 +249,37 @@ function _resolveAction(action) {
 }
 
 function _handleGDriveAuth() {
-  if (window.gapi && gapi.client && gapi.client.getToken()) {
-    var token = gapi.client.getToken();
-    if (token) {
-      google.accounts.oauth2.revoke(token.access_token);
-      gapi.client.setToken('');
-    }
+  var token = (window.gapi && gapi.client) ? gapi.client.getToken() : null;
+  if (token && App._gsdb && !App._gsdb.expired()) {
+    // Валидный доступ — кнопка работает как «Выйти»
+    google.accounts.oauth2.revoke(token.access_token);
+    gapi.client.setToken('');
     localStorage.removeItem('gapi_token');
     localStorage.removeItem('gapi_token_expires');
+    localStorage.removeItem('gapi_token_refresh');
+    localStorage.removeItem('gapi_token_refresh_exp');
     _refreshAuthButton();
     return;
   }
+  // Токена нет/протух, но живая сессия (refresh-маркер) есть — тихо продлеваем
+  // без повторного согласия
+  if (App._gsdb && App._gsdb.hasRefreshSession()) {
+    _renewAuth().then(function(ok) {
+      if (ok) _doSheetsImport(true);
+      _refreshAuthButton();
+    });
+    return;
+  }
+  // Первичная (повторная после смерти сессии) авторизация через consent-попап
   document.getElementById('authorize_button').click();
 }
 
 // Кнопка «Войти/Выйти» отражает реальное состояние авторизации:
-// пока токен валиден — «Выйти», иначе — «Войти» (а не всегда «Войти»).
+// валидный доступ ИЛИ живая offline-сессия — «Выйти», иначе — «Войти».
 function _refreshAuthButton() {
   var btn = document.getElementById('gdrive-auth-btn');
   if (!btn) return;
-  var loggedIn = !!(localStorage.getItem('gapi_token') && App._gsdb && !App._gsdb.expired());
+  var loggedIn = !!(App._gsdb && App._gsdb.hasRefreshSession());
   btn.textContent = loggedIn ? '🔓 Выйти' : '🔐 Войти';
   btn.title = loggedIn ? 'Выйти из Google' : 'Вход Google';
 }
@@ -251,28 +306,99 @@ function _isPlanDoc(text) {
   } catch (e) { return false; }
 }
 
-// Полная перезапись блока A:B (заголовок + данные) — иммунитет к пустым строкам,
-// самовосстановление шапки и никаких опасных deleteDimension по сдвинутым индексам.
-async function _writePlanBlock(header, rows) {
-  var body = [[(header && header[0]) || 'key', (header && header[1]) || 'value']];
-  rows.forEach(function(r) { body.push([r[0] || '', r[1] || '']); });
-  await gapi.client.sheets.spreadsheets.values.update({
+// Чтение листа dora с сохранением РЕАЛЬНЫХ позиций строк.
+// values.get сжимает пустые строки, поэтому для точечной записи без сдвига
+// соседних квартир читаем сетку через spreadsheets.get с includeGridData.
+// Возвращает { sheetTitle, rowCount, rows: [{ a, b }] } — rows[i] отвечает сетке
+// строки i (0 = заголовок), пустые строки сохраняются как { a: '', b: '' }.
+async function _readGridRows() {
+  var resp = await gapi.client.sheets.spreadsheets.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: 'dora!A1:B' + body.length,
+    ranges: ['dora!A1:B1000'],
+    includeGridData: true
+  });
+  var sheet = (resp.result.sheets || []).find(function(s) {
+    return s.properties && s.properties.title === 'dora';
+  });
+  if (!sheet) throw new Error('[Sheets] Лист dora не найден');
+  var grid = (sheet.data && sheet.data[0]) || {};
+  var gp = (sheet.properties && sheet.properties.gridProperties) || {};
+  function cellStr(c) {
+    if (!c) return '';
+    if (c.formattedValue != null) return String(c.formattedValue);
+    var u = c.userEnteredValue;
+    if (u && u.stringValue != null) return String(u.stringValue);
+    return '';
+  }
+  var rows = (grid.rowData || []).map(function(rd) {
+    var vals = (rd && rd.values) || [];
+    return { a: cellStr(vals[0]), b: cellStr(vals[1]) };
+  });
+  return { sheetTitle: sheet.properties.title, rowCount: gp.rowCount || 1000, rows: rows };
+}
+
+function _isPlanEmpty(doc) {
+  return !doc || ((!doc.rooms || !doc.rooms.length) && (!doc.objects || !doc.objects.length));
+}
+
+// ОБЛАКО — источник истины. Точечная запись: меняем ТОЛЬКО строку активного плана,
+// соседние квартиры/строки не перезаписываем (никаких полных перезаписей блока A:B).
+async function _writePlanRow(keyName, json) {
+  var g = await _readGridRows();
+  var idx = -1;
+  for (var i = 1; i < g.rows.length; i++) {
+    if (g.rows[i].a === keyName) { idx = i; break; }
+  }
+  if (idx >= 0) {
+    await gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: g.sheetTitle + '!B' + (idx + 1),
+      valueInputOption: 'RAW',
+      resource: { values: [[json]] }
+    });
+    return;
+  }
+  // Квартиры в облаке ещё нет — добавляем новую строку (append находит первую
+  // свободную строку после таблицы, ничего не сдвигая).
+  await gapi.client.sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: g.sheetTitle + '!A:B',
     valueInputOption: 'RAW',
-    resource: { values: body }
+    resource: { values: [[keyName, json]] }
   });
 }
 
-// Замена/добавление строки активного плана в облаке (header сохранён в data)
-function _upsertRow(data, keyName, json) {
-  var rows = data.rows;
-  var found = false;
-  for (var i = 0; i < rows.length; i++) {
-    if (rows[i][0] === keyName) { rows[i] = [keyName, json]; found = true; break; }
+// Точечная правка имени квартиры в колонке A (без перезаписи блока).
+async function _renamePlanRow(oldName, newName) {
+  var g = await _readGridRows();
+  for (var i = 1; i < g.rows.length; i++) {
+    if (g.rows[i].a === oldName) {
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: g.sheetTitle + '!A' + (i + 1),
+        valueInputOption: 'RAW',
+        resource: { values: [[newName]] }
+      });
+      return;
+    }
   }
-  if (!found) rows.push([keyName, json]);
-  return _writePlanBlock(data.header, rows);
+}
+
+// Точечное удаление строки квартиры: зачищаем ТОЛЬКО её A:B, соседей не трогаем
+// и не сдвигаем (пустая строка-пробел безопаснее, чем перезапись всего блока).
+async function _deletePlanRow(name) {
+  var g = await _readGridRows();
+  for (var i = 1; i < g.rows.length; i++) {
+    if (g.rows[i].a === name) {
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: g.sheetTitle + '!A' + (i + 1) + ':B' + (i + 1),
+        valueInputOption: 'RAW',
+        resource: { values: [['', '']] }
+      });
+      return;
+    }
+  }
 }
 
 async function _doSheetsExport(_retried) {
@@ -290,8 +416,33 @@ async function _doSheetsExport(_retried) {
     var keyName = App.DataStore.getActivePlanName();
     if (!keyName) return;
     var json = App.DataStore.exportData().replace(/[\r\n]+/g, ' ');
-    var data = await _fetchPlanData();
-    await _upsertRow(data, keyName, json);
+    // Облако — источник истины: не пушим локальное состояние, если оно не валидный
+    // план. Пустая/поломанная локальная копия НЕ должна затирать данные в таблице.
+    if (!_isPlanDoc(json)) return;
+
+    // Грубый конфликт «локальная копия пуста, а облако наполнено»: облако побеждает.
+    // Устройство с очищенным/несозданным локальным состоянием не может обнулить БД.
+    var localDoc = JSON.parse(json);
+    if (_isPlanEmpty(localDoc)) {
+      var g = await _readGridRows();
+      var cloudRow = null;
+      for (var i = 1; i < g.rows.length; i++) {
+        if (g.rows[i].a === keyName) { cloudRow = g.rows[i]; break; }
+      }
+      if (cloudRow && cloudRow.b && _isPlanDoc(cloudRow.b)) {
+        var cloudDoc = JSON.parse(cloudRow.b);
+        if (!_isPlanEmpty(cloudDoc)) {
+          console.warn('[Sheets] конфликт: облачная строка «' + keyName + '» наполнена, локальный план пуст — облако побеждает, экспорт отменён');
+          await _importActiveRow({ header: ['key', 'value'], rows: [[keyName, cloudRow.b]] }, true);
+          localStorage.removeItem('dora_unsynced');
+          _hideSyncBanner();
+          _hideSyncError();
+          return;
+        }
+      }
+    }
+
+    await _writePlanRow(keyName, json);
     localStorage.removeItem('dora_unsynced');
     _hideSyncBanner();
     _hideSyncError();
@@ -393,33 +544,30 @@ function _onPlanSwitched() {
 
 function _onPlanRenamed(info) {
   if (!_gsReady || !window.gapi || !gapi.client || !gapi.client.getToken()) return;
-  _fetchPlanData()
-    .then(function(data) {
-      for (var i = 0; i < data.rows.length; i++) {
-        if (data.rows[i][0] === info.oldName) {
-          data.rows[i][0] = info.name;
-          return _writePlanBlock(data.header, data.rows);
-        }
-      }
-    })
+  _renamePlanRow(info.oldName, info.name)
     .catch(function(err) { console.warn('[Sheets] rename sync error:', err); });
 }
 
 function _onPlanDeleted(info) {
   if (!_gsReady || !window.gapi || !gapi.client || !gapi.client.getToken()) return;
-  _fetchPlanData()
-    .then(function(data) {
-      var filtered = data.rows.filter(function(r, i) {
-        if (r[0] !== info.name) return true;
-        // Разрушающая операция — только если в B лежит план или пусто
-        if (r[1] && !_isPlanDoc(r[1])) {
-          console.warn('[Sheets] delete sync: строка «' + info.name + '» не похожа на план, пропущена');
-          return true;
-        }
-        return false;
-      });
-      if (filtered.length === data.rows.length) return;
-      return _writePlanBlock(data.header, filtered);
+  // Разрушающая операция — удаляем точечно только свою строку. Перед этим
+  // проверяем содержимое B: если там не похоже на план — не трогаем (страховка).
+  _readGridRows()
+    .then(function(g) {
+      for (var i = 1; i < g.rows.length; i++) {
+        if (g.rows[i].a !== info.name) continue;
+        return gapi.client.sheets.spreadsheets.values.get({
+          spreadsheetId: SPREADSHEET_ID,
+          range: 'dora!B' + (i + 1)
+        }).then(function(resp) {
+          var bVal = (resp.result.values && resp.result.values[0] && resp.result.values[0][0]) || '';
+          if (bVal && !_isPlanDoc(bVal)) {
+            console.warn('[Sheets] delete sync: строка «' + info.name + '» не похожа на план, пропущена');
+            return;
+          }
+          return _deletePlanRow(info.name);
+        });
+      }
     })
     .catch(function(err) { console.warn('[Sheets] delete sync error:', err); });
 }

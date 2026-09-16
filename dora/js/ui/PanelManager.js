@@ -39,18 +39,21 @@ App.PanelManager = (() => {
     const children = App.DataStore.getChildren(obj.id);
     const ancestors = App.DataStore.getAncestors(obj.id);
     const hlClass = _isSearchMatch(obj.name) ? ' search-highlight' : '';
+    const hlClassSub = _subtreeHasMatch(obj.id) ? ' search-highlight' : '';
     const matchedItems = _searchMatchedItems[obj.id] || new Set();
 
     // Хлебные крошки (крошки — цели для перетаскивания)
     let html = `<div class="breadcrumbs">`;
     html += `<span class="crumb" data-drop-root="1" onclick="App.PanelManager.showDefault()">🏠 План</span>`;
     ancestors.forEach(a => {
-      html += `<span class="crumb-sep">→</span><span class="crumb" data-drop-object="${a.id}" onclick="App.PanelManager.showObject('${a.id}')">${App.utils.escapeHtml(a.name)}</span>`;
+      const aHl = (_isSearchMatch(a.name) || _subtreeHasMatch(a.id)) ? ' search-highlight' : '';
+      html += `<span class="crumb-sep">→</span><span class="crumb${aHl}" data-drop-object="${a.id}" onclick="App.PanelManager.showObject('${a.id}')">${App.utils.escapeHtml(a.name)}</span>`;
     });
-    html += `<span class="crumb-sep">→</span><span class="crumb crumb-current">${App.utils.escapeHtml(obj.name)}</span>`;
+    const curHl = hlClassSub ? ' search-highlight' : '';
+    html += `<span class="crumb-sep">→</span><span class="crumb crumb-current${curHl}">${App.utils.escapeHtml(obj.name)}</span>`;
     html += `</div>`;
 
-    html += `<h3 class="${hlClass}">📦 ${obj.name}</h3>`;
+    html += `<h3 class="${hlClass ? hlClass : hlClassSub}">📦 ${obj.name}</h3>`;
     html += `<div class="meta">Комната: ${room ? room.name : '—'} · ${children.length} влож. · ${itemsTotal} вещей</div>`;
 
     // Вложенные объекты

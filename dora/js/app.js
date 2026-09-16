@@ -364,10 +364,10 @@ async function _writePlanRow(keyName, json) {
     for (let i = 0; i < json.length; i += CHUNK_SIZE) {
       chunks.push(json.slice(i, i + CHUNK_SIZE));
     }
-    // Собираем массив значений для столбцов B, C, D, ... Z
+    // Собираем массив значений для столбцов B, C, D, ... ровно по числу чанков
     var rowValues = [];
-    for (let i = 0; i < 26; i++) {
-      rowValues.push(i < chunks.length ? chunks[i] : '');
+    for (let i = 0; i < chunks.length; i++) {
+      rowValues.push(chunks[i]);
     }
     var firstCol = 'B';
     var lastCol = String.fromCharCode(66 + chunks.length - 1); // B + count - 1

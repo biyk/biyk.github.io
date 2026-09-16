@@ -1070,7 +1070,7 @@ def run_all(session):
                 const u = window.__updates;
                 return {
                     count: u.length,
-                    onlyActiveRow: u.length > 0 && u.every(x => x.range === 'dora!B5'),
+                    onlyActiveRow: u.length > 0 && u.every(x => /^dora!B5(:[A-Z]5)?$/.test(x.range)),
                     noBlockRewrite: !u.some(x => /A1:B/.test(x.range)),
                     kvariraSafe: !u.some(x => x.range === 'dora!B2' || x.range === 'dora!A2:B2'),
                     appended: window.__appends
@@ -1221,7 +1221,7 @@ def run_all(session):
         """)
         time.sleep(0.4)
         r2 = session.evaluate("window.__updates.slice()")
-        assert r2 == ['dora!A4:B4'], f"Delete must clear ONLY the plan's own row, got {r2}"
+        assert r2 == ['dora!A4:Z4'], f"Delete must clear ONLY the plan's own row (A:Z), got {r2}"
         nope = session.evaluate("!window.__updates.some(r => /B[0123]/.test(r))")
         assert nope, "Rename/delete must never touch other plans' rows"
         _reset_local_to_empty()
@@ -1406,6 +1406,101 @@ def run_all(session):
         test("38. Half-filled local loses to full cloud on import", half_filled_local_loses_to_full_cloud)
         test("39. Rename/delete are row-targeted", rename_and_delete_are_row_targeted)
         test("40. Consent persists token, silent renew after expiry", consent_persists_and_renews_silently)
+
+        # --- 41. План >50K символов разбивается на ячейки <=49K ---
+        def big_plan_split_across_columns():
+            _drain_debounce()
+            session.evaluate("""
+                (() => {
+                    window.__updates = [];
+                    window.__appends = 0;
+                    if (window.gapi && gapi.client) gapi.client.setToken({ access_token: 't41' });
+                    const s = gapi.client.sheets.spreadsheets;
+                    const v = s.values;
+                    const active = App.DataStore.getActivePlanName();
+                    s.get = () => Promise.resolve({ result: { sheets: [{
+                        properties: { title: 'dora', gridProperties: { rowCount: 1000 } },
+                        data: [{ rowData: [
+                            { values: [{ formattedValue: 'key' }, { formattedValue: 'value' }] },
+                            { values: [{ formattedValue: active }] }
+                        ]}]
+                    }] } });
+                    v.get = () => Promise.resolve({ result: { values: [['key', 'value'], [active, '']] } });
+                    v.update = (req) => {
+                        const vals = (req.resource && req.resource.values && req.resource.values[0]) || [];
+                        window.__updates.push({ range: req.range,
+                            cells: vals.map(c => (c === '' || c == null) ? 0 : String(c).length) });
+                        return Promise.resolve({ result: {} });
+                    };
+                    v.append = () => { window.__appends++; return Promise.resolve({ result: {} }); };
+                })()
+            """)
+            # Строим план >50K символов: один объект с большими предметами
+            big = session.evaluate("""
+                (() => {
+                    App.DataStore.reset(true);
+                    const room = App.DataStore.addRoom({ name: 'БольшаяКомната', x: 0, y: 0, w: 500, h: 500 });
+                    const obj = App.DataStore.addObject({ name: 'Коробка41', roomId: room.id, x: 10, y: 10, w: 100, h: 100 });
+                    const name = 'ПредметОченьДлинноеИмяЧтобоБыло1234567890АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.repeat(800);
+                    App.DataStore.addObjectItem(obj.id, name);
+                    for (let i = 0; i < 200; i++)
+                        App.DataStore.addObjectItem(obj.id, 'МаленькийПредмет' + i);
+                    return App.DataStore.exportData().length;
+                })()
+            """)
+            assert big > 50000, f"Test plan must exceed 50K chars, got {big}"
+            session.evaluate("App._sheetsDebug.doExport()")
+            time.sleep(1.5)
+            res = session.evaluate("""
+                (function(){
+                    const u = window.__updates;
+                    const maxCell = Math.max.apply(null, u.map(x => Math.max.apply(null, x.cells)));
+                    const totalCells = u.reduce((s, x) => s + x.cells.length, 0);
+                    const totalChars = u.reduce((s, x) => s + x.cells.reduce((a, b) => a + b, 0), 0);
+                    return {
+                        count: u.length, totalCells: totalCells,
+                        maxCell: maxCell,
+                        allSameRow: u.every(x => /^dora!B[0-9]+:[A-Z][0-9]+$/.test(x.range)),
+                        firstRange: u.length ? u[0].range : null,
+                        lastRange: u.length ? u[u.length-1].range : null,
+                        appended: window.__appends
+                    };
+                })()
+            """)
+            assert res["count"] >= 2, f"Big plan must split into >=2 chunks, got {res['count']}"
+            assert res["maxCell"] <= 49000, f"No cell may exceed 49K chars, got {res['maxCell']}"
+            assert res["allSameRow"], f"All chunks must be in the same row, got {res['firstRange']}..{res['lastRange']}"
+            assert res["appended"] == 0, f"Existing row must be updated, not appended, got {res['appended']}"
+            assert res["totalCells"] >= 2, f"Must write into >=2 columns, got {res['totalCells']}"
+
+            # Сборка: values.get возвращает результат из нескольких колонок
+            session.evaluate("""
+                (() => {
+                    const parts = window.__updates.map(u => u.cells.join(''));
+                    const full = parts.join('');
+                    const v = gapi.client.sheets.spreadsheets.values;
+                    const active = App.DataStore.getActivePlanName();
+                    v.get = () => Promise.resolve({ result: { values: [['key', 'value'], [active, full]] } });
+                })()
+            """)
+            session.evaluate("App._sheetsDebug.doImport()")
+            time.sleep(0.5)
+            imported = session.evaluate("""
+                (function(){
+                    const r = App.DataStore.getRooms().find(r => r.name === 'БольшаяКомната');
+                    const o = App.DataStore.getObjects().find(o => o.name === 'Коробка41');
+                    return { hasRoom: !!r, hasObject: !!o, items: o ? o.items.length : 0 };
+                })()
+            """)
+            assert imported["hasRoom"], "Big plan must round-trip via chunks"
+            assert imported["hasObject"], "Big plan object must survive chunked import"
+            assert imported["items"] >= 200, f"All items must survive, got {imported['items']}"
+
+            _reset_local_to_empty()
+            _drain_debounce()
+
+        test("41. Plan >50K chars is split into <=49K cells and round-trips", big_plan_split_across_columns)
+
     finally:
         httpd.shutdown()
 

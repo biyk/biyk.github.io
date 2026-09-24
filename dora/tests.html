@@ -20,6 +20,7 @@
   <div id="panel-default" style="display:none;"></div>
   <div id="panel-content" style="display:none;"></div>
 
+
   <script src="js/core/EventBus.js?v=2026092401"></script>
   <script src="js/core/utils.js?v=2026092401"></script>
   <script src="js/core/DataStore.js?v=2026092401"></script>
@@ -32,6 +33,20 @@
   <script src="js/ui/PanelManager.js?v=2026092401"></script>
   <script src="js/ui/Renderer.js?v=2026092401"></script>
   <script src="js/app.js?v=2026092401"></script>
+
+  <script src="js/core/EventBus.js?v=2026092401"></script>
+  <script src="js/core/utils.js?v=2026092401"></script>
+  <script src="js/core/DataStore.js?v=2026092401"></script>
+  <script src="js/ui/Ruler.js?v=2026092401"></script>
+  <script src="js/ui/GuideManager.js?v=2026092401"></script>
+  <script src="js/interaction/SearchManager.js?v=2026092401"></script>
+  <script src="js/io/ExportImport.js?v=2026092401"></script>
+  <script src="js/interaction/DragManager.js?v=2026092401"></script>
+  <script src="js/ui/ModalManager.js?v=2026092401"></script>
+  <script src="js/ui/PanelManager.js?v=2026092401"></script>
+  <script src="js/ui/Renderer.js?v=2026092401"></script>
+  <script src="js/app.js?v=2026092401"></script>
+
 
   <script>
     const out = document.getElementById('output');
@@ -58,7 +73,7 @@
     App.DataStore.init();
     App.PanelManager.init();
 
-    // ========== TESTS ==========
+    // === TESTS ===
 
     group('1. EventBus');
 
@@ -685,7 +700,74 @@
       assert(isAuthError('строка') === false, 'isAuthError — строка не авторизация');
     })();
 
-    // ========== SUMMARY ==========
+    group('18. PanelManager — поиск объектов и подсветка иерархии');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      const room = App.DataStore.addRoom({ name: 'SearchRoom2', x: 0, y: 0, w: 400, h: 400 });
+      const root = App.DataStore.addObject({ name: 'Суперкоробка', roomId: room.id, x: 50, y: 50, w: 200, h: 100 });
+      const mid = App.DataStore.addObject({ name: 'Полка', parentId: root.id });
+      const leaf = App.DataStore.addObject({ name: 'Простоящик', parentId: mid.id });
+      App.DataStore.addObjectItem(leaf.id, 'мебель');
+
+      // 1. Поиск по имени ОБЪЕКТА находит сам объект
+      const byName = App.SearchManager.findMatches('просто');
+      assert(byName.some(r => r.object.id === leaf.id && r.nameMatch && r.matchedItems.length === 0),
+        'obj-search — поиск по имени находит вложенный объект (nameMatch, без предметов)');
+
+      // 2. Подсветка иерархии: открываем корень, совпадение в глубине (item)
+      App.EventBus.emit('search:results', {
+        query: 'меб',
+        results: [{ object: leaf, matchedItems: ['мебель'], nameMatch: false }]
+      });
+      App.PanelManager.showObject(root.id);
+      const panel = document.getElementById('panel-content');
+      const midRow = Array.from(panel.querySelectorAll('.item-row'))
+        .find(r => r.textContent.includes('Полка'));
+      assert(midRow && midRow.querySelector('.item-name').classList.contains('search-highlight'),
+        'obj-search — ребёнок на пути к совпадению подсвечен в списке вложенных');
+
+      // 3. Заголовок корня подсвечен, т.к. внутри него есть совпадение
+      const h3 = panel.querySelector('h3');
+      assert(h3.classList.contains('search-highlight'),
+        'obj-search — заголовок объекта с совпадением внутри подсвечен');
+
+      // 4. Хлебные крошки: путь к открытому объекту подсвечивается
+      const crumbs = Array.from(panel.querySelectorAll('.crumb'));
+      assert(crumbs.some(c => c.classList.contains('search-highlight')),
+        'obj-search — хлебная крошка на пути к совпадению подсвечена');
+
+      // 5. Спускаемся на уровень «Полка» — её крошка и заголовок тоже подсвечены
+      App.PanelManager.showObject(mid.id);
+      const panel2 = document.getElementById('panel-content');
+      const crumbs2 = Array.from(panel2.querySelectorAll('.crumb'));
+      const polkaCrumb = crumbs2.find(c => c.textContent.includes('Полка'));
+      assert(polkaCrumb && polkaCrumb.classList.contains('search-highlight'),
+        'obj-search — крошка «Полка» на пути к совпадению подсвечена');
+      assert(panel2.querySelector('h3').classList.contains('search-highlight'),
+        'obj-search — заголовок «Полка» подсвечен (внутри есть совпадение)');
+
+      // 6. Совпадение по имени самого объекта также подсвечивает путь
+      App.EventBus.emit('search:clear');
+      App.EventBus.emit('search:results', {
+        query: 'просто',
+        results: [{ object: leaf, matchedItems: [], nameMatch: true }]
+      });
+      App.PanelManager.showObject(root.id);
+      const panel3 = document.getElementById('panel-content');
+      const midRow2 = Array.from(panel3.querySelectorAll('.item-row'))
+        .find(r => r.textContent.includes('Полка'));
+      assert(midRow2 && midRow2.querySelector('.item-name').classList.contains('search-highlight'),
+        'obj-search — путь к совпадению по имени объекта подсвечен');
+
+      // Cleanup
+      App.EventBus.emit('search:clear');
+      App.PanelManager.showDefault();
+      App.DataStore.reset(true);
+    })();
+
+    // === SUMMARY ===
     const summary = document.createElement('div');
     summary.className = 'summary';
     summary.innerHTML = `<strong>Результат:</strong> ${passed}/${total} тестов пройдено ${passed === total ? '✅' : '❌'}`;

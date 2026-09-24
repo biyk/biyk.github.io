@@ -287,12 +287,17 @@ function _refreshAuthButton() {
 async function _fetchPlanData() {
   var resp = await gapi.client.sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: 'dora!A:B'
+    range: 'dora!A:Z'
   });
   var values = resp.result.values || [];
-  // Строка 1 листа — всегда заголовок key|value, данные начинаются со строки 2
+  // Строка 1 листа — всегда заголовок key|value, данные начинаются со строки 2.
+  // План может быть разбит на чанки по 49K в колонках B..Z (ограничение Google
+  // Sheets — 50K символов на ячейку) — собираем их обратно в одну строку.
   var header = (values.length && values[0][0] === 'key') ? values[0] : ['key', 'value'];
   var rows = values.length ? values.slice(1) : [];
+  rows = rows.map(function(r) {
+    return [r[0] || '', (r.slice(1).join('') || '')];
+  });
   return { header: [header[0] || 'key', header[1] || 'value'], rows: rows };
 }
 
@@ -314,7 +319,7 @@ function _isPlanDoc(text) {
 async function _readGridRows() {
   var resp = await gapi.client.sheets.spreadsheets.get({
     spreadsheetId: SPREADSHEET_ID,
-    ranges: ['dora!A1:B1000'],
+    ranges: ['dora!A1:Z1000'],
     includeGridData: true
   });
   var sheet = (resp.result.sheets || []).find(function(s) {
@@ -332,7 +337,10 @@ async function _readGridRows() {
   }
   var rows = (grid.rowData || []).map(function(rd) {
     var vals = (rd && rd.values) || [];
-    return { a: cellStr(vals[0]), b: cellStr(vals[1]) };
+    var a = cellStr(vals[0]);
+    var b = '';
+    for (var i = 1; i < vals.length; i++) b += cellStr(vals[i]);
+    return { a: a, b: b };
   });
   return { sheetTitle: sheet.properties.title, rowCount: gp.rowCount || 1000, rows: rows };
 }
@@ -350,22 +358,35 @@ async function _writePlanRow(keyName, json) {
     if (g.rows[i].a === keyName) { idx = i; break; }
   }
   if (idx >= 0) {
+    // Обновление существующей строки: разбиваем JSON на чанки по 49K
+    const CHUNK_SIZE = 49000;
+    const chunks = [];
+    for (let i = 0; i < json.length; i += CHUNK_SIZE) {
+      chunks.push(json.slice(i, i + CHUNK_SIZE));
+    }
+    // Собираем массив значений для столбцов B, C, D, ... ровно по числу чанков
+    var rowValues = [];
+    for (let i = 0; i < chunks.length; i++) {
+      rowValues.push(chunks[i]);
+    }
+    var firstCol = 'B';
+    var lastCol = String.fromCharCode(66 + chunks.length - 1); // B + count - 1
     await gapi.client.sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: g.sheetTitle + '!B' + (idx + 1),
+      range: g.sheetTitle + '!' + firstCol + (idx + 1) + ':' + lastCol + (idx + 1),
       valueInputOption: 'RAW',
-      resource: { values: [[json]] }
+      resource: { values: [rowValues] }
     });
     return;
   }
-  // Квартиры в облаке ещё нет — добавляем новую строку (append находит первую
-  // свободную строку после таблицы, ничего не сдвигая).
+  // Добавление новой строки (приложение)
   await gapi.client.sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
-    range: g.sheetTitle + '!A:B',
+    range: g.sheetTitle + '!B',  // Новый ряд начинается с B
     valueInputOption: 'RAW',
     resource: { values: [[keyName, json]] }
   });
+  return;
 }
 
 // Точечная правка имени квартиры в колонке A (без перезаписи блока).
@@ -384,7 +405,7 @@ async function _renamePlanRow(oldName, newName) {
   }
 }
 
-// Точечное удаление строки квартиры: зачищаем ТОЛЬКО её A:B, соседей не трогаем
+// Точечное удаление строки квартиры: зачищаем ТОЛЬКО её A:Z (включая чанки), соседей не трогаем
 // и не сдвигаем (пустая строка-пробел безопаснее, чем перезапись всего блока).
 async function _deletePlanRow(name) {
   var g = await _readGridRows();
@@ -392,7 +413,7 @@ async function _deletePlanRow(name) {
     if (g.rows[i].a === name) {
       await gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: g.sheetTitle + '!A' + (i + 1) + ':B' + (i + 1),
+        range: g.sheetTitle + '!A' + (i + 1) + ':Z' + (i + 1),
         valueInputOption: 'RAW',
         resource: { values: [['', '']] }
       });

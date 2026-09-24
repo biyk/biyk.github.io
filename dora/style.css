@@ -587,3 +587,79 @@ body {
 .sync-banner:hover {
   background: #d63a54;
 }
+
+/* ===== MOBILE (без карты: поиск + иерархия + добавление) ===== */
+@media (max-width: 768px) {
+  #toolbar h1 {
+    font-size: 14px;
+  }
+
+  #toolbar {
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .toolbar-group.sep {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  #toolbar .map-only {
+    display: none !important;
+  }
+
+  .search-group {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  #searchInput {
+    width: 100%;
+    flex: 1;
+  }
+
+  #main {
+    flex-direction: column;
+  }
+
+  #plan-container {
+    display: none !important;
+  }
+
+  #info-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    border-left: none;
+    flex: 1;
+  }
+
+  .panel-btn {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .item-row {
+    padding: 6px 0;
+    font-size: 14px;
+  }
+
+  .btn-icon {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  .breadcrumbs {
+    flex-wrap: wrap;
+  }
+
+  .modal {
+    min-width: 0;
+    width: calc(100% - 24px);
+    max-width: 480px;
+  }
+
+  .modal-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

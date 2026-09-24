@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Карта квартиры — организация вещей</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2026090602">
-  <link rel="stylesheet" href="style.css?v=2026090602">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2026092401">
+  <link rel="stylesheet" href="style.css?v=2026092401">
 </head>
 <body>
   <div id="app">
@@ -23,18 +23,18 @@
         <button data-action="manage-plans" title="Управление квартирами">⚙</button>
       </div>
 
-      <div class="toolbar-group sep">
+      <div class="toolbar-group sep map-only">
         <button data-action="guide-h" title="Добавить горизонтальную направляющую">─ Напр.</button>
         <button data-action="guide-v" title="Добавить вертикальную направляющую">│ Напр.</button>
         <button data-action="guide-clear" title="Очистить все направляющие">✕ Напр.</button>
       </div>
 
-      <div class="toolbar-group sep">
+      <div class="toolbar-group sep search-group">
         <input type="text" id="searchInput" placeholder="🔍 Поиск вещей...">
         <button data-action="search-clear">✕</button>
       </div>
 
-      <div class="toolbar-group sep">
+      <div class="toolbar-group sep map-only">
         <button data-action="zoom-out" title="Уменьшить">🔍−</button>
         <span id="zoom-level" style="font-size:12px;min-width:38px;text-align:center">100%</span>
         <button data-action="zoom-in" title="Увеличить">🔍+</button>
@@ -77,18 +77,18 @@
     </div>
   </div>
 
-  <script src="js/core/EventBus.js?v=2026090602"></script>
-  <script src="js/core/utils.js?v=2026090602"></script>
-  <script src="js/core/DataStore.js?v=2026090602"></script>
-  <script src="js/ui/Ruler.js?v=2026090602"></script>
-  <script src="js/ui/GuideManager.js?v=2026090602"></script>
-  <script src="js/interaction/SearchManager.js?v=2026090602"></script>
-  <script src="js/interaction/DragManager.js?v=2026090602"></script>
-  <script src="js/io/ExportImport.js?v=2026090602"></script>
-  <script src="js/ui/ModalManager.js?v=2026090602"></script>
-  <script src="js/ui/PanelManager.js?v=2026090602"></script>
-  <script src="js/ui/Renderer.js?v=2026090602"></script>
-  <script src="js/app.js?v=2026090602"></script>
+  <script src="js/core/EventBus.js?v=2026092401"></script>
+  <script src="js/core/utils.js?v=2026092401"></script>
+  <script src="js/core/DataStore.js?v=2026092401"></script>
+  <script src="js/ui/Ruler.js?v=2026092401"></script>
+  <script src="js/ui/GuideManager.js?v=2026092401"></script>
+  <script src="js/interaction/SearchManager.js?v=2026092401"></script>
+  <script src="js/interaction/DragManager.js?v=2026092401"></script>
+  <script src="js/io/ExportImport.js?v=2026092401"></script>
+  <script src="js/ui/ModalManager.js?v=2026092401"></script>
+  <script src="js/ui/PanelManager.js?v=2026092401"></script>
+  <script src="js/ui/Renderer.js?v=2026092401"></script>
+  <script src="js/app.js?v=2026092401"></script>
   <button id="authorize_button" style="display:none;"></button>
   <button id="signout_button" style="display:none;"></button>
 </body>

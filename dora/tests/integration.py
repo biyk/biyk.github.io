@@ -695,7 +695,77 @@ def run_all(session):
 
     test("31. Panel item drops onto canvas root object", panel_item_to_canvas)
 
-    # --- 32. Export silently renews auth and retries when token missing ---
+    # --- 32. Mobile: карта скрыта, панель на всю ширину, дефолт — браузер комнат ---
+    def mobile_hides_map_browse_panel():
+        from browser import send_cdp
+        try:
+            send_cdp(session.ws, "Emulation.setDeviceMetricsOverride", {
+                "width": 390, "height": 844, "deviceScaleFactor": 3, "mobile": True,
+            })
+            time.sleep(0.3)
+            plan_hidden = session.evaluate("""
+                (() => {
+                    const pc = document.getElementById('plan-container');
+                    return !pc || getComputedStyle(pc).display === 'none';
+                })()
+            """)
+            assert plan_hidden, "Mobile: #plan-container must be hidden"
+            panel_full = session.evaluate("""
+                (() => {
+                    const ip = document.getElementById('info-panel');
+                    const r = ip.getBoundingClientRect();
+                    return r.width > window.innerWidth * 0.5;
+                })()
+            """)
+            assert panel_full, "Mobile: #info-panel must take the full width"
+            session.evaluate("App.PanelManager.showDefault()")
+            browse = session.evaluate("""
+                (() => {
+                    const def = document.getElementById('panel-default');
+                    return def.style.display !== 'none' &&
+                           def.innerHTML.includes('Гостиная') &&
+                           def.innerHTML.includes('Кухня');
+                })()
+            """)
+            assert browse, "Mobile: default panel must list rooms for browsing"
+            # Навигация без карты: клик по комнате открывает её содержимое
+            room_id = session.evaluate(
+                "App.DataStore.getRooms().find(r => r.name === 'Гостиная').id"
+            )
+            session.evaluate(f"App.PanelManager.showRoom('{room_id}')")
+            sel = session.evaluate("App.PanelManager.getSelectedRoomId()")
+            assert sel == room_id, f"Mobile: room selection via panel must work, got {sel}"
+            shown = session.evaluate("document.getElementById('panel-content').style.display !== 'none'")
+            assert shown, "Mobile: room panel content must be visible"
+            # Поиск и добавление предмета работают без карты
+            obj_id = session.evaluate("App.DataStore.getObjects()[0].id")
+            session.evaluate(f"App.PanelManager.showObject('{obj_id}')")
+            added = session.evaluate(f"""
+                App.DataStore.addObjectItem('{obj_id}', 'МобПредмет') === true
+            """)
+            assert added, "Mobile: adding an item from the panel must work"
+            has = session.evaluate(
+                f"App.DataStore.getObject('{obj_id}').items.includes('МобПредмет')"
+            )
+            assert has, "Mobile: added item must persist"
+            # cleanup
+            session.evaluate("""
+                (() => {
+                    App.DataStore.getObjects().forEach(o => {
+                        while (o.items.length) App.DataStore.removeObjectItem(o.id, 0);
+                    });
+                    App.PanelManager.showDefault();
+                })()
+            """)
+        finally:
+            send_cdp(session.ws, "Emulation.setDeviceMetricsOverride", {
+                "width": 1920, "height": 1080, "deviceScaleFactor": 1, "mobile": False,
+            })
+            time.sleep(0.2)
+
+    test("32. Mobile hides map, browse panel navigation", mobile_hides_map_browse_panel)
+
+    # --- 33. Export silently renews auth and retries when token missing ---
     def export_renews_and_retries():
         from browser import send_cdp
 
@@ -1397,15 +1467,15 @@ def run_all(session):
             except Exception:
                 pass
             time.sleep(0.5)
-        test("32. Export renews auth and retries", export_renews_and_retries)
-        test("33. Cloud wins on boot (import overwrites local)", cloud_wins_on_boot)
-        test("34. Auth button reflects login state", auth_button_reflects_state)
-        test("35. Sync-error indicator on save failure", sync_error_indicator)
-        test("36. Export writes only the active plan's row", export_writes_only_active_plan_row)
-        test("37. Empty local cannot wipe a full cloud row", empty_local_cannot_wipe_cloud)
-        test("38. Half-filled local loses to full cloud on import", half_filled_local_loses_to_full_cloud)
-        test("39. Rename/delete are row-targeted", rename_and_delete_are_row_targeted)
-        test("40. Consent persists token, silent renew after expiry", consent_persists_and_renews_silently)
+        test("33. Export renews auth and retries", export_renews_and_retries)
+        test("34. Cloud wins on boot (import overwrites local)", cloud_wins_on_boot)
+        test("35. Auth button reflects login state", auth_button_reflects_state)
+        test("36. Sync-error indicator on save failure", sync_error_indicator)
+        test("37. Export writes only the active plan's row", export_writes_only_active_plan_row)
+        test("38. Empty local cannot wipe a full cloud row", empty_local_cannot_wipe_cloud)
+        test("39. Half-filled local loses to full cloud on import", half_filled_local_loses_to_full_cloud)
+        test("40. Rename/delete are row-targeted", rename_and_delete_are_row_targeted)
+        test("41. Consent persists token, silent renew after expiry", consent_persists_and_renews_silently)
     finally:
         httpd.shutdown()
 

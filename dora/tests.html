@@ -20,18 +20,18 @@
   <div id="panel-default" style="display:none;"></div>
   <div id="panel-content" style="display:none;"></div>
 
-  <script src="js/core/EventBus.js?v=2026090602"></script>
-  <script src="js/core/utils.js?v=2026090602"></script>
-  <script src="js/core/DataStore.js?v=2026090602"></script>
-  <script src="js/ui/Ruler.js?v=2026090602"></script>
-  <script src="js/ui/GuideManager.js?v=2026090602"></script>
-  <script src="js/interaction/SearchManager.js?v=2026090602"></script>
-  <script src="js/io/ExportImport.js?v=2026090602"></script>
-  <script src="js/interaction/DragManager.js?v=2026090602"></script>
-  <script src="js/ui/ModalManager.js?v=2026090602"></script>
-  <script src="js/ui/PanelManager.js?v=2026090602"></script>
-  <script src="js/ui/Renderer.js?v=2026090602"></script>
-  <script src="js/app.js?v=2026090602"></script>
+  <script src="js/core/EventBus.js?v=2026092401"></script>
+  <script src="js/core/utils.js?v=2026092401"></script>
+  <script src="js/core/DataStore.js?v=2026092401"></script>
+  <script src="js/ui/Ruler.js?v=2026092401"></script>
+  <script src="js/ui/GuideManager.js?v=2026092401"></script>
+  <script src="js/interaction/SearchManager.js?v=2026092401"></script>
+  <script src="js/io/ExportImport.js?v=2026092401"></script>
+  <script src="js/interaction/DragManager.js?v=2026092401"></script>
+  <script src="js/ui/ModalManager.js?v=2026092401"></script>
+  <script src="js/ui/PanelManager.js?v=2026092401"></script>
+  <script src="js/ui/Renderer.js?v=2026092401"></script>
+  <script src="js/app.js?v=2026092401"></script>
 
   <script>
     const out = document.getElementById('output');
@@ -481,6 +481,45 @@
       App.DataStore.deleteObject(obj.id);
       App.DataStore.deleteRoom(room.id);
       App.DataStore.reset(true);
+    })();
+
+    group('14b. PanelManager — browser (дефолтный вид без карты)');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      // Два объекта: в комнате и «свободный» без комнаты
+      const room = App.DataStore.addRoom({ name: 'КомнатаБраузера', x: 0, y: 0, w: 400, h: 400 });
+      const rObj = App.DataStore.addObject({ name: 'Стеллаж2', roomId: room.id, x: 50, y: 50, w: 80, h: 40 });
+      App.DataStore.addObjectItem(rObj.id, 'Книга');
+      const loose = App.DataStore.addObject({ name: 'Свободный', x: 500, y: 500, w: 80, h: 40 });
+
+      // Дефолтный вид = список комнат + объекты без комнаты (навигация без карты)
+      App.PanelManager.showDefault();
+      const def = document.getElementById('panel-default');
+      assert(def.style.display === 'block', 'browse — дефолтная панель показана');
+      assert(def.innerHTML.includes('КомнатаБраузера'), 'browse — комната в списке напитков');
+      assert(def.innerHTML.includes('Свободный'), 'browse — свободный объект виден');
+      assert(def.innerHTML.includes('Книга') || def.innerHTML.includes('вещей'),
+        'browse — счётчики вещей отображаются');
+
+      // Клик по свободному объекту открывает его панель (без карты)
+      const looseId = loose.id;
+      App.PanelManager.showObject(looseId);
+      assert(App.PanelManager.getSelectedObjectId() === looseId, 'browse — showObject работает');
+      App.PanelManager.showDefault();
+
+      // Клик по комнате — её содержимое
+      App.PanelManager.showRoom(room.id);
+      assert(App.PanelManager.getSelectedRoomId() === room.id, 'browse — showRoom работает');
+
+      // Очистка
+      App.DataStore.removeObjectItem(rObj.id, 0);
+      App.DataStore.deleteObject(rObj.id);
+      App.DataStore.deleteObject(looseId);
+      App.DataStore.deleteRoom(room.id);
+      App.DataStore.reset(true);
+      App.PanelManager.showDefault();
     })();
 
     group('15. DataStore — мультиквартиры');

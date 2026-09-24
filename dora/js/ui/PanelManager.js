@@ -12,11 +12,51 @@ App.PanelManager = (() => {
   let _dnd = null; // { kind: 'item'|'object', objectId, index }
 
   function _showDefault() {
-    if (_defaultEl) _defaultEl.style.display = 'block';
+    if (_defaultEl) {
+      _defaultEl.innerHTML = _buildBrowseView();
+      _defaultEl.style.display = 'block';
+    }
     if (_contentEl) _contentEl.style.display = 'none';
     _selectedObjectId = null;
     _selectedRoomId = null;
     App.EventBus.emit('selection:clear');
+  }
+
+  // Дефолтный вид без карты: список комнат + объекты без комнаты.
+  // Нужен для мобильной версии (нет SVG, по которому можно кликать).
+  function _buildBrowseView() {
+    const rooms = App.DataStore.getRooms();
+    const rootObjects = App.DataStore.getRootObjects();
+
+    let html = `<h3>🏠 Комнаты и объекты</h3>`;
+
+    if (rooms.length === 0 && rootObjects.length === 0) {
+      html += `<div class="empty-msg">Пусто — добавьте комнату или объект</div>`;
+    }
+
+    rooms.forEach(room => {
+      const objs = rootObjects.filter(o => o.roomId === room.id);
+      const totalItems = objs.reduce((s, o) => s + App.DataStore.getObjectTotalItems(o.id), 0);
+      html += `<div class="container-block clickable browse" onclick="App.PanelManager.showRoom('${room.id}')">
+        <h4 style="color:#e94560">🚪 ${App.utils.escapeHtml(room.name)}</h4>
+        <div class="meta">${objs.length} объект(ов) · ${totalItems} вещей</div>
+      </div>`;
+    });
+
+    const loose = rootObjects.filter(o => !o.roomId);
+    loose.forEach(o => {
+      const total = App.DataStore.getObjectTotalItems(o.id);
+      html += `<div class="container-block clickable browse" onclick="App.PanelManager.showObject('${o.id}')">
+        <h4>📦 ${App.utils.escapeHtml(o.name)}</h4>
+        <div class="meta">${total} вещей</div>
+      </div>`;
+    });
+
+    html += `<div class="meta" style="margin-top:14px;font-size:12px;color:#555;">
+      🖱 Нажмите на комнату или объект, чтобы открыть содержимое.
+    </div>`;
+
+    return html;
   }
 
   function _isSearchMatch(name) {

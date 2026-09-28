@@ -1,8 +1,6 @@
 <template>
     <div class="container">
-        <h1 :title="log.today_points">{{hero.hero_name}} {{parseFloat(hero.hero_money).toFixed(0)}} ({{ currentTime }})
-            <AuthCountdown/>
-        </h1>
+        <h1 :title="log.today_points">{{hero.hero_name}} {{parseFloat(hero.hero_money).toFixed(0)}} ({{ currentTime }})</h1>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />
@@ -25,7 +23,6 @@
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import TodoNew from "@/components/TodoNew.vue"
 import TodoList from "@/components/TodoList.vue"
-import AuthCountdown from "@/components/AuthCountdown.vue"
 import Settings from "@/components/Settings.vue"
 import { useStore } from 'vuex'
 import './assets/styles/App.css'
@@ -33,11 +30,14 @@ import { startTaskAgent, stopTaskAgent } from "@/agents/taskAgent.js"
 import Shop from "@/components/Shop.vue";
 import {calcExecutions} from "@/utils/tasks.js";  // ← 🔥
 import { formatDateTime } from "@/utils/format.js"
+import { formatAuthLeft } from "@/utils/auth.js"
 
 export default {
     data() {
         return {
             currentTime: formatDateTime(),
+            authTimer: null,
+            signoutLabel: null,
             log:{}
         };
     },
@@ -45,8 +45,7 @@ export default {
         Shop,
         Settings,
         TodoNew,
-        TodoList,
-        AuthCountdown
+        TodoList
     },
     computed: {
         hero() {
@@ -75,10 +74,27 @@ export default {
 
         return { activeTab };
     },
+    methods: {
+        // Отсчёт остатка авторизации Google — в подпись кнопки Sign Out (новый элемент и стили не заводим)
+        renderAuthCountdown() {
+            const button = document.getElementById('signout_button');
+            if (!button) return;
+            if (this.signoutLabel === null) this.signoutLabel = button.textContent.trim();
+            const left = formatAuthLeft(localStorage.getItem('gapi_token_expires'));
+            button.textContent = left;
+        },
+    },
+    beforeUnmount() {
+        clearInterval(this.authTimer);
+    },
     async mounted() {
         this.$store.dispatch("hero/initHero");
         this.timer = setInterval(() => {
             this.currentTime = formatDateTime();
+        }, 1000);
+        this.renderAuthCountdown();
+        this.authTimer = setInterval(() => {
+            this.renderAuthCountdown();
         }, 1000);
         this.log = await calcExecutions(this.$store);
     }

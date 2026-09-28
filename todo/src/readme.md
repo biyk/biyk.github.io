@@ -11,6 +11,7 @@
 - **Статистика** — today/week/month/h24, `averageCalc`/`prevAvg`/`today_points` (кнопка статистики в шапке).
 - **Автозаполнение календаря** — задачи расставляются в свободные слоты Google Calendar.
 - **Фоновый агент** — синхронизация каждые 60 секунд.
+- **Остаток авторизации** — в шапке показывается, сколько осталось до протухания токена Google (`авторизация: 54:12`), значение берётся из `localStorage['gapi_token_expires']`.
 - **Тесты** — встроенный браузерный раннер (кнопка «Тесты» на вкладке «Настройки»).
 
 ## Технологии
@@ -29,12 +30,13 @@ todo/src/
 ├── App.vue              # корневой компонент: вкладки, агент, статистика
 ├── router.js            # hash-роутер (/#/calendar, /#/new, /#/shop, /#/settings)
 ├── vite.config.js       # сборка + manualChunks (vue / element-plus) + автоимпорт
-├── components/          # TodoList, TodoNew, Shop, Settings
+├── components/          # TodoList, TodoNew, Shop, Settings, AuthCountdown
 ├── store/modules/       # todos, hero, events, settings (Vuex)
 ├── agents/taskAgent.js  # фоновая синхронизация (60 c)
 ├── utils/
 │   ├── calendar.js      # listEvents/addEvent/updateEvent/deleteEvent/getFreeSlots/makeEvent
 │   ├── tasks.js         # makeTaskDone/setTaskToCalendar/setTaskCompleted/calcExecutions/taskSort
+│   ├── auth.js          # authLeftSeconds/formatAuthLeft — остаток авторизации по gapi_token_expires
 │   ├── uuid.js          # generateUUIDv4
 │   └── tests/           # браузерный раннер (*.test.js), unit/ (vitest), smoke/ (Playwright)
 └── readme.md            # этот файл
@@ -62,8 +64,9 @@ npm install
 
 | Команда | Что гоняет |
 |---|---|
-| `npm test` | всё: unit + smoke (последовательно) |
-| `npm run test:unit` | unit-тесты Vitest (`utils/tests/unit/*.test.js`) — чистая логика без браузера: ORM, formatData, getFreeSlots, taskSort |
+| `npm test` | всё: unit + component + smoke (последовательно) |
+| `npm run test:unit` | unit-тесты Vitest (`utils/tests/unit/*.test.js`) — чистая логика без браузера: ORM, formatData, getFreeSlots, taskSort, auth |
+| `npm run test:component` | компонентные тесты Vitest на happy-dom (`utils/tests/component/*.test.js`) — лок задач в TodoList, отсчёт авторизации |
 | `npm run test:smoke` | Playwright smoke-тест (`utils/tests/smoke/site-load.test.js`) — headless Chromium грузит собранную версию (`vite preview`) и ловит JS-ошибки на старте |
 | `npm run test:watch` | unit-тесты в watch-режиме |
 

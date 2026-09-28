@@ -1,6 +1,8 @@
 <template>
     <div class="container">
-        <h1 :title="log.today_points">{{hero.hero_name}} {{parseFloat(hero.hero_money).toFixed(0)}} ({{ currentTime }})</h1>
+        <h1 :title="log.today_points">{{hero.hero_name}} {{parseFloat(hero.hero_money).toFixed(0)}} ({{ currentTime }})
+            <AuthCountdown/>
+        </h1>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="Календарь" name="calendar">
                 <TodoList filter="calendar"  />
@@ -23,6 +25,7 @@
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import TodoNew from "@/components/TodoNew.vue"
 import TodoList from "@/components/TodoList.vue"
+import AuthCountdown from "@/components/AuthCountdown.vue"
 import Settings from "@/components/Settings.vue"
 import { useStore } from 'vuex'
 import './assets/styles/App.css'
@@ -42,7 +45,8 @@ export default {
         Shop,
         Settings,
         TodoNew,
-        TodoList
+        TodoList,
+        AuthCountdown
     },
     computed: {
         hero() {

@@ -115,6 +115,46 @@ export async function calcExecutions(store){
 
 }
 
+// Суммарное время (в минутах), зафиксированное по задаче за сегодня.
+// Источник — журнал task_executions: каждая пауза/стоп дописывает туда свою строку
+// с execution_time. Нужна для того, чтобы при финальном «✅ завершено»/«⏹ стоп»
+// по задаче, которая была на паузе, в task_time попало всё реально отработанное за день время,
+// а не усреднение плана с фактом.
+export async function sumExecutedMinutesToday(store, task_uuid) {
+    const api = window.GoogleSheetDB || new GoogleSheetDB();
+    await api.waitGoogle();
+
+    const settings = store.getters["settings/allSettings"];
+    const spreadsheetSetting = settings.find(s => s.code === "spreadsheetId");
+    if (!spreadsheetSetting) {
+        console.warn("spreadsheetId not found in settings");
+        return 0;
+    }
+
+    let table = new Table({
+        spreadsheetId: spreadsheetSetting.value,
+        list: "task_executions"
+    });
+
+    let list = await table.getAll({formated: true, format: 'orm'});
+    if (!Array.isArray(list)) return 0;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    let total = 0;
+    list.forEach((item) => {
+        if (!item || item.task_id !== task_uuid) return;
+        if (!item.execution_date || !item.execution_time) return;
+        const execDate = parseInt(item.execution_date);
+        const minutes = parseInt(item.execution_time);
+        if (!execDate || execDate < startOfToday) return;
+        if (!minutes) return;
+        total += minutes;
+    });
+    return total;
+}
+
 function getAverageCalc(list) {
     let totalDays = 30;
     let start = 1;
@@ -203,14 +243,14 @@ export async function makeTaskDone(task, store, options = {}) {
         last_execution
     } = task;
     minutesSpent = minutesSpent || task_time;
-    let {deleted} = options;
+    let {deleted, skipReward} = options;
     repeat_index = toNumber(repeat_index);
 
     const _caller = new Error().stack?.split('\n').slice(2, 4).map(s => s.trim()).join(' → ');
     console.log('[makeTaskDone] ВХОД:', {
         task_uuid: task.task_uuid,
         task_title: task.task_title,
-        режим: options.deleted ? 'delete (без награды)' : (task.repeat_mode === '5' ? 'repeat_mode=5 (без награды)' : 'выполнение (награда)'),
+        режим: options.deleted ? 'delete (без награды)' : options.skipReward ? 'done из паузы (без повторной награды)' : (task.repeat_mode === '5' ? 'repeat_mode=5 (без награды)' : 'выполнение (награда)'),
         start_date_вход: task.start_date,
         task_finish_date_вход: task.task_finish_date,
         number_of_executions_было: number_of_executions,
@@ -320,7 +360,7 @@ export async function makeTaskDone(task, store, options = {}) {
         task_finish_date: updatedTask.task_finish_date, completed: updatedTask.completed, money_reward
     });
 
-    if (deleted || repeat_mode === '5') return;
+    if (deleted || repeat_mode === '5' || skipReward) return;
 
     let hero = {...store.getters["hero/getHero"]}; // создаем копию объекта
 

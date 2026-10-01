@@ -5,6 +5,7 @@ import TodoList from '@/components/TodoList.vue';
 const mocks = vi.hoisted(() => ({
     makeTaskDone: vi.fn(),
     calcExecutions: vi.fn(),
+    sumExecutedMinutesToday: vi.fn(),
     listEvents: vi.fn(),
     addEvent: vi.fn(),
     updateEvent: vi.fn(),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/utils/tasks.js', () => ({
     makeTaskDone: mocks.makeTaskDone,
     calcExecutions: mocks.calcExecutions,
+    sumExecutedMinutesToday: mocks.sumExecutedMinutesToday,
     setTaskCompleted: vi.fn(),
     setTaskToCalendar: vi.fn(),
     taskDate: vi.fn(() => ''),
@@ -90,6 +92,8 @@ beforeEach(() => {
     window.GoogleSheetDB = { expired: () => false, waitGoogle: vi.fn().mockResolvedValue(undefined) };
     vi.clearAllMocks();
     mocks.makeTaskDone.mockResolvedValue({});
+    mocks.listEvents.mockResolvedValue([]);
+    mocks.sumExecutedMinutesToday.mockResolvedValue(0);
 });
 
 afterEach(() => {

@@ -52,9 +52,9 @@
                       <button  class="pause" @click.stop="pauseTask(todo)">⏸</button>
                     </span>
                 </span>
-                <span  v-if="todo.start_date == 0" class="done" @click.stop="toggleTodo(todo)">✅</span>
+                <span  v-if="todo.start_date == 0" class="done" @click.stop="toggleTodo(todo, 'done')">✅</span>
                 <span v-else class="done" >
-                    <button @click.stop="toggleTodo(todo)">⏹</button>
+                    <button @click.stop="toggleTodo(todo, 'stop')">⏹</button>
                 </span>
                 <span v-if="selectedFilter==='calendar'" class="delete" @click.stop="deleteTodo(todo)" title="Нет возможности, нет сил сделать">ⓧ</span>
             </div>
@@ -65,7 +65,7 @@
 
 <script>
 import '../assets/styles/components/TodoList.css';
-import {calcExecutions, makeTaskDone, setTaskCompleted, setTaskToCalendar, taskDate, taskSort} from "@/utils/tasks.js";
+import {calcExecutions, makeTaskDone, setTaskCompleted, setTaskToCalendar, sumExecutedMinutesToday, taskDate, taskSort} from "@/utils/tasks.js";
 import {addEvent, deleteEvent, listEvents, updateEvent} from "@/utils/calendar.js";
 import {toNumber} from "@/utils/numbers.js";
 import throttle from 'lodash/throttle';
@@ -211,7 +211,7 @@ export default {
             this.$store.dispatch("todos/updateTodo", { ...todo }); // принудительное сохранение
         },
 
-        async toggleTodo(todo) {
+        async toggleTodo(todo, reason = 'done') {
             this.doAuth();
             let task_uuid = todo.task_uuid
             if (this.busyUuids.has(task_uuid)) {
@@ -221,26 +221,49 @@ export default {
             console.log('[toggleTodo] ВХОД:', {
                 task_uuid, task_title: todo.task_title, start_date: todo.start_date,
                 task_finish_date: todo.task_finish_date, completed: todo.completed,
-                number_of_executions: todo.number_of_executions, task_time: todo.task_time, minutesSpent: todo.minutesSpent
+                number_of_executions: todo.number_of_executions, task_time: todo.task_time,
+                minutesSpent: todo.minutesSpent, reason
             });
             this.busyUuids.add(task_uuid);
             this.completingUuids.add(task_uuid);
             try {
                 const task = { ...todo };
-                let start_date = parseInt(task.start_date)
+                const start_date = parseInt(task.start_date);
+                const finish_date = parseInt(task.task_finish_date);
                 task.completed = true;
-                if (start_date) {
-                    const now = Date.now();
-                    const durationMs = now - start_date;
-                    const minutesSpent = Math.ceil(durationMs / 60000); // округление вверх
-                    console.log('[toggleTodo] старт был:', start_date, '→ durationMs:', durationMs, '→ minutesSpent:', minutesSpent);
-                    const previous = Number(task.task_time) || 0;
-                    const newAverage = Math.ceil((previous + minutesSpent) / 2);
-                    task.task_time = newAverage;
-                    task.minutesSpent = minutesSpent;
+                // финально закрываем задачу, которая уже была на паузе → не начисляем награду/запись заново
+                let skipReward = false;
+                if (reason === 'pause') {
+                    // ⏸ — прежнее поведение: усредняем план и факт этого сегмента
+                    if (start_date) {
+                        const minutesSpent = Math.ceil((Date.now() - start_date) / 60000);
+                        const previous = Number(task.task_time) || 0;
+                        task.task_time = Math.ceil((previous + minutesSpent) / 2);
+                        task.minutesSpent = minutesSpent;
+                        task.start_date = 0;
+                        console.log('[toggleTodo] pause: minutesSpent:', minutesSpent, '→ task_time(avg):', task.task_time);
+                    }
+                } else if (start_date) {
+                    // ⏹ stop: task_time = суммарное время по журналу за сегодня + текущий отрезок
+                    const minutesSpent = Math.ceil((Date.now() - start_date) / 60000);
+                    const priorToday = await sumExecutedMinutesToday(this.$store, task_uuid);
+                    task.minutesSpent = minutesSpent;                 // событие/награда/журнал = только текущий отрезок
+                    task.task_time = priorToday + minutesSpent;       // колонка B = всё время за день
                     task.start_date = 0;
+                    console.log('[toggleTodo] stop: priorToday:', priorToday, '+ minutesSpent:', minutesSpent, '→ task_time:', task.task_time);
+                } else if (finish_date) {
+                    // ✅ завершено по задаче, которая была на паузе: её сегменты уже в журнале,
+                    // в task_time пишем суммарное время за сегодня и не начисляем награду повторно
+                    const totalToday = await sumExecutedMinutesToday(this.$store, task_uuid);
+                    if (totalToday > 0) {
+                        task.task_time = totalToday;
+                        skipReward = true;
+                        console.log('[toggleTodo] done(была на паузе): task_time = сумма за день:', totalToday);
+                    } else {
+                        console.log('[toggleTodo] done(была на паузе), журнал пуст → оставляем план:', todo.task_time);
+                    }
                 } else {
-                    console.log('[toggleTodo] start_date = 0 (задача НЕ была запущена): minutesSpent не считаем, timeSpent = task_time =', todo.task_time);
+                    console.log('[toggleTodo] done: задача НЕ была запущена: minutesSpent не считаем, timeSpent = task_time =', todo.task_time);
                 }
                 const endDate = new Date();
                 const timeSpent = task.minutesSpent ?? task.task_time;
@@ -281,8 +304,8 @@ export default {
                 }
                 setTimeout(async () => {
                     try {
-                        console.log('[toggleTodo] setTimeout(300) → makeTaskDone:', { task_uuid, minutesSpent: task.minutesSpent, start_date: task.start_date, task_time: task.task_time });
-                        await makeTaskDone(task, this.$store);
+                        console.log('[toggleTodo] setTimeout(300) → makeTaskDone:', { task_uuid, minutesSpent: task.minutesSpent, start_date: task.start_date, task_time: task.task_time, skipReward });
+                        await makeTaskDone(task, this.$store, { skipReward });
                         this.log = await calcExecutions(this.$store);
                     } catch (err) {
                         console.error('Ошибка выполнения задачи:', err);
@@ -363,7 +386,7 @@ export default {
                 return;
             }
             console.log('[pauseTask] ВХОД (стоп запущенной):', { task_uuid: todo.task_uuid, task_title: todo.task_title, start_date: todo.start_date });
-            const started = await this.toggleTodo(todo);
+            const started = await this.toggleTodo(todo, 'pause');
             if (!started) return;
             setTimeout(()=>{
                 const todos = this.$store.getters['todos/getTodos'];

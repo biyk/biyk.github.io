@@ -29,8 +29,9 @@ vi.mock('@/utils/calendar.js', () => ({
     deleteEvent: mocks.deleteEvent,
 }));
 
-// Фича: «✅ завершено»/«⏹ стоп» по задаче, которая была на паузе, пишет в task_time
-// суммарное время за день (источник — журнал task_executions), а не усреднение плана.
+// Фича: при завершении задачи (⏸/⏹/✅) в task_time пишем
+// ceil(((всё время за сегодня + текущий отрезок) + было_task_time) / 2);
+// награда/событие/журнал считаются по фактическому времени (minutesSpent).
 function makeTodo(overrides = {}) {
     return {
         task_uuid: 'uuid-sum-1',
@@ -101,8 +102,8 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe('task_time = суммарное время за день (журнал) при done/stop', () => {
-    it('✅ завершено по задаче из паузы: task_time = сумма журнала за сегодня, без повторной награды', async () => {
+describe('task_time = ceil(((день_сегодня + текущий_отрезок) + было_task_time)/2) при завершении', () => {
+    it('✅ завершено из паузы: task_time = ceil((сумма_за_сегодня + было)/2), без повторной награды', async () => {
         // была на паузе: start_date=0, task_finish_date != 0
         const todo = makeTodo({ start_date: 0, task_finish_date: 1, task_time: 30 });
         const { wrapper } = await mountList([todo]);
@@ -115,11 +116,12 @@ describe('task_time = суммарное время за день (журнал)
 
         expect(mocks.sumExecutedMinutesToday).toHaveBeenCalledWith(expect.anything(), todo.task_uuid);
         const [task, , options] = doneCall();
-        expect(task.task_time).toBe(75);
+        expect(task.task_time).toBe(53);        // ceil((75 + 30) / 2) = 53
+        expect(task.minutesSpent).toBe(75);     // событие = фактическое время за день
         expect(options && options.skipReward).toBe(true);
     });
 
-    it('⏹ стоп запущенной: task_time = журнал за сегодня + текущий отрезок, награда как обычно', async () => {
+    it('⏹ стоп запущенной: task_time = ceil(((журнал + текущий_отрезок) + было)/2), награда как обычно', async () => {
         // 20 минут в работе
         const start = Date.now() - 20 * 60 * 1000;
         const todo = makeTodo({ start_date: start, task_finish_date: 0, task_time: 10 });
@@ -132,12 +134,12 @@ describe('task_time = суммарное время за день (журнал)
         await flushMicrotasks();
 
         const [task, , options] = doneCall();
-        expect(task.task_time).toBe(60);        // 40 (журнал) + 20 (текущий отрезок)
-        expect(task.minutesSpent).toBe(20);      // событие/награда/журнал = только текущий отрезок
+        expect(task.task_time).toBe(35);        // ceil(((40 + 20) + 10) / 2) = 35
+        expect(task.minutesSpent).toBe(20);     // событие/награда/журнал = только текущий отрезок
         expect(options && options.skipReward).toBeFalsy();
     });
 
-    it('⏸ пауза сохраняет прежнее усреднение и НЕ читает журнал', async () => {
+    it('⏸ пауза теперь тоже читает журнал и считает новую формулу', async () => {
         const start = Date.now() - 20 * 60 * 1000;
         const todo = makeTodo({ start_date: start, task_finish_date: 0, task_time: 10 });
         const { wrapper } = await mountList([todo]);
@@ -149,13 +151,13 @@ describe('task_time = суммарное время за день (журнал)
         await flushMicrotasks();
 
         const [task, , options] = doneCall();
-        expect(task.task_time).toBe(15);        // ceil((10 + 20) / 2) — старое поведение
+        expect(task.task_time).toBe(35);        // ceil(((40 + 20) + 10) / 2) = 35
         expect(task.minutesSpent).toBe(20);
         expect(options && options.skipReward).toBeFalsy();
-        expect(mocks.sumExecutedMinutesToday).not.toHaveBeenCalled();
+        expect(mocks.sumExecutedMinutesToday).toHaveBeenCalledWith(expect.anything(), todo.task_uuid);
     });
 
-    it('✅ завершено по задаче, которую никогда не запускали: план не трогаем, журнал не читаем', async () => {
+    it('✅ завершено без запуска: task_time = ceil(план/2), журнал не читаем', async () => {
         const todo = makeTodo({ start_date: 0, task_finish_date: 0, task_time: 30 });
         const { wrapper } = await mountList([todo]);
 
@@ -165,12 +167,13 @@ describe('task_time = суммарное время за день (журнал)
         await flushMicrotasks();
 
         const [task, , options] = doneCall();
-        expect(task.task_time).toBe(30);        // осталось значение плана
+        expect(task.task_time).toBe(15);        // ceil(30 / 2) = 15
+        expect(task.minutesSpent).toBe(30);     // событие/награда/журнал = план
         expect(options && options.skipReward).toBeFalsy();
         expect(mocks.sumExecutedMinutesToday).not.toHaveBeenCalled();
     });
 
-    it('✅ завершено из паузы при пустом журнале: план не затираем нулём и награду не глушим', async () => {
+    it('✅ завершено из паузы при пустом журнале: план не затираем и награду не глушим', async () => {
         const todo = makeTodo({ start_date: 0, task_finish_date: 1, task_time: 30 });
         const { wrapper } = await mountList([todo]);
         mocks.sumExecutedMinutesToday.mockResolvedValue(0);

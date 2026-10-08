@@ -233,37 +233,36 @@ export default {
                 task.completed = true;
                 // финально закрываем задачу, которая уже была на паузе → не начисляем награду/запись заново
                 let skipReward = false;
-                if (reason === 'pause') {
-                    // ⏸ — прежнее поведение: усредняем план и факт этого сегмента
-                    if (start_date) {
-                        const minutesSpent = Math.ceil((Date.now() - start_date) / 60000);
-                        const previous = Number(task.task_time) || 0;
-                        task.task_time = Math.ceil((previous + minutesSpent) / 2);
-                        task.minutesSpent = minutesSpent;
-                        task.start_date = 0;
-                        console.log('[toggleTodo] pause: minutesSpent:', minutesSpent, '→ task_time(avg):', task.task_time);
-                    }
-                } else if (start_date) {
-                    // ⏹ stop: task_time = суммарное время по журналу за сегодня + текущий отрезок
+                // Формула task_time при завершении задачи:
+                //   task_time = ceil(((всё время по задаче за сегодня + текущий отрезок) + было_task_time) / 2)
+                // где «всё время за сегодня» — сумма execution_time из журнала task_executions за сегодня.
+                // Награда/событие/журнал считаются по фактическому времени (minutesSpent),
+                // а усреднённое значение пишется в колонку task_time последним.
+                const oldTaskTime = Number(task.task_time) || 0;
+                if (start_date) {
+                    // ⏸ пауза / ⏹ стоп: запущенный таймер → есть текущий (live) отрезок + уже зафиксированные сегодня сегменты
                     const minutesSpent = Math.ceil((Date.now() - start_date) / 60000);
                     const priorToday = await sumExecutedMinutesToday(this.$store, task_uuid);
                     task.minutesSpent = minutesSpent;                 // событие/награда/журнал = только текущий отрезок
-                    task.task_time = priorToday + minutesSpent;       // колонка B = всё время за день
+                    task.task_time = Math.ceil(((priorToday + minutesSpent) + oldTaskTime) / 2);
                     task.start_date = 0;
-                    console.log('[toggleTodo] stop: priorToday:', priorToday, '+ minutesSpent:', minutesSpent, '→ task_time:', task.task_time);
+                    console.log('[toggleTodo]', reason, ': priorToday:', priorToday, '+ minutesSpent:', minutesSpent, '+ old:', oldTaskTime, '→ task_time:', task.task_time);
                 } else if (finish_date) {
-                    // ✅ завершено по задаче, которая была на паузе: её сегменты уже в журнале,
-                    // в task_time пишем суммарное время за сегодня и не начисляем награду повторно
+                    // ✅ завершено по задаче, которая была на паузе: live-отрезка нет, все сегменты уже в журнале за сегодня
                     const totalToday = await sumExecutedMinutesToday(this.$store, task_uuid);
                     if (totalToday > 0) {
-                        task.task_time = totalToday;
-                        skipReward = true;
-                        console.log('[toggleTodo] done(была на паузе): task_time = сумма за день:', totalToday);
+                        task.minutesSpent = totalToday;               // событие = фактическое время за день
+                        task.task_time = Math.ceil((totalToday + oldTaskTime) / 2);
+                        skipReward = true;                            // награду не начисляем повторно (уже выдана на паузах)
+                        console.log('[toggleTodo] done(была на паузе): totalToday:', totalToday, '+ old:', oldTaskTime, '→ task_time:', task.task_time);
                     } else {
-                        console.log('[toggleTodo] done(была на паузе), журнал пуст → оставляем план:', todo.task_time);
+                        console.log('[toggleTodo] done(была на паузе), журнал пуст → оставляем план:', task.task_time);
                     }
                 } else {
-                    console.log('[toggleTodo] done: задача НЕ была запущена: minutesSpent не считаем, timeSpent = task_time =', todo.task_time);
+                    // ✅ завершено без запуска: ни журнала, ни live-отрезка нет → «за сегодня»=0, «текущий»=0
+                    task.minutesSpent = oldTaskTime;                  // событие/награда/журнал = плановое время
+                    task.task_time = Math.ceil(oldTaskTime / 2);      // ceil((0 + old)/2)
+                    console.log('[toggleTodo] done(без запуска): old:', oldTaskTime, '→ task_time:', task.task_time);
                 }
                 const endDate = new Date();
                 const timeSpent = task.minutesSpent ?? task.task_time;

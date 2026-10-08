@@ -259,10 +259,10 @@ export default {
                         console.log('[toggleTodo] done(была на паузе), журнал пуст → оставляем план:', task.task_time);
                     }
                 } else {
-                    // ✅ завершено без запуска: ни журнала, ни live-отрезка нет → «за сегодня»=0, «текущий»=0
+                    // ✅ завершено без запуска: время не засечено → берём текущий план и засчитываем его как выполненный.
+                    // task_time остаётся без изменений; награда/событие/журнал считаются по плану.
                     task.minutesSpent = oldTaskTime;                  // событие/награда/журнал = плановое время
-                    task.task_time = Math.ceil(oldTaskTime / 2);      // ceil((0 + old)/2)
-                    console.log('[toggleTodo] done(без запуска): old:', oldTaskTime, '→ task_time:', task.task_time);
+                    console.log('[toggleTodo] done(без запуска): засчитываем план как выполненный, task_time остаётся:', task.task_time);
                 }
                 const endDate = new Date();
                 const timeSpent = task.minutesSpent ?? task.task_time;

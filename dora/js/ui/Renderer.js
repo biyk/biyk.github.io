@@ -7,6 +7,23 @@ App.Renderer = (() => {
   let _zoomGroup = null;
   let _searchMatchIds = new Set();
 
+  // Собираем id корневых объектов, которые нужно подсветить поданному поиску
+  function _collectMatchIds(results) {
+    _searchMatchIds.clear();
+    (results || []).forEach(r => {
+      const root = App.DataStore.getRootAncestor(r.object.id);
+      if (root) _searchMatchIds.add(root.id);
+    });
+  }
+
+  // Подсветка на канве живёт, пока в поле есть ≥1 символ и есть совпадения.
+  // При любом изменении данных пересобираем её от текущего запроса, а не сбрасываем.
+  function _syncHighlightFromQuery() {
+    const q = (App.SearchManager && App.SearchManager.getQuery) ? App.SearchManager.getQuery() : '';
+    if (q && q.trim()) _collectMatchIds(App.SearchManager.findMatches(q));
+    else _searchMatchIds.clear();
+  }
+
   function _render() {
     if (!_svg || !_planContent) return;
     _planContent.innerHTML = '';
@@ -138,18 +155,12 @@ App.Renderer = (() => {
       _svg.appendChild(_handlesGroup);
 
       App.EventBus.on('data:changed', () => {
-        _searchMatchIds.clear();
+        _syncHighlightFromQuery();
         _render();
       });
 
       App.EventBus.on('search:results', ({ results }) => {
-        _searchMatchIds.clear();
-        if (results && results.length > 0) {
-          results.forEach(r => {
-            const root = App.DataStore.getRootAncestor(r.object.id);
-            if (root) _searchMatchIds.add(root.id);
-          });
-        }
+        _collectMatchIds(results);
         _render();
       });
 

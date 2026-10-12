@@ -62,6 +62,9 @@ class BrowserSession:
         self.process = None
         self.ws_url = None
         self.ws = None
+        # id только тех вкладок, которые создали МЫ (закрываем по окончанию;
+        # чужие вкладки не трогаем)
+        self._created_targets = []
 
     def start(self):
         if not is_port_open(CDP_PORT):
@@ -87,26 +90,25 @@ class BrowserSession:
             print("[browser] Ready")
 
     def connect_page(self, url):
-        """Opens (or reuses) a tab at the given URL, returns the page WS URL."""
-        # Get existing targets
+        """ВСЕГДА создаёт СВОЮ новую вкладку в текущем браузере (порт 9222) и
+        работает в ней. Чужие вкладки не переиспользует и не перезагружает.
+        Забрать фокус своей вкладки — можно."""
         targets = get_cdp_targets()
-        page_targets = [t for t in targets if t.get("type") == "page"]
-        existing = next((t for t in page_targets if url in t.get("url", "")), None)
+        browser_target = next((t for t in targets if t.get("type") == "browser"), targets[0])
+        bws = websocket.create_connection(browser_target["webSocketDebuggerUrl"], timeout=10)
+        resp = send_cdp(bws, "Target.createTarget", {"url": "about:blank"})
+        target_id = resp["result"]["targetId"]
+        # Разрешаем забрать фокус на свою вкладку
+        try:
+            send_cdp(bws, "Target.activateTarget", {"targetId": target_id})
+        except Exception:
+            pass
+        bws.close()
+        self._created_targets.append(target_id)
 
-        if existing:
-            ws_url = existing["webSocketDebuggerUrl"]
-        elif page_targets:
-            ws_url = page_targets[0]["webSocketDebuggerUrl"]
-            self._navigate(ws_url, url)
-        else:
-            browser_target = next((t for t in targets if t.get("type") == "browser"), targets[0])
-            ws = websocket.create_connection(browser_target["webSocketDebuggerUrl"], timeout=10)
-            resp = send_cdp(ws, "Target.createTarget", {"url": "about:blank"})
-            ws.close()
-            target_id = resp["result"]["targetId"]
-            targets = get_cdp_targets()
-            ws_url = next(t["webSocketDebuggerUrl"] for t in targets if t["id"] == target_id)
-            self._navigate(ws_url, url)
+        targets = get_cdp_targets()
+        ws_url = next(t["webSocketDebuggerUrl"] for t in targets if t["id"] == target_id)
+        self._navigate(ws_url, url)
 
         self.ws_url = ws_url
         self.ws = websocket.create_connection(ws_url, timeout=30)
@@ -212,6 +214,24 @@ class BrowserSession:
             except Exception:
                 pass
             self.ws = None
+        # Закрываем только свои вкладки (чужие не трогаем). Браузер при этом
+        # остаётся живым, если мы его не запускали сами.
+        if self._created_targets:
+            try:
+                targets = get_cdp_targets()
+                browser_target = next((t for t in targets if t.get("type") == "browser"), None)
+                if browser_target:
+                    bws = websocket.create_connection(browser_target["webSocketDebuggerUrl"], timeout=10)
+                    for tid in self._created_targets:
+                        try:
+                            send_cdp(bws, "Target.closeTarget", {"targetId": tid})
+                        except Exception:
+                            pass
+                    bws.close()
+            except Exception:
+                pass
+            self._created_targets = []
+        # Убиваем браузер только если сами его запускали (process задан в start()).
         if self.process:
             self.process.terminate()
             try:

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Integration tests: open index.html, inject test data, verify SVG rendering,
 zoom, drag/resize, guides, and ruler via CDP.
 """
@@ -356,6 +356,40 @@ def run_all(session):
         session.evaluate("App.SearchManager.clear()")
 
     test("23. Search highlights root of nested match", nested_search_highlight)
+
+    # --- 23b. Search highlight survives data:changed (no loss on navigation/edits) ---
+    def search_persists_data_changed():
+        # Реальный поиск через SearchManager — запоминает активный запрос
+        session.evaluate("App.SearchManager.performSearch('Стол')")
+        time.sleep(0.2)
+        hl_before = session.evaluate("""
+            (() => {
+                const el = document.querySelector('[data-draggable="o_test_1"]');
+                return el && el.classList.contains('search-match');
+            })()
+        """)
+        assert hl_before, "Object 'Стол' should be highlighted after search"
+        # Любое изменение данных (data:changed) не должно сбрасывать подсветку на канве
+        session.evaluate("App.DataStore.addObjectItem('o_test_1', 'вилка')")
+        time.sleep(0.2)
+        hl_after = session.evaluate("""
+            (() => {
+                const el = document.querySelector('[data-draggable="o_test_1"]');
+                return el && el.classList.contains('search-match');
+            })()
+        """)
+        assert hl_after, "Search highlight must persist through data:changed"
+        # Очистка: убрать предмет и снять поиск
+        session.evaluate("""
+            (() => {
+                const o = App.DataStore.getObject('o_test_1');
+                const idx = o.items.indexOf('вилка');
+                if (idx >= 0) App.DataStore.removeObjectItem('o_test_1', idx);
+            })()
+        """)
+        session.evaluate("App.SearchManager.clear()")
+
+    test("23b. Search highlight survives data:changed", search_persists_data_changed)
 
     # --- 24. moveObjectInto cycle protection ---
     def move_object_cycle():

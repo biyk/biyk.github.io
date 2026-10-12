@@ -5,7 +5,7 @@ App.SearchManager = (() => {
   let _lastQuery = '';
 
   function _findMatches(query) {
-    const q = query.toLowerCase().trim();
+    const q = (query || '').toLowerCase().trim();
     if (!q) return [];
 
     const results = [];

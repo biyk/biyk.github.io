@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -21,31 +21,31 @@
   <div id="panel-content" style="display:none;"></div>
 
 
-  <script src="js/core/EventBus.js?v=2026092401"></script>
-  <script src="js/core/utils.js?v=2026092401"></script>
-  <script src="js/core/DataStore.js?v=2026092401"></script>
-  <script src="js/ui/Ruler.js?v=2026092401"></script>
-  <script src="js/ui/GuideManager.js?v=2026092401"></script>
-  <script src="js/interaction/SearchManager.js?v=2026092401"></script>
-  <script src="js/io/ExportImport.js?v=2026092401"></script>
-  <script src="js/interaction/DragManager.js?v=2026092401"></script>
-  <script src="js/ui/ModalManager.js?v=2026092401"></script>
-  <script src="js/ui/PanelManager.js?v=2026092401"></script>
-  <script src="js/ui/Renderer.js?v=2026092401"></script>
-  <script src="js/app.js?v=2026092401"></script>
+  <script src="js/core/EventBus.js?v=2026101201"></script>
+  <script src="js/core/utils.js?v=2026101201"></script>
+  <script src="js/core/DataStore.js?v=2026101201"></script>
+  <script src="js/ui/Ruler.js?v=2026101201"></script>
+  <script src="js/ui/GuideManager.js?v=2026101201"></script>
+  <script src="js/interaction/SearchManager.js?v=2026101201"></script>
+  <script src="js/io/ExportImport.js?v=2026101201"></script>
+  <script src="js/interaction/DragManager.js?v=2026101201"></script>
+  <script src="js/ui/ModalManager.js?v=2026101201"></script>
+  <script src="js/ui/PanelManager.js?v=2026101201"></script>
+  <script src="js/ui/Renderer.js?v=2026101201"></script>
+  <script src="js/app.js?v=2026101201"></script>
 
-  <script src="js/core/EventBus.js?v=2026092401"></script>
-  <script src="js/core/utils.js?v=2026092401"></script>
-  <script src="js/core/DataStore.js?v=2026092401"></script>
-  <script src="js/ui/Ruler.js?v=2026092401"></script>
-  <script src="js/ui/GuideManager.js?v=2026092401"></script>
-  <script src="js/interaction/SearchManager.js?v=2026092401"></script>
-  <script src="js/io/ExportImport.js?v=2026092401"></script>
-  <script src="js/interaction/DragManager.js?v=2026092401"></script>
-  <script src="js/ui/ModalManager.js?v=2026092401"></script>
-  <script src="js/ui/PanelManager.js?v=2026092401"></script>
-  <script src="js/ui/Renderer.js?v=2026092401"></script>
-  <script src="js/app.js?v=2026092401"></script>
+  <script src="js/core/EventBus.js?v=2026101201"></script>
+  <script src="js/core/utils.js?v=2026101201"></script>
+  <script src="js/core/DataStore.js?v=2026101201"></script>
+  <script src="js/ui/Ruler.js?v=2026101201"></script>
+  <script src="js/ui/GuideManager.js?v=2026101201"></script>
+  <script src="js/interaction/SearchManager.js?v=2026101201"></script>
+  <script src="js/io/ExportImport.js?v=2026101201"></script>
+  <script src="js/interaction/DragManager.js?v=2026101201"></script>
+  <script src="js/ui/ModalManager.js?v=2026101201"></script>
+  <script src="js/ui/PanelManager.js?v=2026101201"></script>
+  <script src="js/ui/Renderer.js?v=2026101201"></script>
+  <script src="js/app.js?v=2026101201"></script>
 
 
   <script>
@@ -470,13 +470,18 @@
       const room = App.DataStore.addRoom({ name: 'SearchRoom', x: 0, y: 0, w: 400, h: 400 });
       const obj = App.DataStore.addObject({ name: 'Стеллаж', roomId: room.id, x: 50, y: 50, w: 80, h: 40 });
 
-      // Emit search:results with name match
+      // Emit search:results with name match — подсветка в обзоре panel-default (видно «где» объект)
       App.EventBus.emit('search:results', {
         query: 'Стеллаж',
         results: [{ object: obj, matchedItems: [], nameMatch: true }]
       });
+      const def = document.getElementById('panel-default');
+      assert(def.innerHTML.includes('search-highlight'), 'search highlight — panel-default подсвечивает объект с совпадением');
+
+      // Открытие объекта сохраняет подсветку в panel-content
+      App.PanelManager.showObject(obj.id);
       const panel = document.getElementById('panel-content');
-      assert(panel.innerHTML.includes('search-highlight'), 'search highlight — panel renders search-highlight class on object name');
+      assert(panel.innerHTML.includes('search-highlight'), 'search highlight — панель объекта подсвечивает имя');
 
       // Emit search:results with item match
       App.DataStore.addObjectItem(obj.id, 'Подушки');
@@ -484,7 +489,7 @@
         query: 'Подушки',
         results: [{ object: obj, matchedItems: ['Подушки'], nameMatch: false }]
       });
-      assert(panel.innerHTML.includes('search-highlight'), 'search highlight — panel renders search-highlight on matched item');
+      assert(panel.innerHTML.includes('search-highlight'), 'search highlight — панель подсвечивает совпавший предмет');
       assert(panel.innerHTML.includes('Подушки'), 'search highlight — matched item text visible');
 
       // Clear search removes highlights
@@ -765,6 +770,49 @@
       App.EventBus.emit('search:clear');
       App.PanelManager.showDefault();
       App.DataStore.reset(true);
+    })();
+
+    group('18b. Поиск — подсветка не теряется при навигации и живёт пока есть запрос');
+
+    (function() {
+      App.DataStore.reset(true);
+
+      const room = App.DataStore.addRoom({ name: 'Комната', x: 0, y: 0, w: 400, h: 400 });
+      const root = App.DataStore.addObject({ name: 'Шкаф', roomId: room.id, x: 10, y: 10, w: 120, h: 60 });
+      const child = App.DataStore.addObject({ name: 'Полка', parentId: root.id });
+      App.DataStore.addObjectItem(child.id, 'носки');
+
+      // Реальный поиск через SearchManager (как при вводе в поле)
+      App.SearchManager.performSearch('носк');
+      assert(App.SearchManager.getQuery() === 'носк', 'persist — запрос запомнен SearchManager');
+
+      // 1. Обзор panel-default подсвечивает корневой объект, внутри которого лежит совпадение
+      const def = document.getElementById('panel-default');
+      assert(def.innerHTML.includes('search-highlight'), 'persist — panel-default подсвечивает объект с совпадением');
+
+      // 2. Переход внутрь объекта — подсветка сохраняется
+      App.PanelManager.showObject(root.id);
+      assert(document.getElementById('panel-content').innerHTML.includes('search-highlight'),
+        'persist — подсветка жива при переходе внутрь объекта');
+
+      // 3. Изменение данных (data:changed) + возврат навигации — подсветка НЕ теряется
+      App.DataStore.addObjectItem(child.id, 'перчатки'); // эмитит data:changed
+      App.PanelManager.showObject(root.id);              // «путешествие» после изменения
+      assert(document.getElementById('panel-content').innerHTML.includes('search-highlight'),
+        'persist — подсветка держится после data:changed и навигации');
+
+      // 4. Подсветка держится, пока в запросе ≥1 символ и есть совпадения
+      assert(App.SearchManager.findMatches('носки').length >= 1, 'persist — совпадения есть при полном слове');
+
+      // 5. Очистка поля (пустой запрос) снимает подсветку
+      App.SearchManager.clear();
+      App.PanelManager.showDefault();
+      assert(!document.getElementById('panel-default').innerHTML.includes('search-highlight'),
+        'persist — пустой запрос снимает подсветку в panel-default');
+
+      // Cleanup
+      App.DataStore.reset(true);
+      App.PanelManager.showDefault();
     })();
 
     // === SUMMARY ===

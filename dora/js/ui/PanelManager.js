@@ -24,9 +24,11 @@ App.PanelManager = (() => {
 
   // Дефолтный вид без карты: список комнат + объекты без комнаты.
   // Нужен для мобильной версии (нет SVG, по которому можно кликать).
+  // При активном поиске подсвечивает объекты с совпадениями, чтобы видеть «где» они лежат.
   function _buildBrowseView() {
     const rooms = App.DataStore.getRooms();
     const rootObjects = App.DataStore.getRootObjects();
+    const searching = !!_searchQuery;
 
     let html = `<h3>🏠 Комнаты и объекты</h3>`;
 
@@ -37,16 +39,26 @@ App.PanelManager = (() => {
     rooms.forEach(room => {
       const objs = rootObjects.filter(o => o.roomId === room.id);
       const totalItems = objs.reduce((s, o) => s + App.DataStore.getObjectTotalItems(o.id), 0);
-      html += `<div class="container-block clickable browse" onclick="App.PanelManager.showRoom('${room.id}')">
+      const matched = searching ? objs.filter(o => _objectHasMatch(o.id)) : [];
+      const roomHl = matched.length > 0 ? ' search-highlight' : '';
+      html += `<div class="container-block clickable browse${roomHl}" onclick="App.PanelManager.showRoom('${room.id}')">
         <h4 style="color:#e94560">🚪 ${App.utils.escapeHtml(room.name)}</h4>
-        <div class="meta">${objs.length} объект(ов) · ${totalItems} вещей</div>
-      </div>`;
+        <div class="meta">${objs.length} объект(ов) · ${totalItems} вещей</div>`;
+      // При поиске показываем внутри комнаты сами совпавшие объекты — чтобы видеть, где что лежит
+      matched.forEach(o => {
+        html += `<div class="item-row">
+          <span class="item-name search-highlight" onclick="event.stopPropagation();App.PanelManager.showObject('${o.id}')">▸ 📦 ${App.utils.escapeHtml(o.name)}</span>
+          <span class="meta">${App.DataStore.getObjectTotalItems(o.id)} вещей</span>
+        </div>`;
+      });
+      html += `</div>`;
     });
 
     const loose = rootObjects.filter(o => !o.roomId);
     loose.forEach(o => {
       const total = App.DataStore.getObjectTotalItems(o.id);
-      html += `<div class="container-block clickable browse" onclick="App.PanelManager.showObject('${o.id}')">
+      const oHl = searching && _objectHasMatch(o.id) ? ' search-highlight' : '';
+      html += `<div class="container-block clickable browse${oHl}" onclick="App.PanelManager.showObject('${o.id}')">
         <h4>📦 ${App.utils.escapeHtml(o.name)}</h4>
         <div class="meta">${total} вещей</div>
       </div>`;
@@ -62,6 +74,13 @@ App.PanelManager = (() => {
   function _isSearchMatch(name) {
     if (!_searchQuery) return false;
     return name.toLowerCase().includes(_searchQuery.toLowerCase());
+  }
+
+  // Объект «подсвечен», если совпало его имя или что-то внутри него
+  function _objectHasMatch(objId) {
+    const o = App.DataStore.getObject(objId);
+    if (!o) return false;
+    return _isSearchMatch(o.name) || _subtreeHasMatch(objId);
   }
 
   // Истина, если объект или кто-то внутри него содержит совпадение по поиску
@@ -324,11 +343,11 @@ App.PanelManager = (() => {
               _searchMatchedItems[r.object.id] = new Set(r.matchedItems);
             }
           });
-          const first = results[0].object;
-          this.showObject(first.id);
-        } else {
-          if (_selectedObjectId) this.refresh();
         }
+        // Не «прыгаем» к первому совпадению — пользователь сам путешествует по объектам.
+        // Просто перерисовываем текущий вид: обзор (panel-default) или открытую панель —
+        // подсветка ставится на все совпадения и сохраняется при переходах.
+        this.refresh();
       });
 
       App.EventBus.on('search:clear', () => {

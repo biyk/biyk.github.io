@@ -1627,6 +1627,12 @@ def run_all(session):
                 f"document.querySelectorAll('#panel-content [data-drop-item^=\"{obj_id}:\"]').length")
             assert handles == 3, f"Item rows must be droppable for reorder, got {handles}"
 
+            def dom_items():
+                return session.evaluate("""
+                    [...document.querySelectorAll('#panel-content .item-row[data-drag-item] .item-name')]
+                        .map(el => el.textContent.replace(/^·\s*/, '').trim()).join(',')
+                """)
+
             def dispatch(from_sel_js, to_sel_js):
                 session.evaluate(f"""
                     (() => {{
@@ -1650,6 +1656,8 @@ def run_all(session):
             )
             order1 = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.join(',')")
             assert order1 == 'РС3,РС2,РС1', f"Swap 0↔2 failed: {order1}"
+            dom1 = dom_items()
+            assert dom1 == 'РС3,РС2,РС1', f"Panel DOM must re-render after reorder drop, got {dom1}"
 
             # 2 ↔ 0: обратный обмен возвращает исходный порядок
             dispatch(
@@ -1658,6 +1666,8 @@ def run_all(session):
             )
             order2 = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.join(',')")
             assert order2 == 'РС1,РС2,РС3', f"Swap 2↔0 failed: {order2}"
+            dom2 = dom_items()
+            assert dom2 == 'РС1,РС2,РС3', f"Panel DOM must match store after reverse swap, got {dom2}"
 
             # Тот же предмет на свою строку — порядок не меняется
             dispatch(

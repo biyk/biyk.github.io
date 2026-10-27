@@ -315,6 +315,8 @@ App.PanelManager = (() => {
     t.classList.add('drop-hover');
   }
 
+  // ВАЖНО: этот обработчик висит на DOM-элементе как обычная функция — `this` тут не PanelManager,
+  // поэтому перерисовку вызываем явно через App.PanelManager.
   function _onDrop(e) {
     if (!_dnd) return;
     const rowEl = e.target.closest('[data-drop-item]');
@@ -325,7 +327,7 @@ App.PanelManager = (() => {
         e.preventDefault();
         App.DataStore.reorderItem(_dnd.objectId, _dnd.index, targetIdx);
         _dnd = null;
-        this.refresh();
+        App.PanelManager.refresh();
         return;
       }
     }
@@ -343,7 +345,7 @@ App.PanelManager = (() => {
       else App.DataStore.moveObjectInto(_dnd.objectId, targetId);
     }
     _dnd = null;
-    this.refresh();
+    App.PanelManager.refresh();
   }
 
   function _onDragEnd() {

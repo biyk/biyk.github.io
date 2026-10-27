@@ -21,31 +21,31 @@
   <div id="panel-content" style="display:none;"></div>
 
 
-  <script src="js/core/EventBus.js?v=2026102701"></script>
-  <script src="js/core/utils.js?v=2026102701"></script>
-  <script src="js/core/DataStore.js?v=2026102701"></script>
-  <script src="js/ui/Ruler.js?v=2026102701"></script>
-  <script src="js/ui/GuideManager.js?v=2026102701"></script>
-  <script src="js/interaction/SearchManager.js?v=2026102701"></script>
-  <script src="js/io/ExportImport.js?v=2026102701"></script>
-  <script src="js/interaction/DragManager.js?v=2026102701"></script>
-  <script src="js/ui/ModalManager.js?v=2026102701"></script>
-  <script src="js/ui/PanelManager.js?v=2026102701"></script>
-  <script src="js/ui/Renderer.js?v=2026102701"></script>
-  <script src="js/app.js?v=2026102701"></script>
+  <script src="js/core/EventBus.js?v=2026102702"></script>
+  <script src="js/core/utils.js?v=2026102702"></script>
+  <script src="js/core/DataStore.js?v=2026102702"></script>
+  <script src="js/ui/Ruler.js?v=2026102702"></script>
+  <script src="js/ui/GuideManager.js?v=2026102702"></script>
+  <script src="js/interaction/SearchManager.js?v=2026102702"></script>
+  <script src="js/io/ExportImport.js?v=2026102702"></script>
+  <script src="js/interaction/DragManager.js?v=2026102702"></script>
+  <script src="js/ui/ModalManager.js?v=2026102702"></script>
+  <script src="js/ui/PanelManager.js?v=2026102702"></script>
+  <script src="js/ui/Renderer.js?v=2026102702"></script>
+  <script src="js/app.js?v=2026102702"></script>
 
-  <script src="js/core/EventBus.js?v=2026102701"></script>
-  <script src="js/core/utils.js?v=2026102701"></script>
-  <script src="js/core/DataStore.js?v=2026102701"></script>
-  <script src="js/ui/Ruler.js?v=2026102701"></script>
-  <script src="js/ui/GuideManager.js?v=2026102701"></script>
-  <script src="js/interaction/SearchManager.js?v=2026102701"></script>
-  <script src="js/io/ExportImport.js?v=2026102701"></script>
-  <script src="js/interaction/DragManager.js?v=2026102701"></script>
-  <script src="js/ui/ModalManager.js?v=2026102701"></script>
-  <script src="js/ui/PanelManager.js?v=2026102701"></script>
-  <script src="js/ui/Renderer.js?v=2026102701"></script>
-  <script src="js/app.js?v=2026102701"></script>
+  <script src="js/core/EventBus.js?v=2026102702"></script>
+  <script src="js/core/utils.js?v=2026102702"></script>
+  <script src="js/core/DataStore.js?v=2026102702"></script>
+  <script src="js/ui/Ruler.js?v=2026102702"></script>
+  <script src="js/ui/GuideManager.js?v=2026102702"></script>
+  <script src="js/interaction/SearchManager.js?v=2026102702"></script>
+  <script src="js/io/ExportImport.js?v=2026102702"></script>
+  <script src="js/interaction/DragManager.js?v=2026102702"></script>
+  <script src="js/ui/ModalManager.js?v=2026102702"></script>
+  <script src="js/ui/PanelManager.js?v=2026102702"></script>
+  <script src="js/ui/Renderer.js?v=2026102702"></script>
+  <script src="js/app.js?v=2026102702"></script>
 
 
   <script>
@@ -696,31 +696,25 @@
 
       assert(App.DataStore.reorderItem(a.id, 0, 2) === true, 'reorderItem — успешный перенос возвращает true');
       let items = App.DataStore.getObject(a.id).items;
-      assert(items.join(',') === 'Ручка,Фонарик,Книга',
-        'reorderItem — 0→2 (на строку 2): порядок [Ручка, Фонарик, Книга], got: ' + items.join(','));
+      assert(items.join(',') === 'Фонарик,Ручка,Книга',
+        'reorderItem — 0↔2: обмен местами [Фонарик, Ручка, Книга], got: ' + items.join(','));
 
-      // Обратный перенос: 2 → на строку 0 (предмет встаёт НА позицию 0, в начало)
-      assert(App.DataStore.reorderItem(a.id, 2, 0) === true, 'reorderItem — перенос в начало');
+      // Обратный обмен возвращает исходный порядок (swap симметричен)
+      assert(App.DataStore.reorderItem(a.id, 2, 0) === true, 'reorderItem — обратный обмен');
       items = App.DataStore.getObject(a.id).items;
       assert(items.join(',') === 'Книга,Ручка,Фонарик',
-        'reorderItem — 2→0: порядок [Книга, Ручка, Фонарик], got: ' + items.join(','));
+        'reorderItem — 2↔0: порядок восстановлен [Книга, Ручка, Фонарик], got: ' + items.join(','));
 
-      // Соседний сдвиг вниз: 0 → на строку 1
-      assert(App.DataStore.reorderItem(a.id, 0, 1) === true, 'reorderItem — соседний перенос вниз');
+      // Соседний обмен: 0 ↔ 1
+      assert(App.DataStore.reorderItem(a.id, 0, 1) === true, 'reorderItem — соседний обмен');
       items = App.DataStore.getObject(a.id).items;
       assert(items.join(',') === 'Ручка,Книга,Фонарик',
-        'reorderItem — 0→1: порядок [Ручка, Книга, Фонарик], got: ' + items.join(','));
-
-      // …и обратно наверх: 2 → на строку 0 (порядок восстановлен)
-      assert(App.DataStore.reorderItem(a.id, 2, 0) === true, 'reorderItem — обратный перенос вверх');
-      items = App.DataStore.getObject(a.id).items;
-      assert(items.join(',') === 'Фонарик,Ручка,Книга',
-        'reorderItem — 2→0: порядок [Фонарик, Ручка, Книга], got: ' + items.join(','));
+        'reorderItem — 0↔1: [Ручка, Книга, Фонарик], got: ' + items.join(','));
 
       assert(reorderEvent && reorderEvent.objectId === a.id
-        && reorderEvent.fromIndex === 2 && reorderEvent.toIndex === 0,
+        && reorderEvent.fromIndex === 0 && reorderEvent.toIndex === 1,
         'reorderItem — событие item:reordered с индексами');
-      assert(changed >= 4, 'reorderItem — событие data:changed');
+      assert(changed >= 3, 'reorderItem — событие data:changed');
 
       assert(App.DataStore.reorderItem(a.id, 0, 0) === false, 'reorderItem — тот же индекс отклонён');
       assert(App.DataStore.reorderItem('nope', 0, 1) === false, 'reorderItem — несуществующий объект');
@@ -730,13 +724,13 @@
       assert(App.DataStore.reorderItem(a.id, 0, -1) === false, 'reorderItem — отрицательный to');
       assert(App.DataStore.reorderItem(a.id, 1.5, 2) === false, 'reorderItem — нецелый from');
       items = App.DataStore.getObject(a.id).items;
-      assert(items.join(',') === 'Фонарик,Ручка,Книга', 'reorderItem — ошибки не изменили порядок');
+      assert(items.join(',') === 'Ручка,Книга,Фонарик', 'reorderItem — ошибки не изменили порядок');
 
       // Сохранение в localStorage
       App.DataStore.reorderItem(a.id, 2, 0);
       const saved = JSON.parse(localStorage.getItem('apartmentPlan'));
       const savedObj = saved.objects.find(o => o.id === a.id);
-      assert(savedObj.items.join(',') === 'Книга,Фонарик,Ручка',
+      assert(savedObj.items.join(',') === 'Фонарик,Книга,Ручка',
         'reorderItem — порядок сохраняется в localStorage');
 
       off1(); off2();

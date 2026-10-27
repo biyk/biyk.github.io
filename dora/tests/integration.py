@@ -1643,21 +1643,21 @@ def run_all(session):
                 """)
                 time.sleep(0.2)
 
-            # 0 → на строку индекса 2: предмет встаёт НА позицию 2 (в конец)
+            # 0 ↔ 2: предметы меняются местами (swap), а не вставляются друг в друга
             dispatch(
                 f"content.querySelector('[data-drag-item=\"{obj_id}:0\"]')",
                 f"content.querySelector('[data-drop-item=\"{obj_id}:2\"]')"
             )
             order1 = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.join(',')")
-            assert order1 == 'РС2,РС3,РС1', f"Reorder 0→2 failed: {order1}"
+            assert order1 == 'РС3,РС2,РС1', f"Swap 0↔2 failed: {order1}"
 
-            # 2 → на строку индекса 0: предмет встаёт НА позицию 0 (в начало)
+            # 2 ↔ 0: обратный обмен возвращает исходный порядок
             dispatch(
                 f"content.querySelector('[data-drag-item=\"{obj_id}:2\"]')",
                 f"content.querySelector('[data-drop-item=\"{obj_id}:0\"]')"
             )
             order2 = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.join(',')")
-            assert order2 == 'РС1,РС2,РС3', f"Reorder 2→0 failed: {order2}"
+            assert order2 == 'РС1,РС2,РС3', f"Swap 2↔0 failed: {order2}"
 
             # Тот же предмет на свою строку — порядок не меняется
             dispatch(

@@ -489,20 +489,18 @@ App.DataStore = (() => {
       return true;
     },
 
-    // Ручная сортировка: перестановка предмета внутри одного объекта.
-    // Предмет встаёт НА позицию toIndex (как при drag на строку-цель):
-    // вниз — после цели (её индекс сдвинулся влево после splice), вверх — перед ней (не сдвинулся).
-    // В обоих случаях достаточно вставки по toIndex после удаления из fromIndex.
+    // Ручная сортировка: обмен предметами местами внутри одного объекта.
+    // Предмет, перетащенный на строку toIndex, меняется с ней позициями (swap).
     reorderItem(objectId, fromIndex, toIndex) {
       const obj = _data.objects.find(o => o.id === objectId);
       if (!obj) return false;
       if (!Number.isInteger(fromIndex) || fromIndex < 0 || fromIndex >= obj.items.length) return false;
       if (!Number.isInteger(toIndex) || toIndex < 0 || toIndex >= obj.items.length) return false;
       if (fromIndex === toIndex) return false;
-      const item = obj.items.splice(fromIndex, 1)[0];
-      obj.items.splice(toIndex, 0, item);
+      [obj.items[fromIndex], obj.items[toIndex]] = [obj.items[toIndex], obj.items[fromIndex]];
       _persist();
-      App.EventBus.emit('item:reordered', { objectId, fromIndex, toIndex, item });
+      App.EventBus.emit('item:reordered', { objectId, fromIndex, toIndex,
+        item: obj.items[toIndex], swappedWith: obj.items[fromIndex] });
       App.EventBus.emit('data:changed', { source: 'item:reordered' });
       return true;
     },

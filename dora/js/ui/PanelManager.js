@@ -152,7 +152,9 @@ App.PanelManager = (() => {
         const item = obj.items[i];
         const itemHl = matchedItems.has(item) ? ' search-highlight' : '';
         const itemDup = nameCounts[item.toLowerCase()] > 1 ? ' duplicate' : '';
-        html += `<div class="item-row" draggable="true" data-drag-item="${obj.id}:${i}">
+        // строка предмета — цель для ручной сортировки (кроме режима А–Я: порядок отображения ≠ порядок в данных)
+        const dropItemAttr = _sortItemsAlpha ? '' : ` data-drop-item="${obj.id}:${i}"`;
+        html += `<div class="item-row" draggable="true" data-drag-item="${obj.id}:${i}"${dropItemAttr}>
           <span class="item-name${itemHl}${itemDup}" title="${itemDup ? 'Дубль' : 'Переименовать'}" onclick="App.PanelManager._renameObjectItem('${obj.id}',${i})">· ${App.utils.escapeHtml(item)}</span>
           <button class="btn-icon" onclick="App.ModalManager.showMoveItem('${obj.id}',${i})" title="Переместить в другой объект">→</button>
           <button class="btn-icon" onclick="App.PanelManager._removeObjectItem('${obj.id}',${i})" title="Удалить">✕</button>
@@ -263,6 +265,12 @@ App.PanelManager = (() => {
     return !App.DataStore.isDescendant(targetId, _dnd.objectId);
   }
 
+  // Ручная сортировка: предмет можно бросить на строку того же объекта (кроме своей)
+  function _dndValidReorder(objectId, index) {
+    return !!_dnd && _dnd.kind === 'item' &&
+      _dnd.objectId === objectId && _dnd.index !== index;
+  }
+
   function _onDragStart(e) {
     const itemEl = e.target.closest('[data-drag-item]');
     const objEl = e.target.closest('[data-drag-object]');
@@ -282,6 +290,17 @@ App.PanelManager = (() => {
 
   function _onDragOver(e) {
     if (!_dnd) return;
+    // приоритет — ручная сортировка: дроп на строку предмета того же объекта
+    const rowEl = e.target.closest('[data-drop-item]');
+    if (rowEl) {
+      const [rid, ridx] = rowEl.getAttribute('data-drop-item').split(':');
+      if (_dndValidReorder(rid, Number(ridx))) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        rowEl.classList.add('drop-hover');
+        return;
+      }
+    }
     const t = e.target.closest('[data-drop-object], [data-drop-root]');
     document.querySelectorAll('#panel-content .drop-hover').forEach(el => el.classList.remove('drop-hover'));
     if (!t) return;
@@ -298,6 +317,18 @@ App.PanelManager = (() => {
 
   function _onDrop(e) {
     if (!_dnd) return;
+    const rowEl = e.target.closest('[data-drop-item]');
+    if (rowEl) {
+      const [rid, ridx] = rowEl.getAttribute('data-drop-item').split(':');
+      const targetIdx = Number(ridx);
+      if (_dndValidReorder(rid, targetIdx)) {
+        e.preventDefault();
+        App.DataStore.reorderItem(_dnd.objectId, _dnd.index, targetIdx);
+        _dnd = null;
+        this.refresh();
+        return;
+      }
+    }
     const t = e.target.closest('[data-drop-object], [data-drop-root]');
     if (!t) return;
     e.preventDefault();

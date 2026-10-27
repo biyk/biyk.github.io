@@ -1604,6 +1604,91 @@ def run_all(session):
             _drain_debounce()
 
         test("42. Plan >50K chars is split into <=49K cells and round-trips", big_plan_split_across_columns)
+
+        # --- 43. Panel dnd: ручная сортировка предметов внутри объекта ---
+        def panel_item_reorder():
+            obj_id = session.evaluate("""
+                (() => {
+                    let o = App.DataStore.getObjects().find(x => x.name === 'ШкафРучнойСортировки');
+                    if (!o) o = App.DataStore.addObject({ name: 'ШкафРучнойСортировки', x: 700, y: 150, w: 100, h: 80 });
+                    ['РС1', 'РС2', 'РС3'].forEach(n => {
+                        if (!o.items.includes(n)) App.DataStore.addObjectItem(o.id, n);
+                    });
+                    App.PanelManager.showObject(o.id);
+                    return o.id;
+                })()
+            """)
+            rows = session.evaluate(f"""
+                [...document.querySelectorAll('#panel-content [data-drag-item^="{obj_id}:"]')]
+                    .map(el => el.getAttribute('data-drag-item'))
+            """)
+            assert len(rows) == 3, f"Must render 3 item rows, got {rows}"
+            handles = session.evaluate(
+                f"document.querySelectorAll('#panel-content [data-drop-item^=\"{obj_id}:\"]').length")
+            assert handles == 3, f"Item rows must be droppable for reorder, got {handles}"
+
+            def dispatch(from_sel_js, to_sel_js):
+                session.evaluate(f"""
+                    (() => {{
+                        const content = document.getElementById('panel-content');
+                        const src = {from_sel_js};
+                        const dst = {to_sel_js};
+                        if (!src || !dst) throw new Error('reorder elements not found');
+                        const dt = new DataTransfer();
+                        src.dispatchEvent(new DragEvent('dragstart', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                        dst.dispatchEvent(new DragEvent('dragover', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                        dst.dispatchEvent(new DragEvent('drop', {{ bubbles: true, cancelable: true, dataTransfer: dt }}));
+                        src.dispatchEvent(new DragEvent('dragend', {{ bubbles: true, dataTransfer: dt }}));
+                    }})()
+                """)
+                time.sleep(0.2)
+
+            # 0 → на строку индекса 2: предмет встаёт НА позицию 2 (в конец)
+            dispatch(
+                f"content.querySelector('[data-drag-item=\"{obj_id}:0\"]')",
+                f"content.querySelector('[data-drop-item=\"{obj_id}:2\"]')"
+            )
+            order1 = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.join(',')")
+            assert order1 == 'РС2,РС3,РС1', f"Reorder 0→2 failed: {order1}"
+
+            # 2 → на строку индекса 0: предмет встаёт НА позицию 0 (в начало)
+            dispatch(
+                f"content.querySelector('[data-drag-item=\"{obj_id}:2\"]')",
+                f"content.querySelector('[data-drop-item=\"{obj_id}:0\"]')"
+            )
+            order2 = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.join(',')")
+            assert order2 == 'РС1,РС2,РС3', f"Reorder 2→0 failed: {order2}"
+
+            # Тот же предмет на свою строку — порядок не меняется
+            dispatch(
+                f"content.querySelector('[data-drag-item=\"{obj_id}:1\"]')",
+                f"content.querySelector('[data-drop-item=\"{obj_id}:1\"]')"
+            )
+            order3 = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.join(',')")
+            assert order3 == order2, f"Drop on own row must be no-op, got {order3}"
+
+            # При алфавитной сортировке ручная сортировка недоступна
+            session.evaluate("App.PanelManager.toggleSortItems(true)")
+            alpha_handles = session.evaluate(
+                "document.querySelectorAll('#panel-content [data-drop-item]').length")
+            session.evaluate("App.PanelManager.toggleSortItems(false)")
+            assert alpha_handles == 0, f"Alpha sort must disable reorder targets, got {alpha_handles}"
+
+            # Осталось ровно 3 предмета (перестановка, не дублирование)
+            count = session.evaluate(f"App.DataStore.getObject('{obj_id}').items.length")
+            assert count == 3, f"Items must not duplicate, got {count}"
+
+            # Cleanup
+            session.evaluate(f"""
+                (() => {{
+                    const o = App.DataStore.getObject('{obj_id}');
+                    while (o.items.length) App.DataStore.removeObjectItem(o.id, 0);
+                    App.DataStore.deleteObject(o.id);
+                    App.PanelManager.showDefault();
+                }})()
+            """)
+
+        test("43. Panel dnd reorders items manually within an object", panel_item_reorder)
     finally:
         httpd.shutdown()
 

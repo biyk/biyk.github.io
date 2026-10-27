@@ -62,8 +62,9 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - `addObject()` with `parentId` inherits `roomId` from parent; root objects auto-detect room by spatial containment at creation if `roomId` not provided.
 - `moveObjectInto(objectId, newParentId)` nests/detaches objects. Guards: rejects self-nesting and nesting into own descendant (cycle protection). `null` detaches to root and recomputes `roomId` by center coordinates.
 - `moveItem(fromObjectId, fromIndex, toObjectId)` transfers an item between objects (splice + push). Guards: valid ids, integer index in range, source ≠ target. Emits `item:moved` + `data:changed`.
+- `reorderItem(objectId, fromIndex, toIndex)` manual reordering inside one object: item is removed and re-inserted AT `toIndex` (drop onto a row → lands on that row; works for both up- and downward drags). Guards: valid id, integer in-range indexes, from ≠ to. Emits `item:reordered` + `data:changed`.
 - **Canvas drag-drop nesting**: releasing a dragged root object with the cursor over another root object nests it (`DragManager` tracks `_state.dropTargetId`, target gets `.drop-target` green outline; highlight is applied AFTER `Renderer.render()` because render rebuilds the SVG DOM every mousemove frame).
-- **Panel HTML5 dnd** (`PanelManager`, delegated listeners on `#panel-content` bound once in `init()` — panel innerHTML is rebuilt on every refresh): item rows are draggable (`data-drag-item="objId:idx"`), nested child rows are draggable + droppable (`data-drag-object` / `data-drop-object`), breadcrumb crumbs are drop targets (`data-drop-object`, «🏠 План» = `data-drop-root` detaches to root). Items cannot drop on root crumb.
+- **Panel HTML5 dnd** (`PanelManager`, delegated listeners on `#panel-content` bound once in `init()` — panel innerHTML is rebuilt on every refresh): item rows are draggable (`data-drag-item="objId:idx"`) AND droppable onto each other for manual reorder (`data-drop-item="objId:idx"`, handled before `data-drop-object` branch; disabled while A–Я alpha sort is on, since display order ≠ data order; drop on own row is a no-op), nested child rows are draggable + droppable (`data-drag-object` / `data-drop-object`), breadcrumb crumbs are drop targets (`data-drop-object`, «🏠 План» = `data-drop-root` detaches to root). Items cannot drop on root crumb.
 - **Canvas item drop** (`DragManager`): an item dragged from the panel can be dropped onto a root object rect on the SVG — `_onCanvasDragOver`/`_onCanvasDrop` listen on the `<svg>`, target via `e.target.closest('[data-draggable]')` with `data-dtype="object"`, highlight `.drop-target`. Panel exposes the in-flight drag via `getActiveItemDrag()`/`clearItemDrag()`.
 - `ModalManager.showMoveItem(objectId, itemIndex)` — fallback dialog («→» button on each item row) with hierarchical target select.
 - `deleteObject()` only works on **empty** objects (no children, no items) — cascade delete is not supported.
@@ -105,7 +106,7 @@ Multiple apartments ("квартиры") are supported. Registry and active plan
 - `tests/browser.py` — CDP browser launcher (Chrome DevTools Protocol via WebSocket). Class: `BrowserSession`.
 - `tests/integration.py` — integration tests (render, zoom, drag, resize, guides, ruler, snap, dnd).
 - `tests/run_tests.py` — runner entry point. Uses `BrowserSession` context manager.
-- `tests.html` — unit tests (EventBus, utils, DataStore, ExportImport, guides, multi-plan, moveItem).
+- `tests.html` — unit tests (EventBus, utils, DataStore, ExportImport, guides, multi-plan, moveItem, reorderItem).
 - Headless window: **1920×1080** via `Emulation.setDeviceMetricsOverride` so rooms at x=650+ are visible.
 - Page scroll: `plan-container.scrollTo(600, 0)` in `inject_data()`.
 - `inject_data()` also removes `apartmentPlans`/`apartmentPlanActive` keys so integration runs always boot into the legacy `plan`.
